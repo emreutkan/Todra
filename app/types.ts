@@ -1,14 +1,15 @@
-export type TaskPriority = 'normal' | 'high' | 'crucial' | 'optional';
-
 export interface Task {
     id: string;
     title: string;
-    description?: string;
+    description: string;
     priority: TaskPriority;
     completed: boolean;
-    createdAt: number;
-    dueDate?: number;
+    createdAt: number; // timestamp
+    dueDate: number;   // timestamp - new field
+    category: string;  // new field
 }
+
+export type TaskPriority = 'optional' | 'normal' | 'high' | 'crucial';
 
 export type RootStackParamList = {
     Splash: undefined;

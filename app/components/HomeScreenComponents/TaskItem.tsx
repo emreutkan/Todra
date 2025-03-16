@@ -1,13 +1,5 @@
-import React from 'react';
-import {
-    View,
-    Text,
-    StyleSheet,
-    TouchableOpacity,
-    Animated,
-    PanResponder,
-    Dimensions
-} from 'react-native';
+import React, { useMemo, useRef } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Animated, PanResponder, Dimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { COLORS, PRIORITY_COLORS, SIZES } from '../../theme';
 import { Task, TaskPriority } from '../../types';
@@ -32,50 +24,48 @@ const TaskItem: React.FC<TaskItemProps> = ({
                                                totalTasks,
                                                onDelete,
                                                onToggleComplete,
-                                               onPress
+                                               onPress,
                                            }) => {
-    const translateX = new Animated.Value(0);
+    const translateX = useRef(new Animated.Value(0)).current;
 
-    const panResponder = PanResponder.create({
-        onStartShouldSetPanResponder: () => true,
-        onPanResponderMove: (_, gestureState) => {
-            translateX.setValue(gestureState.dx);
-        },
-        onPanResponderRelease: (_, gestureState) => {
-            if (gestureState.dx < SWIPE_THRESHOLD) {
-                // Delete the task
-                Animated.timing(translateX, {
-                    toValue: -width,
-                    duration: 250,
-                    useNativeDriver: true,
-                }).start(() => onDelete(item.id));
-            } else {
-                // Reset position
-                Animated.spring(translateX, {
-                    toValue: 0,
-                    useNativeDriver: true,
-                }).start();
-            }
-        },
-    });
+    const panResponder = useMemo(
+        () =>
+            PanResponder.create({
+                onStartShouldSetPanResponder: () => true,
+                onPanResponderMove: (_, gestureState) => {
+                    translateX.setValue(gestureState.dx);
+                },
+                onPanResponderRelease: (_, gestureState) => {
+                    if (gestureState.dx < SWIPE_THRESHOLD) {
+                        // Animate off-screen before deleting
+                        Animated.timing(translateX, {
+                            toValue: -width,
+                            duration: 250,
+                            useNativeDriver: true,
+                        }).start(() => onDelete(item.id));
+                    } else {
+                        // Reset position
+                        Animated.spring(translateX, {
+                            toValue: 0,
+                            useNativeDriver: true,
+                        }).start();
+                    }
+                },
+            }),
+        [translateX, onDelete, item.id]
+    );
 
-    // Animating the task item entrance
     const taskAnimStyle = {
         transform: [{ translateX }],
         opacity: taskOpacity,
     };
 
-    const getPriorityLabel = (priority: TaskPriority) => {
-        return priority.charAt(0).toUpperCase() + priority.slice(1);
-    };
+    const getPriorityLabel = (priority: TaskPriority) =>
+        priority.charAt(0).toUpperCase() + priority.slice(1);
 
     return (
         <Animated.View
-            style={[
-                styles.taskItemContainer,
-                taskAnimStyle,
-                { zIndex: totalTasks - index }
-            ]}
+            style={[styles.taskItemContainer, taskAnimStyle, { zIndex: totalTasks - index }]}
             {...panResponder.panHandlers}
         >
             <LinearGradient
@@ -88,13 +78,14 @@ const TaskItem: React.FC<TaskItemProps> = ({
                     style={styles.taskContent}
                     onPress={() => onPress(item.id)}
                     activeOpacity={0.7}
+                    accessibilityLabel="Task item"
+                    accessibilityHint="Tap to view task details"
                 >
                     <TouchableOpacity
-                        style={[
-                            styles.checkbox,
-                            item.completed && styles.checkboxChecked
-                        ]}
+                        style={[styles.checkbox, item.completed && styles.checkboxChecked]}
                         onPress={() => onToggleComplete(item.id)}
+                        accessibilityLabel="Toggle task completion"
+                        accessibilityHint="Marks this task as complete or incomplete"
                     >
                         {item.completed && (
                             <View style={styles.checkmark}>
@@ -104,10 +95,7 @@ const TaskItem: React.FC<TaskItemProps> = ({
                     </TouchableOpacity>
                     <View style={styles.taskTextContainer}>
                         <Text
-                            style={[
-                                styles.taskTitle,
-                                item.completed && styles.taskCompleted
-                            ]}
+                            style={[styles.taskTitle, item.completed && styles.taskCompleted]}
                             numberOfLines={1}
                             ellipsizeMode="tail"
                         >
@@ -115,10 +103,7 @@ const TaskItem: React.FC<TaskItemProps> = ({
                         </Text>
                         {item.description ? (
                             <Text
-                                style={[
-                                    styles.taskDescription,
-                                    item.completed && styles.taskCompleted
-                                ]}
+                                style={[styles.taskDescription, item.completed && styles.taskCompleted]}
                                 numberOfLines={1}
                                 ellipsizeMode="tail"
                             >
@@ -126,14 +111,9 @@ const TaskItem: React.FC<TaskItemProps> = ({
                             </Text>
                         ) : null}
                         <View
-                            style={[
-                                styles.priorityBadge,
-                                { backgroundColor: PRIORITY_COLORS[item.priority] }
-                            ]}
+                            style={[styles.priorityBadge, { backgroundColor: PRIORITY_COLORS[item.priority] }]}
                         >
-                            <Text style={styles.priorityText}>
-                                {getPriorityLabel(item.priority)}
-                            </Text>
+                            <Text style={styles.priorityText}>{getPriorityLabel(item.priority)}</Text>
                         </View>
                     </View>
                 </TouchableOpacity>
@@ -217,4 +197,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default TaskItem;
+export default React.memo(TaskItem);

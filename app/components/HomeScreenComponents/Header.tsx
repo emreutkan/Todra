@@ -1,47 +1,105 @@
 import React from 'react';
-import { View, Text, StyleSheet, Animated, Platform, StatusBar as RNStatusBar } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
 import { COLORS, SIZES } from '../../theme';
-
-const STATUSBAR_HEIGHT = Platform.OS === 'ios' ? 44 : RNStatusBar.currentHeight || 0;
+import { Ionicons } from '@expo/vector-icons';
+import CategoryFilterChips from './CategoryFilterChips';
 
 interface HeaderProps {
     fadeAnim: Animated.Value;
+    onFilterTypeChange: () => void;
+    filterType: 'createdAt' | 'dueDate';
+    onCategoryFilterChange: (category: string | null) => void;
+    activeCategory: string | null;
 }
 
-const Header: React.FC<HeaderProps> = ({ fadeAnim }) => {
+const Header: React.FC<HeaderProps> = ({
+                                           fadeAnim,
+                                           onFilterTypeChange,
+                                           filterType,
+                                           onCategoryFilterChange,
+                                           activeCategory
+                                       }) => {
+    const greetingMessage = React.useMemo(() => {
+        const currentHour = new Date().getHours();
+        if (currentHour < 12) {
+            return 'Good Morning';
+        } else if (currentHour < 18) {
+            return 'Good Afternoon';
+        } else {
+            return 'Good Evening';
+        }
+    }, []);
+
     return (
-        <LinearGradient
-            colors={['rgba(0,0,0,0.8)', COLORS.background]}
-            style={styles.header}
+        <Animated.View
+            style={[
+                styles.header,
+                { opacity: fadeAnim }
+            ]}
         >
-            <Animated.View style={{ opacity: fadeAnim }}>
-                <Text style={styles.headerTitle}>Task Planner</Text>
-                <Text style={styles.headerSubtitle}>Organize your day</Text>
-            </Animated.View>
-        </LinearGradient>
+            <View style={styles.headerTop}>
+                <View>
+                    <Text style={styles.greeting}>{greetingMessage}</Text>
+                    <Text style={styles.title}>Your Tasks</Text>
+                </View>
+
+                <TouchableOpacity
+                    style={styles.filterButton}
+                    onPress={onFilterTypeChange}
+                >
+                    <Ionicons
+                        name={filterType === 'dueDate' ? 'calendar' : 'create'}
+                        size={22}
+                        color={COLORS.primary}
+                    />
+                    <Text style={styles.filterText}>
+                        {filterType === 'dueDate' ? 'Due Date' : 'Created Date'}
+                    </Text>
+                </TouchableOpacity>
+            </View>
+
+            <CategoryFilterChips
+                onSelectCategory={onCategoryFilterChange}
+                selectedCategory={activeCategory}
+            />
+        </Animated.View>
     );
 };
 
 const styles = StyleSheet.create({
     header: {
-        paddingTop: STATUSBAR_HEIGHT + 20,
-        paddingBottom: 20,
         paddingHorizontal: 20,
-        borderBottomLeftRadius: 0,
-        borderBottomRightRadius: 0,
+        paddingBottom: 10,
     },
-    headerTitle: {
-        color: COLORS.text,
+    headerTop: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 15,
+    },
+    greeting: {
+        fontSize: SIZES.medium,
+        color: COLORS.text + 'CC',
+        marginBottom: 5,
+    },
+    title: {
         fontSize: SIZES.extraLarge,
         fontWeight: 'bold',
-        letterSpacing: 1,
+        color: COLORS.text,
     },
-    headerSubtitle: {
-        color: COLORS.text + '90',
-        fontSize: SIZES.medium,
-        marginTop: 5,
+    filterButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: COLORS.primary + '15',
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderRadius: 20,
     },
+    filterText: {
+        marginLeft: 6,
+        color: COLORS.primary,
+        fontWeight: '500',
+    }
 });
 
 export default Header;

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
     View,
     Text,
@@ -7,7 +7,7 @@ import {
     Animated,
     TouchableOpacity,
     ActivityIndicator,
-    RefreshControl
+    RefreshControl,
 } from 'react-native';
 import { COLORS, SIZES } from '../../theme';
 import { Task } from '../../types';
@@ -16,7 +16,6 @@ import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 
-// Define section type for grouping tasks
 type TaskSection = {
     title: string;
     data: Task[];
@@ -43,20 +42,18 @@ const TaskList: React.FC<TaskListProps> = ({
                                                onDeleteTask,
                                                onToggleTaskCompletion,
                                                onTaskPress,
-                                               onRefresh
+                                               onRefresh,
                                            }) => {
     const [refreshing, setRefreshing] = useState(false);
     const [sortType, setSortType] = useState<'priority' | 'created' | 'dueDate'>('priority');
     const [groupByCompleted, setGroupByCompleted] = useState(true);
-    const [sections, setSections] = useState<TaskSection[]>([]);
-    const [expandedSections, setExpandedSections] = useState<{[key: string]: boolean}>({});
+    const [expandedSections, setExpandedSections] = useState<{ [key: string]: boolean }>({});
     const [filterVisible, setFilterVisible] = useState(false);
 
-    // Animation for filter panel
+    // Animation refs for the filter panel
     const filterPanelHeight = useRef(new Animated.Value(0)).current;
     const filterPanelOpacity = useRef(new Animated.Value(0)).current;
 
-    // Function to toggle filter visibility with animation
     const toggleFilterPanel = () => {
         if (filterVisible) {
             Animated.parallel([
@@ -69,7 +66,7 @@ const TaskList: React.FC<TaskListProps> = ({
                     toValue: 0,
                     duration: 200,
                     useNativeDriver: false,
-                })
+                }),
             ]).start(() => setFilterVisible(false));
         } else {
             setFilterVisible(true);
@@ -83,83 +80,20 @@ const TaskList: React.FC<TaskListProps> = ({
                     toValue: 1,
                     duration: 200,
                     useNativeDriver: false,
-                })
+                }),
             ]).start();
         }
     };
 
-    // Toggle section collapse/expand
     const toggleSection = (sectionTitle: string) => {
         setExpandedSections(prev => ({
             ...prev,
-            [sectionTitle]: !prev[sectionTitle]
+            [sectionTitle]: !prev[sectionTitle],
         }));
     };
 
-    // Prepare sections based on grouping and sorting preferences
-    useEffect(() => {
-        if (tasks.length > 0) {
-            let newSections: TaskSection[] = [];
-
-            if (groupByCompleted) {
-                // Group tasks by completion status
-                const incompleteTasks = tasks.filter(task => !task.completed);
-                const completedTasks = tasks.filter(task => task.completed);
-
-                // Sort tasks based on sort type
-                const sortedIncompleteTasks = sortTasks(incompleteTasks, sortType);
-                const sortedCompletedTasks = sortTasks(completedTasks, sortType);
-
-                if (sortedIncompleteTasks.length > 0) {
-                    newSections.push({
-                        title: 'To Do',
-                        data: sortedIncompleteTasks,
-                        count: sortedIncompleteTasks.length,
-                        completedCount: 0
-                    });
-                }
-
-                if (sortedCompletedTasks.length > 0) {
-                    newSections.push({
-                        title: 'Completed',
-                        data: sortedCompletedTasks,
-                        count: sortedCompletedTasks.length,
-                        completedCount: sortedCompletedTasks.length
-                    });
-                }
-            } else {
-                // Just sort all tasks together
-                const sortedTasks = sortTasks(tasks, sortType);
-                newSections.push({
-                    title: 'All Tasks',
-                    data: sortedTasks,
-                    count: sortedTasks.length,
-                    completedCount: sortedTasks.filter(t => t.completed).length
-                });
-            }
-
-            // Initialize section expanded state
-            const newExpandedSections: {[key: string]: boolean} = {};
-            newSections.forEach(section => {
-                // Default: 'To Do' expanded, 'Completed' collapsed
-                newExpandedSections[section.title] = section.title !== 'Completed';
-            });
-
-            // Only update if no manual toggles have been made
-            if (Object.keys(expandedSections).length === 0) {
-                setExpandedSections(newExpandedSections);
-            }
-
-            setSections(newSections);
-        } else {
-            setSections([]);
-        }
-    }, [tasks, groupByCompleted, sortType]);
-
-    // Function to sort tasks based on selected criteria
     const sortTasks = (tasksToSort: Task[], sortBy: string): Task[] => {
-        const priorityOrder = { 'crucial': 0, 'high': 1, 'normal': 2, 'optional': 3 };
-
+        const priorityOrder = { crucial: 0, high: 1, normal: 2, optional: 3 };
         return [...tasksToSort].sort((a, b) => {
             switch (sortBy) {
                 case 'priority':
@@ -167,7 +101,6 @@ const TaskList: React.FC<TaskListProps> = ({
                 case 'created':
                     return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
                 case 'dueDate':
-                    // Handle tasks without due dates
                     if (!a.dueDate && !b.dueDate) return 0;
                     if (!a.dueDate) return 1;
                     if (!b.dueDate) return -1;
@@ -178,7 +111,55 @@ const TaskList: React.FC<TaskListProps> = ({
         });
     };
 
-    // Handle refresh
+    const sections = useMemo(() => {
+        if (tasks.length === 0) return [];
+        let newSections: TaskSection[] = [];
+
+        if (groupByCompleted) {
+            const incompleteTasks = tasks.filter(task => !task.completed);
+            const completedTasks = tasks.filter(task => task.completed);
+            const sortedIncompleteTasks = sortTasks(incompleteTasks, sortType);
+            const sortedCompletedTasks = sortTasks(completedTasks, sortType);
+
+            if (sortedIncompleteTasks.length > 0) {
+                newSections.push({
+                    title: 'To Do',
+                    data: sortedIncompleteTasks,
+                    count: sortedIncompleteTasks.length,
+                    completedCount: 0,
+                });
+            }
+            if (sortedCompletedTasks.length > 0) {
+                newSections.push({
+                    title: 'Completed',
+                    data: sortedCompletedTasks,
+                    count: sortedCompletedTasks.length,
+                    completedCount: sortedCompletedTasks.length,
+                });
+            }
+        } else {
+            const sortedTasks = sortTasks(tasks, sortType);
+            newSections.push({
+                title: 'All Tasks',
+                data: sortedTasks,
+                count: sortedTasks.length,
+                completedCount: sortedTasks.filter(t => t.completed).length,
+            });
+        }
+        return newSections;
+    }, [tasks, groupByCompleted, sortType]);
+
+    useEffect(() => {
+        if (sections.length > 0 && Object.keys(expandedSections).length === 0) {
+            const newExpandedSections: { [key: string]: boolean } = {};
+            sections.forEach(section => {
+                // Default: expand "To Do" and collapse "Completed"
+                newExpandedSections[section.title] = section.title !== 'Completed';
+            });
+            setExpandedSections(newExpandedSections);
+        }
+    }, [sections, expandedSections]);
+
     const handleRefresh = async () => {
         if (onRefresh) {
             setRefreshing(true);
@@ -187,171 +168,160 @@ const TaskList: React.FC<TaskListProps> = ({
         }
     };
 
-    // Render section header with toggle functionality
-    const renderSectionHeader = useCallback(({ section }: { section: TaskSection }) => {
-        const isExpanded = expandedSections[section.title] || false;
-
-        return (
-            <TouchableOpacity
-                style={styles.sectionHeader}
-                onPress={() => toggleSection(section.title)}
-                activeOpacity={0.7}
-            >
-                <View style={styles.sectionHeaderLeft}>
-                    <Text style={styles.sectionTitle}>{section.title}</Text>
-                    <View style={styles.sectionBadge}>
-                        <Text style={styles.sectionCount}>{section.data.length}</Text>
-                    </View>
-                </View>
-
-                <View style={styles.sectionHeaderRight}>
-                    {section.title === 'To Do' && (
-                        <View style={styles.progressContainer}>
-                            <View
-                                style={[styles.progressBar, { width: `${Math.max(0, 100 - (section.data.length / tasks.length * 100))}%` }]}
-                            />
+    const renderSectionHeader = useCallback(
+        ({ section }: { section: TaskSection }) => {
+            const isExpanded = expandedSections[section.title] || false;
+            return (
+                <TouchableOpacity
+                    style={styles.sectionHeader}
+                    onPress={() => toggleSection(section.title)}
+                    activeOpacity={0.7}
+                    accessibilityLabel={`Section ${section.title}`}
+                    accessibilityHint="Tap to expand or collapse this section"
+                >
+                    <View style={styles.sectionHeaderLeft}>
+                        <Text style={styles.sectionTitle}>{section.title}</Text>
+                        <View style={styles.sectionBadge}>
+                            <Text style={styles.sectionCount}>{section.data.length}</Text>
                         </View>
-                    )}
-                    <MaterialIcons
-                        name={isExpanded ? "keyboard-arrow-up" : "keyboard-arrow-down"}
-                        size={24}
-                        color={COLORS.text}
-                    />
-                </View>
-            </TouchableOpacity>
-        );
-    }, [expandedSections, tasks.length]);
-
-    // Render list header with filters and sort options
-    const renderListHeader = () => {
-        return (
-            <View style={styles.tasksHeader}>
-                <View style={styles.headerTopRow}>
-                    <View style={styles.headerDivider}>
-                        <Text style={styles.tasksHeaderTitle}>
-                            {tasks.length > 0
-                                ? `${tasks.length} Task${tasks.length > 1 ? 's' : ''}`
-                                : 'No Tasks'}
-                        </Text>
                     </View>
-
-                    <TouchableOpacity
-                        style={styles.filterButton}
-                        onPress={toggleFilterPanel}
-                    >
-                        <MaterialIcons name="filter-list" size={22} color={COLORS.text} />
-                    </TouchableOpacity>
-                </View>
-
-                {/* Filter panel */}
-                {filterVisible && (
-                    <Animated.View
-                        style={[
-                            styles.filterPanel,
-                            {
-                                height: filterPanelHeight,
-                                opacity: filterPanelOpacity
-                            }
-                        ]}
-                    >
-                        <BlurView intensity={20} tint="dark" style={styles.filterBlur}>
-                            <View style={styles.filterSection}>
-                                <Text style={styles.filterTitle}>Sort by:</Text>
-                                <View style={styles.filterOptions}>
-                                    <TouchableOpacity
-                                        style={[
-                                            styles.filterOption,
-                                            sortType === 'priority' && styles.filterOptionActive
-                                        ]}
-                                        onPress={() => setSortType('priority')}
-                                    >
-                                        <Text style={[
-                                            styles.filterOptionText,
-                                            sortType === 'priority' && styles.filterOptionActiveText
-                                        ]}>Priority</Text>
-                                    </TouchableOpacity>
-
-                                    <TouchableOpacity
-                                        style={[
-                                            styles.filterOption,
-                                            sortType === 'created' && styles.filterOptionActive
-                                        ]}
-                                        onPress={() => setSortType('created')}
-                                    >
-                                        <Text style={[
-                                            styles.filterOptionText,
-                                            sortType === 'created' && styles.filterOptionActiveText
-                                        ]}>Created</Text>
-                                    </TouchableOpacity>
-
-                                    <TouchableOpacity
-                                        style={[
-                                            styles.filterOption,
-                                            sortType === 'dueDate' && styles.filterOptionActive
-                                        ]}
-                                        onPress={() => setSortType('dueDate')}
-                                    >
-                                        <Text style={[
-                                            styles.filterOptionText,
-                                            sortType === 'dueDate' && styles.filterOptionActiveText
-                                        ]}>Due Date</Text>
-                                    </TouchableOpacity>
-                                </View>
+                    <View style={styles.sectionHeaderRight}>
+                        {section.title === 'To Do' && (
+                            <View style={styles.progressContainer}>
+                                <View
+                                    style={[
+                                        styles.progressBar,
+                                        { width: `${Math.max(0, 100 - (section.data.length / tasks.length * 100))}%` },
+                                    ]}
+                                />
                             </View>
+                        )}
+                        <MaterialIcons
+                            name={isExpanded ? 'keyboard-arrow-up' : 'keyboard-arrow-down'}
+                            size={24}
+                            color={COLORS.text}
+                        />
+                    </View>
+                </TouchableOpacity>
+            );
+        },
+        [expandedSections, tasks.length]
+    );
 
-                            <View style={styles.filterSection}>
-                                <Text style={styles.filterTitle}>Group:</Text>
-                                <View style={styles.toggleContainer}>
-                                    <TouchableOpacity
-                                        style={[
-                                            styles.toggleOption,
-                                            groupByCompleted ? styles.toggleOptionActive : styles.toggleOptionInactive
-                                        ]}
-                                        onPress={() => setGroupByCompleted(true)}
+    const renderListHeader = () => (
+        <View style={styles.tasksHeader}>
+            <View style={styles.headerTopRow}>
+                <View style={styles.headerDivider}>
+                    <Text style={styles.tasksHeaderTitle}>
+                        {tasks.length > 0 ? `${tasks.length} Task${tasks.length > 1 ? 's' : ''}` : 'No Tasks'}
+                    </Text>
+                </View>
+                <TouchableOpacity
+                    style={styles.filterButton}
+                    onPress={toggleFilterPanel}
+                    accessibilityLabel="Filter tasks"
+                    accessibilityHint="Tap to open filter options"
+                >
+                    <MaterialIcons name="filter-list" size={22} color={COLORS.text} />
+                </TouchableOpacity>
+            </View>
+            {filterVisible && (
+                <Animated.View
+                    style={[styles.filterPanel, { height: filterPanelHeight, opacity: filterPanelOpacity }]}
+                >
+                    <BlurView intensity={20} tint="dark" style={styles.filterBlur}>
+                        <View style={styles.filterSection}>
+                            <Text style={styles.filterTitle}>Sort by:</Text>
+                            <View style={styles.filterOptions}>
+                                <TouchableOpacity
+                                    style={[styles.filterOption, sortType === 'priority' && styles.filterOptionActive]}
+                                    onPress={() => setSortType('priority')}
+                                >
+                                    <Text
+                                        style={[styles.filterOptionText, sortType === 'priority' && styles.filterOptionActiveText]}
                                     >
-                                        <Text style={[
-                                            styles.toggleOptionText,
-                                            groupByCompleted ? styles.toggleOptionActiveText : styles.toggleOptionInactiveText
-                                        ]}>By Status</Text>
-                                    </TouchableOpacity>
-
-                                    <TouchableOpacity
-                                        style={[
-                                            styles.toggleOption,
-                                            !groupByCompleted ? styles.toggleOptionActive : styles.toggleOptionInactive
-                                        ]}
-                                        onPress={() => setGroupByCompleted(false)}
+                                        Priority
+                                    </Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={[styles.filterOption, sortType === 'created' && styles.filterOptionActive]}
+                                    onPress={() => setSortType('created')}
+                                >
+                                    <Text
+                                        style={[styles.filterOptionText, sortType === 'created' && styles.filterOptionActiveText]}
                                     >
-                                        <Text style={[
-                                            styles.toggleOptionText,
-                                            !groupByCompleted ? styles.toggleOptionActiveText : styles.toggleOptionInactiveText
-                                        ]}>All Together</Text>
-                                    </TouchableOpacity>
-                                </View>
+                                        Created
+                                    </Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={[styles.filterOption, sortType === 'dueDate' && styles.filterOptionActive]}
+                                    onPress={() => setSortType('dueDate')}
+                                >
+                                    <Text
+                                        style={[styles.filterOptionText, sortType === 'dueDate' && styles.filterOptionActiveText]}
+                                    >
+                                        Due Date
+                                    </Text>
+                                </TouchableOpacity>
                             </View>
-                        </BlurView>
-                    </Animated.View>
-                )}
-
-                <View style={styles.tasksSummary}>
-                    <View style={styles.tasksSummaryItem}>
-                        <View style={[styles.tasksSummaryDot, { backgroundColor: COLORS.success }]} />
-                        <Text style={styles.tasksSummaryText}>
-                            {tasks.filter(t => t.completed).length} Completed
-                        </Text>
-                    </View>
-                    <View style={styles.tasksSummaryItem}>
-                        <View style={[styles.tasksSummaryDot, { backgroundColor: COLORS.primary }]} />
-                        <Text style={styles.tasksSummaryText}>
-                            {tasks.filter(t => !t.completed).length} Remaining
-                        </Text>
-                    </View>
+                        </View>
+                        <View style={styles.filterSection}>
+                            <Text style={styles.filterTitle}>Group:</Text>
+                            <View style={styles.toggleContainer}>
+                                <TouchableOpacity
+                                    style={[
+                                        styles.toggleOption,
+                                        groupByCompleted ? styles.toggleOptionActive : styles.toggleOptionInactive,
+                                    ]}
+                                    onPress={() => setGroupByCompleted(true)}
+                                >
+                                    <Text
+                                        style={[
+                                            styles.toggleOptionText,
+                                            groupByCompleted ? styles.toggleOptionActiveText : styles.toggleOptionInactiveText,
+                                        ]}
+                                    >
+                                        By Status
+                                    </Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={[
+                                        styles.toggleOption,
+                                        !groupByCompleted ? styles.toggleOptionActive : styles.toggleOptionInactive,
+                                    ]}
+                                    onPress={() => setGroupByCompleted(false)}
+                                >
+                                    <Text
+                                        style={[
+                                            styles.toggleOptionText,
+                                            !groupByCompleted ? styles.toggleOptionActiveText : styles.toggleOptionInactiveText,
+                                        ]}
+                                    >
+                                        All Together
+                                    </Text>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    </BlurView>
+                </Animated.View>
+            )}
+            <View style={styles.tasksSummary}>
+                <View style={styles.tasksSummaryItem}>
+                    <View style={[styles.tasksSummaryDot, { backgroundColor: COLORS.success }]} />
+                    <Text style={styles.tasksSummaryText}>
+                        {tasks.filter(t => t.completed).length} Completed
+                    </Text>
+                </View>
+                <View style={styles.tasksSummaryItem}>
+                    <View style={[styles.tasksSummaryDot, { backgroundColor: COLORS.primary }]} />
+                    <Text style={styles.tasksSummaryText}>
+                        {tasks.filter(t => !t.completed).length} Remaining
+                    </Text>
                 </View>
             </View>
-        );
-    };
+        </View>
+    );
 
-    // Loading state
     if (loading) {
         return (
             <View style={styles.loadingContainer}>
@@ -361,7 +331,6 @@ const TaskList: React.FC<TaskListProps> = ({
         );
     }
 
-    // Empty state
     if (tasks.length === 0) {
         return (
             <View style={styles.emptyContainer}>
@@ -374,11 +343,7 @@ const TaskList: React.FC<TaskListProps> = ({
                     <Ionicons name="calendar-outline" size={70} color={COLORS.text + '40'} />
                     <Text style={styles.emptyText}>No tasks for {currentDate.toLocaleDateString()}</Text>
                     <Text style={styles.emptySubtext}>Tap the + button to add a new task</Text>
-
-                    <TouchableOpacity
-                        style={styles.emptyRefreshButton}
-                        onPress={handleRefresh}
-                    >
+                    <TouchableOpacity style={styles.emptyRefreshButton} onPress={handleRefresh}>
                         <Text style={styles.emptyRefreshButtonText}>Refresh</Text>
                     </TouchableOpacity>
                 </LinearGradient>
@@ -386,20 +351,15 @@ const TaskList: React.FC<TaskListProps> = ({
         );
     }
 
-    // Main content with tasks
     return (
         <SectionList
             sections={sections}
             keyExtractor={(item) => item.id}
             renderSectionHeader={renderSectionHeader}
-            stickySectionHeadersEnabled={true}
+            stickySectionHeadersEnabled
             ListHeaderComponent={renderListHeader}
             renderItem={({ item, index, section }) => {
-                // Don't render items for collapsed sections
-                if (!expandedSections[section.title]) {
-                    return null;
-                }
-
+                if (!expandedSections[section.title]) return null;
                 return (
                     <TaskItem
                         item={item}
@@ -443,7 +403,6 @@ const styles = StyleSheet.create({
     headerDivider: {
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'space-between',
     },
     tasksHeaderTitle: {
         color: COLORS.text,
@@ -565,7 +524,6 @@ const styles = StyleSheet.create({
         paddingHorizontal: 16,
         borderBottomWidth: 1,
         borderBottomColor: 'rgba(255,255,255,0.05)',
-        zIndex: 10,
     },
     sectionHeaderLeft: {
         flexDirection: 'row',
@@ -663,5 +621,5 @@ const styles = StyleSheet.create({
         color: COLORS.primary,
         fontSize: SIZES.medium,
         fontWeight: '600',
-    }
+    },
 });

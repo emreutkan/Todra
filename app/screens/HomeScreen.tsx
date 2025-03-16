@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
-import {View, StyleSheet, Animated, Dimensions, Alert} from 'react-native';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import React, {useState, useCallback, useMemo, useEffect} from 'react';
+import { View, StyleSheet, Animated, Dimensions, Alert, Platform, RefreshControl } from 'react-native';
+import { useNavigation, useFocusEffect, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
 import { COLORS } from '../theme';
@@ -13,54 +13,63 @@ import Header from '../components/HomeScreenComponents/Header';
 import DateSlider from '../components/HomeScreenComponents/DateSlider';
 import TaskList from '../components/HomeScreenComponents/TaskList';
 import AddButton from '../components/HomeScreenComponents/AddButton';
+import EmptyState from '../components/common/EmptyState';
 
 type HomeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Home'>;
+type HomeScreenRouteProp = RouteProp<RootStackParamList, 'Home'>;
 
 const { width } = Dimensions.get('window');
 
-const HomeScreen = () => {
+const HomeScreen: React.FC = () => {
+    const navigation = useNavigation<HomeScreenNavigationProp>();
+    const route = useRoute<HomeScreenRouteProp>();
+
     const [tasks, setTasks] = useState<Task[]>([]);
     const [filteredTasks, setFilteredTasks] = useState<Task[]>([]);
     const [loading, setLoading] = useState(true);
-    const navigation = useNavigation<HomeScreenNavigationProp>();
+    const [refreshing, setRefreshing] = useState(false);
+    const [selectedFilterType, setSelectedFilterType] = useState<'createdAt' | 'dueDate'>('dueDate');
+    const [activeCategory, setActiveCategory] = useState<string | null>(null);
 
     // For animations
-    const fadeAnim = useRef(new Animated.Value(0)).current;
-    const taskOpacity = useRef(new Animated.Value(0)).current;
+    const fadeAnim = useState(new Animated.Value(0))[0];
+    const taskOpacity = useState(new Animated.Value(0))[0];
 
     // For date slider
-    const today = new Date();
+    const today = useMemo(() => new Date(), []);
     const [currentDate, setCurrentDate] = useState(today);
-    const [selectedMonth, setSelectedMonth] = useState(today.toLocaleString('default', { month: 'long' }));
-    const [dateRange, setDateRange] = useState<Date[]>([]);
+    const [selectedMonth, setSelectedMonth] = useState(
+        today.toLocaleString('default', { month: 'long', year: 'numeric' })
+    );
 
-    // Setup date range for slider
-    useEffect(() => {
+    // Memoize the date range calculation to improve performance
+    const dateRange = useMemo(() => {
         // Get the current date
         const now = new Date();
+        const currentMonth = now.getMonth();
+        const currentYear = now.getFullYear();
 
-        // Get first and last day of the current month
-        const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
-        const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-
-        // Create array of dates for the full month
+        // Create array of dates for the full month plus next 10 days
         const dates: Date[] = [];
-        let currentMonth = now.getMonth();
-        let currentYear = now.getFullYear();
 
         // Add dates from the current month
+        const lastDay = new Date(currentYear, currentMonth + 1, 0);
         for (let i = 1; i <= lastDay.getDate(); i++) {
             dates.push(new Date(currentYear, currentMonth, i));
         }
 
-        // Add first 10 days of next month
-        for (let i = 1; i <= 10; i++) {
-            dates.push(new Date(currentYear, currentMonth + 1, i));
+        // Add first 15 days of next month
+        const nextMonth = currentMonth === 11 ? 0 : currentMonth + 1;
+        const nextMonthYear = currentMonth === 11 ? currentYear + 1 : currentYear;
+        for (let i = 1; i <= 15; i++) {
+            dates.push(new Date(nextMonthYear, nextMonth, i));
         }
 
-        setDateRange(dates);
+        return dates;
+    }, []);
 
-        // Start entrance animations
+    // Start entrance animations when component mounts
+    React.useEffect(() => {
         Animated.sequence([
             Animated.timing(fadeAnim, {
                 toValue: 1,
@@ -77,84 +86,171 @@ const HomeScreen = () => {
 
     // Reload tasks when the screen comes into focus
     useFocusEffect(
-        React.useCallback(() => {
+        useCallback(() => {
             loadTasks();
-        }, [])
+
+            // Check for success message from AddTaskScreen
+            if (route.params?.showSuccessMessage) {
+                // You could use a toast notification here instead of Alert
+                Alert.alert('Success', route.params.message || 'Task action completed');
+
+                // Clear the parameters to avoid showing the message again
+                navigation.setParams({
+                    showSuccessMessage: undefined,
+                    message: undefined,
+                    timestamp: undefined
+                });
+            }
+
+            return () => {
+                // Clean up any subscriptions if needed
+            };
+        }, [route.params?.timestamp])
     );
 
-    // Filter tasks based on selected date
+    // Filter tasks based on selected date and category
     useEffect(() => {
-        if (tasks.length > 0) {
-            const startOfDay = new Date(currentDate);
-            startOfDay.setHours(0, 0, 0, 0);
-
-            const endOfDay = new Date(currentDate);
-            endOfDay.setHours(23, 59, 59, 999);
-
-            const startTimestamp = startOfDay.getTime();
-            const endTimestamp = endOfDay.getTime();
-
-            // Filter tasks for the selected date
-            const filtered = tasks.filter(task => {
-                const taskDate = new Date(task.createdAt);
-                taskDate.setHours(0, 0, 0, 0);
-                const taskTimestamp = taskDate.getTime();
-                return taskTimestamp >= startTimestamp && taskTimestamp <= endTimestamp;
-            });
-
-            setFilteredTasks(filtered);
+        if (tasks.length === 0) {
+            setFilteredTasks([]);
+            return;
         }
-    }, [currentDate, tasks]);
+
+        const startOfDay = new Date(currentDate);
+        startOfDay.setHours(0, 0, 0, 0);
+
+        const endOfDay = new Date(currentDate);
+        endOfDay.setHours(23, 59, 59, 999);
+
+        const startTimestamp = startOfDay.getTime();
+        const endTimestamp = endOfDay.getTime();
+
+        // Filter tasks for the selected date based on date filter type
+        let dateFiltered = tasks.filter(task => {
+            // Use either createdAt or dueDate based on the filter type
+            const relevantDate = selectedFilterType === 'dueDate' && task.dueDate
+                ? task.dueDate
+                : task.createdAt;
+
+            const taskDate = new Date(relevantDate);
+            taskDate.setHours(0, 0, 0, 0);
+            const taskTimestamp = taskDate.getTime();
+            return taskTimestamp >= startTimestamp && taskTimestamp <= endTimestamp;
+        });
+
+        // Further filter by category if one is selected
+        if (activeCategory) {
+            dateFiltered = dateFiltered.filter(task =>
+                task.category === activeCategory
+            );
+        }
+
+        // Sort tasks by priority (crucial first, optional last)
+        dateFiltered.sort((a, b) => {
+            const priorityOrder = {
+                'crucial': 0,
+                'high': 1,
+                'normal': 2,
+                'optional': 3
+            };
+            return (priorityOrder[a.priority] || 2) - (priorityOrder[b.priority] || 2);
+        });
+
+        setFilteredTasks(dateFiltered);
+    }, [currentDate, tasks, selectedFilterType, activeCategory]);
 
     const loadTasks = async () => {
+        setRefreshing(true);
         try {
             const loadedTasks = await storageService.loadTasks();
             setTasks(loadedTasks);
-            setLoading(false);
         } catch (error) {
             console.error('Error loading tasks:', error);
+            Alert.alert(
+                'Error',
+                'Failed to load tasks. Please try again.',
+                [{ text: 'OK' }]
+            );
+        } finally {
             setLoading(false);
+            setRefreshing(false);
         }
     };
 
-    const handleAddTask = () => {
-        navigation.navigate('AddTask');
-    };
+    const handleAddTask = useCallback(() => {
+        // Pass the current selected date to the AddTask screen
+        navigation.navigate('AddTask', { selectedDate: currentDate });
+    }, [navigation, currentDate]);
 
-    const handleTaskPress = (taskId: string) => {
+    const handleTaskPress = useCallback((taskId: string) => {
         navigation.navigate('TaskDetails', { taskId });
-    };
+    }, [navigation]);
 
-    const handleToggleTaskCompletion = async (taskId: string) => {
-        const updatedTasks = tasks.map(task =>
-            task.id === taskId ? { ...task, completed: !task.completed } : task
-        );
-        setTasks(updatedTasks);
-        await storageService.saveTasks(updatedTasks);
-    };
-
-    const handleDeleteTask = async (taskId: string) => {
+    const handleToggleTaskCompletion = useCallback(async (taskId: string) => {
         try {
-            const updatedTasks = tasks.filter(task => task.id !== taskId);
+            const updatedTasks = tasks.map(task =>
+                task.id === taskId ? { ...task, completed: !task.completed } : task
+            );
             setTasks(updatedTasks);
             await storageService.saveTasks(updatedTasks);
+        } catch (error) {
+            console.error('Error updating task:', error);
+            Alert.alert('Error', 'Failed to update task status');
+        }
+    }, [tasks]);
+
+    const handleDeleteTask = useCallback(async (taskId: string) => {
+        try {
+            Alert.alert(
+                'Delete Task',
+                'Are you sure you want to delete this task?',
+                [
+                    { text: 'Cancel', style: 'cancel' },
+                    {
+                        text: 'Delete',
+                        style: 'destructive',
+                        onPress: async () => {
+                            const updatedTasks = tasks.filter(task => task.id !== taskId);
+                            setTasks(updatedTasks);
+                            await storageService.saveTasks(updatedTasks);
+                        }
+                    }
+                ]
+            );
         } catch (error) {
             console.error('Error deleting task:', error);
             Alert.alert('Error', 'Failed to delete task');
         }
-    };
+    }, [tasks]);
 
-    const handleDateChange = (date: Date) => {
+    const handleDateChange = useCallback((date: Date) => {
         setCurrentDate(date);
-        setSelectedMonth(date.toLocaleString('default', { month: 'long' }));
-    };
+        setSelectedMonth(date.toLocaleString('default', { month: 'long', year: 'numeric' }));
+    }, []);
+
+    const handleRefresh = useCallback(() => {
+        loadTasks();
+    }, []);
+
+    const toggleDateFilterType = useCallback(() => {
+        setSelectedFilterType(prev => prev === 'createdAt' ? 'dueDate' : 'createdAt');
+    }, []);
+
+    const handleCategoryFilter = useCallback((category: string | null) => {
+        setActiveCategory(category);
+    }, []);
 
     return (
         <View style={styles.container}>
             <StatusBar style="light" />
 
             {/* Header */}
-            <Header fadeAnim={fadeAnim} />
+            <Header
+                fadeAnim={fadeAnim}
+                onFilterTypeChange={toggleDateFilterType}
+                filterType={selectedFilterType}
+                onCategoryFilterChange={handleCategoryFilter}
+                activeCategory={activeCategory}
+            />
 
             {/* Date slider */}
             <DateSlider
@@ -164,6 +260,7 @@ const HomeScreen = () => {
                 today={today}
                 selectedMonth={selectedMonth}
                 onDateChange={handleDateChange}
+                filterType={selectedFilterType}
             />
 
             {/* Main content */}
@@ -172,15 +269,30 @@ const HomeScreen = () => {
                     tasks={filteredTasks}
                     taskOpacity={taskOpacity}
                     loading={loading}
+                    refreshing={refreshing}
                     currentDate={currentDate}
+                    onRefresh={handleRefresh}
                     onDeleteTask={handleDeleteTask}
                     onToggleTaskCompletion={handleToggleTaskCompletion}
                     onTaskPress={handleTaskPress}
+                    emptyComponent={
+                        <EmptyState
+                            type={loading ? 'loading' : 'no-data'}
+                            message={loading
+                                ? 'Loading your tasks...'
+                                : `No tasks for ${currentDate.toLocaleDateString()} ${activeCategory ? `in ${activeCategory}` : ''}`
+                            }
+                        />
+                    }
                 />
             </View>
 
             {/* Floating add button */}
-            <AddButton onPress={handleAddTask} />
+            <AddButton
+                onPress={handleAddTask}
+                size={60}
+                label="New Task"
+            />
         </View>
     );
 };
@@ -189,11 +301,19 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: COLORS.background,
+        ...Platform.select({
+            ios: {
+                paddingTop: 50, // Safe area for iOS
+            },
+            android: {
+                paddingTop: 25, // Account for status bar on Android
+            }
+        })
     },
     contentContainer: {
         flex: 1,
-        paddingHorizontal: 15,
-    },
+        paddingHorizontal: 20,
+    }
 });
 
 export default HomeScreen;
