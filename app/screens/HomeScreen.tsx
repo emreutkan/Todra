@@ -14,11 +14,14 @@ import DateSlider from '../components/HomeScreenComponents/DateSlider';
 import TaskList from '../components/HomeScreenComponents/TaskList';
 import AddButton from '../components/HomeScreenComponents/AddButton';
 import EmptyState from '../components/common/EmptyState';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Category } from '../components/AddTaskComponents/CategorySelector';
 
 type HomeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Home'>;
 type HomeScreenRouteProp = RouteProp<RootStackParamList, 'Home'>;
 
 const { width } = Dimensions.get('window');
+const CATEGORIES_STORAGE_KEY = 'user_categories';
 
 const HomeScreen: React.FC = () => {
     const navigation = useNavigation<HomeScreenNavigationProp>();
@@ -30,6 +33,8 @@ const HomeScreen: React.FC = () => {
     const [refreshing, setRefreshing] = useState(false);
     const [selectedFilterType, setSelectedFilterType] = useState<'createdAt' | 'dueDate'>('dueDate');
     const [activeCategory, setActiveCategory] = useState<string | null>(null);
+    const [activeCategoryName, setActiveCategoryName] = useState<string | null>(null);
+    const [categories, setCategories] = useState<Category[]>([]);
 
     // For animations
     const fadeAnim = useState(new Animated.Value(0))[0];
@@ -68,8 +73,47 @@ const HomeScreen: React.FC = () => {
         return dates;
     }, []);
 
+    // Load categories from AsyncStorage
+    const loadCategories = useCallback(async () => {
+        try {
+            const storedCategories = await AsyncStorage.getItem(CATEGORIES_STORAGE_KEY);
+            if (storedCategories) {
+                const parsedCategories: Category[] = JSON.parse(storedCategories);
+                setCategories(parsedCategories);
+
+                // Update active category name if there's an active category
+                if (activeCategory) {
+                    const categoryDetails = parsedCategories.find(cat => cat.id === activeCategory);
+                    if (categoryDetails) {
+                        setActiveCategoryName(categoryDetails.name);
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Error loading categories:', error);
+        }
+    }, [activeCategory]);
+
+    // Load categories when component mounts and when screen is focused
+    useEffect(() => {
+        loadCategories();
+    }, [loadCategories]);
+
+    useFocusEffect(
+        useCallback(() => {
+            loadCategories();
+            return () => {};
+        }, [loadCategories])
+    );
+
+    // Get category details by ID
+    const getCategoryDetails = useCallback((categoryId: string | null) => {
+        if (!categoryId) return null;
+        return categories.find(cat => cat.id === categoryId) || null;
+    }, [categories]);
+
     // Start entrance animations when component mounts
-    React.useEffect(() => {
+    useEffect(() => {
         Animated.sequence([
             Animated.timing(fadeAnim, {
                 toValue: 1,
@@ -142,6 +186,14 @@ const HomeScreen: React.FC = () => {
             dateFiltered = dateFiltered.filter(task =>
                 task.category === activeCategory
             );
+
+            // Update the active category name
+            const categoryDetails = getCategoryDetails(activeCategory);
+            if (categoryDetails) {
+                setActiveCategoryName(categoryDetails.name);
+            }
+        } else {
+            setActiveCategoryName(null);
         }
 
         // Sort tasks by priority (crucial first, optional last)
@@ -156,7 +208,7 @@ const HomeScreen: React.FC = () => {
         });
 
         setFilteredTasks(dateFiltered);
-    }, [currentDate, tasks, selectedFilterType, activeCategory]);
+    }, [currentDate, tasks, selectedFilterType, activeCategory, categories, getCategoryDetails]);
 
     const loadTasks = async () => {
         setRefreshing(true);
@@ -229,7 +281,8 @@ const HomeScreen: React.FC = () => {
 
     const handleRefresh = useCallback(() => {
         loadTasks();
-    }, []);
+        loadCategories();
+    }, [loadCategories]);
 
     const toggleDateFilterType = useCallback(() => {
         setSelectedFilterType(prev => prev === 'createdAt' ? 'dueDate' : 'createdAt');
@@ -237,7 +290,26 @@ const HomeScreen: React.FC = () => {
 
     const handleCategoryFilter = useCallback((category: string | null) => {
         setActiveCategory(category);
-    }, []);
+
+        // Update active category name immediately
+        if (category) {
+            const categoryDetails = getCategoryDetails(category);
+            if (categoryDetails) {
+                setActiveCategoryName(categoryDetails.name);
+            }
+        } else {
+            setActiveCategoryName(null);
+        }
+    }, [getCategoryDetails]);
+
+    // Format the date string for display
+    const formattedDate = useMemo(() => {
+        return currentDate.toLocaleDateString(undefined, {
+            month: 'short',
+            day: 'numeric',
+            weekday: 'short'
+        });
+    }, [currentDate]);
 
     return (
         <View style={styles.container}>
@@ -280,7 +352,7 @@ const HomeScreen: React.FC = () => {
                             type={loading ? 'loading' : 'no-data'}
                             message={loading
                                 ? 'Loading your tasks...'
-                                : `No tasks for ${currentDate.toLocaleDateString()} ${activeCategory ? `in ${activeCategory}` : ''}`
+                                : `No tasks for ${formattedDate}${activeCategoryName ? ` in ${activeCategoryName}` : ''}`
                             }
                         />
                     }
