@@ -366,6 +366,7 @@ const TaskList: React.FC<TaskListProps> = ({
                         index={index}
                         taskOpacity={taskOpacity}
                         totalTasks={section.data.length}
+                        allTasks={tasks} // Add this line
                         onDelete={onDeleteTask}
                         onToggleComplete={onToggleTaskCompletion}
                         onPress={onTaskPress}
