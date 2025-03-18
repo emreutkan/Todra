@@ -5,10 +5,10 @@ export interface Task {
     priority: TaskPriority;
     completed: boolean;
     createdAt: number; // timestamp
-    dueDate: number;   // timestamp - new field
-    category: string;  // new field
+    dueDate: number;   // timestamp
+    category: string;
+    predecessorIds: string[]; // Add this new field
 }
-
 export type TaskPriority = 'optional' | 'normal' | 'high' | 'crucial';
 
 export type RootStackParamList = {
