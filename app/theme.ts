@@ -44,9 +44,9 @@ export const darkPurpleTheme = {
 
 // --- Light + Gray Theme ---
 export const lightGrayTheme = {
-    primary: '#757575',      // Gray for primary elements
-    secondary: '#616161',    // Darker gray for secondary elements
-    accent: '#9E9E9E',       // Lighter gray for accent
+    primary: '#383838',      // Gray for primary elements
+    secondary: '#383838',    // Darker gray for secondary elements
+    accent: '#383838',       // Lighter gray for accent
     background: '#F5F5F5',   // Light background
     card: '#FFFFFF',         // White for cards
     surface: '#FFFFFF',      // Surface color for elements
@@ -71,7 +71,6 @@ export const PRIORITY_COLORS = {
     normal: '#2196F3',    // Blue
     high: '#FFC107',      // Yellow
     crucial: '#F44336',   // Red
-    optional: '#9C27B0',  // Purple
 };
 
 export const FONTS = {

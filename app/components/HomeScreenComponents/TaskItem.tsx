@@ -9,7 +9,6 @@ import {
     Dimensions,
     Alert
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { PRIORITY_COLORS, SIZES } from '../../theme';
 import { Task, TaskPriority } from '../../types';
 import { useTheme } from '../../context/ThemeContext';
@@ -17,13 +16,12 @@ import { useTheme } from '../../context/ThemeContext';
 const { width } = Dimensions.get('window');
 const SWIPE_THRESHOLD = -100;
 
-// In TaskItem.tsx
 interface TaskItemProps {
     item: Task;
     index: number;
     taskOpacity: Animated.Value;
     totalTasks: number;
-    allTasks: Task[]; // Add this line
+    allTasks: Task[];
     onDelete: (id: string) => void;
     onToggleComplete: (id: string) => void;
     onPress: (id: string) => void;
@@ -39,7 +37,7 @@ const TaskItem: React.FC<TaskItemProps> = ({
                                                onToggleComplete,
                                                onPress,
                                            }) => {
-    const { colors, isDark } = useTheme();
+    const { colors } = useTheme();
     const translateX = useRef(new Animated.Value(0)).current;
 
     // Check if all predecessor tasks are completed
@@ -114,12 +112,6 @@ const TaskItem: React.FC<TaskItemProps> = ({
     const getPriorityLabel = (priority: TaskPriority) =>
         priority.charAt(0).toUpperCase() + priority.slice(1);
 
-    // Define gradient colors based on theme
-    const gradientColors = [
-        colors.card,
-        isDark ? colors.card + '90' : colors.card + 'E6'
-    ];
-
     return (
         <Animated.View
             style={[
@@ -132,11 +124,11 @@ const TaskItem: React.FC<TaskItemProps> = ({
             ]}
             {...panResponder.panHandlers}
         >
-            <LinearGradient
-                colors={gradientColors}
-                style={styles.taskItem}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
+            <View
+                style={[
+                    styles.taskItem,
+                    { backgroundColor: colors.card }
+                ]}
             >
                 <TouchableOpacity
                     style={styles.taskContent}
@@ -225,7 +217,7 @@ const TaskItem: React.FC<TaskItemProps> = ({
                         </View>
                     </View>
                 </TouchableOpacity>
-            </LinearGradient>
+            </View>
         </Animated.View>
     );
 };

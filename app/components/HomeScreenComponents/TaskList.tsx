@@ -13,7 +13,6 @@ import { SIZES } from '../../theme';
 import { Task } from '../../types';
 import TaskItem from './TaskItem';
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { useTheme } from '../../context/ThemeContext';
 
@@ -380,12 +379,11 @@ const TaskList: React.FC<TaskListProps> = ({
     if (tasks.length === 0) {
         return (
             <View style={[styles.emptyContainer, { backgroundColor: colors.background }]}>
-                <LinearGradient
-                    colors={[colors.border, 'transparent']}
-                    style={styles.emptyGradient}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 0, y: 1 }}
-                >
+                <View style={[styles.emptyContent, {
+                    backgroundColor: colors.card,
+                    borderColor: colors.border,
+                    borderWidth: 1,
+                }]}>
                     <Ionicons name="calendar-outline" size={70} color={colors.text + '40'} />
                     <Text style={[styles.emptyText, { color: colors.text }]}>No tasks for {currentDate.toLocaleDateString()}</Text>
                     <Text style={[styles.emptySubtext, { color: colors.textSecondary }]}>Tap the + button to add a new task</Text>
@@ -398,7 +396,7 @@ const TaskList: React.FC<TaskListProps> = ({
                     >
                         <Text style={[styles.emptyRefreshButtonText, { color: colors.primary }]}>Refresh</Text>
                     </TouchableOpacity>
-                </LinearGradient>
+                </View>
             </View>
         );
     }
@@ -501,12 +499,10 @@ const styles = StyleSheet.create({
         marginBottom: 8,
         borderWidth: 1,
     },
-    filterOptionActive: {
-        // Styles set dynamically with theme colors
-    },
     filterOptionText: {
         fontSize: SIZES.small,
     },
+    filterOptionActive: {},
     filterOptionActiveText: {
         fontWeight: '600',
     },
@@ -521,9 +517,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 16,
         paddingVertical: 8,
     },
-    toggleOptionActive: {
-        // Styles set dynamically with theme colors
-    },
+    toggleOptionActive: {},
     toggleOptionInactive: {
         backgroundColor: 'transparent',
     },
@@ -533,9 +527,7 @@ const styles = StyleSheet.create({
     toggleOptionActiveText: {
         fontWeight: '600',
     },
-    toggleOptionInactiveText: {
-        // Colors set dynamically with theme
-    },
+    toggleOptionInactiveText: {},
     tasksSummary: {
         flexDirection: 'row',
         marginTop: 5,
@@ -619,7 +611,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
         paddingVertical: 40,
     },
-    emptyGradient: {
+    emptyContent: {
         width: '100%',
         alignItems: 'center',
         justifyContent: 'center',

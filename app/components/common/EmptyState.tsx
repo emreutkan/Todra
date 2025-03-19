@@ -1,41 +1,48 @@
 import React from 'react';
 import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
-import { COLORS, SIZES } from '../../theme';
+import { SIZES } from '../../theme';
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '../../context/ThemeContext';
 
 interface EmptyStateProps {
     type: 'loading' | 'no-data' | 'error';
     message: string;
     iconName?: string;
+    subMessage?: string;
 }
 
 const EmptyState: React.FC<EmptyStateProps> = ({
                                                    type,
                                                    message,
-                                                   iconName
+                                                   iconName,
+                                                   subMessage
                                                }) => {
+    const { colors } = useTheme();
+
     return (
         <View style={styles.container}>
             {type === 'loading' ? (
-                <ActivityIndicator size="large" color={COLORS.primary} />
+                <ActivityIndicator size="large" color={colors.primary} />
             ) : (
-                <View style={styles.iconContainer}>
+                <View style={[styles.iconContainer, { backgroundColor: colors.card }]}>
                     <Ionicons
                         name={
                             iconName ||
                             (type === 'error' ? 'alert-circle' : 'calendar-clear-outline')
                         }
                         size={50}
-                        color={COLORS.primary + '80'}
+                        color={colors.primary + '80'}
                     />
                 </View>
             )}
 
-            <Text style={styles.message}>{message}</Text>
+            <Text style={[styles.message, { color: colors.text }]}>
+                {message}
+            </Text>
 
-            {type === 'no-data' && (
-                <Text style={styles.subMessage}>
-                    Tap the + button to create a task
+            {(type === 'no-data' || subMessage) && (
+                <Text style={[styles.subMessage, { color: colors.textSecondary }]}>
+                    {subMessage || "Tap the + button to create a task"}
                 </Text>
             )}
         </View>
@@ -53,20 +60,18 @@ const styles = StyleSheet.create({
         width: 80,
         height: 80,
         borderRadius: 40,
-        backgroundColor: COLORS.card,
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: 16,
     },
     message: {
         fontSize: SIZES.medium,
-        color: COLORS.text,
+        fontWeight: '500',
         textAlign: 'center',
         marginBottom: 8,
     },
     subMessage: {
         fontSize: SIZES.font,
-        color: COLORS.text + '90',
         textAlign: 'center',
     }
 });

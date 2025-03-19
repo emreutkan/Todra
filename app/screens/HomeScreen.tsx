@@ -360,8 +360,6 @@ const HomeScreen: React.FC = () => {
 
             <AddButton
                 onPress={handleAddTask}
-                size={60}
-                label="New Task"
             />
         </View>
     );
@@ -381,7 +379,7 @@ const styles = StyleSheet.create({
     },
     contentContainer: {
         flex: 1,
-        paddingHorizontal: 20,
+        // paddingHorizontal: 20,
     }
 });
 

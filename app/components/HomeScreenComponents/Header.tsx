@@ -90,9 +90,9 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         paddingHorizontal: 20,
         paddingVertical: 15,
-        marginHorizontal: 20,
-        marginBottom: 10,
-        borderRadius: 12,
+        // marginHorizontal: 20,
+        // marginBottom: 10,
+        // borderRadius: 12,
         borderWidth: 1,
     },
     title: {
