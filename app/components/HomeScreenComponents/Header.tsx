@@ -1,105 +1,116 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
-import { COLORS, SIZES } from '../../theme';
 import { Ionicons } from '@expo/vector-icons';
-import CategoryFilterChips from './CategoryFilterChips';
+import { useTheme } from '../../context/ThemeContext';
 
-interface HeaderProps {
+type HeaderProps = {
     fadeAnim: Animated.Value;
     onFilterTypeChange: () => void;
     filterType: 'createdAt' | 'dueDate';
     onCategoryFilterChange: (category: string | null) => void;
     activeCategory: string | null;
-}
+    onThemeToggle: () => void; // New prop for theme toggling
+};
 
 const Header: React.FC<HeaderProps> = ({
                                            fadeAnim,
                                            onFilterTypeChange,
                                            filterType,
                                            onCategoryFilterChange,
-                                           activeCategory
+                                           activeCategory,
+                                           onThemeToggle,
                                        }) => {
-    const greetingMessage = React.useMemo(() => {
-        const currentHour = new Date().getHours();
-        if (currentHour < 12) {
-            return 'Good Morning';
-        } else if (currentHour < 18) {
-            return 'Good Afternoon';
-        } else {
-            return 'Good Evening';
-        }
-    }, []);
+    const { colors } = useTheme();
 
     return (
         <Animated.View
             style={[
                 styles.header,
-                { opacity: fadeAnim }
+                {
+                    opacity: fadeAnim,
+                    backgroundColor: colors.card,
+                    borderColor: colors.border
+                }
             ]}
         >
-            <View style={styles.headerTop}>
-                <View>
-                    <Text style={styles.greeting}>{greetingMessage}</Text>
-                    <Text style={styles.title}>Your Tasks</Text>
-                </View>
+            <Text style={[styles.title, { color: colors.text }]}>Task Planner</Text>
 
+            <View style={styles.controls}>
+                {/* Date filter toggle button */}
                 <TouchableOpacity
-                    style={styles.filterButton}
+                    style={[styles.iconButton, { backgroundColor: colors.surface }]}
                     onPress={onFilterTypeChange}
                 >
                     <Ionicons
-                        name={filterType === 'dueDate' ? 'calendar' : 'create'}
+                        name={filterType === 'dueDate' ? 'calendar' : 'time'}
                         size={22}
-                        color={COLORS.primary}
+                        color={colors.primary}
                     />
-                    <Text style={styles.filterText}>
-                        {filterType === 'dueDate' ? 'Due Date' : 'Created Date'}
-                    </Text>
+                </TouchableOpacity>
+
+                {/* Theme toggle button */}
+                <TouchableOpacity
+                    style={[styles.iconButton, { backgroundColor: colors.surface }]}
+                    onPress={onThemeToggle}
+                >
+                    <Ionicons
+                        name="color-palette-outline"
+                        size={22}
+                        color={colors.primary}
+                    />
+                </TouchableOpacity>
+
+                {/* Category filter button */}
+                <TouchableOpacity
+                    style={[
+                        styles.iconButton,
+                        {
+                            backgroundColor: activeCategory
+                                ? colors.primary
+                                : colors.surface
+                        }
+                    ]}
+                    onPress={() => onCategoryFilterChange(activeCategory ? null : 'all')}
+                >
+                    <Ionicons
+                        name="apps"
+                        size={22}
+                        color={activeCategory ? colors.onPrimary : colors.primary}
+                    />
                 </TouchableOpacity>
             </View>
-
-            <CategoryFilterChips
-                onSelectCategory={onCategoryFilterChange}
-                selectedCategory={activeCategory}
-            />
         </Animated.View>
     );
 };
 
 const styles = StyleSheet.create({
     header: {
-        paddingHorizontal: 20,
-        paddingBottom: 10,
-    },
-    headerTop: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 15,
-    },
-    greeting: {
-        fontSize: SIZES.medium,
-        color: COLORS.text + 'CC',
-        marginBottom: 5,
+        justifyContent: 'space-between',
+        paddingHorizontal: 20,
+        paddingVertical: 15,
+        marginHorizontal: 20,
+        marginBottom: 10,
+        borderRadius: 12,
+        borderWidth: 1,
     },
     title: {
-        fontSize: SIZES.extraLarge,
+        fontSize: 24,
         fontWeight: 'bold',
-        color: COLORS.text,
     },
-    filterButton: {
+    controls: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: COLORS.primary + '15',
-        paddingHorizontal: 12,
-        paddingVertical: 8,
-        borderRadius: 20,
     },
-    filterText: {
-        marginLeft: 6,
-        color: COLORS.primary,
-        fontWeight: '500',
-    }
+    iconButton: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginLeft: 8,
+    },
 });
 
 export default Header;

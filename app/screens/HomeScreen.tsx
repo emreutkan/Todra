@@ -3,19 +3,18 @@ import { View, StyleSheet, Animated, Dimensions, Alert, Platform, RefreshControl
 import { useNavigation, useFocusEffect, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
-import { COLORS } from '../theme';
-import { Task } from '../types';
 import { RootStackParamList } from '../types';
 import { storageService } from '../storage';
-
-// Import components
+import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '../context/ThemeContext';
+import ThemeSwitcher from '../components/common/ThemeSwitcher';
 import Header from '../components/HomeScreenComponents/Header';
 import DateSlider from '../components/HomeScreenComponents/DateSlider';
 import TaskList from '../components/HomeScreenComponents/TaskList';
 import AddButton from '../components/HomeScreenComponents/AddButton';
-import EmptyState from '../components/common/EmptyState';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Category } from '../components/AddTaskComponents/CategorySelector';
+import { Task } from '../types';
 
 type HomeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Home'>;
 type HomeScreenRouteProp = RouteProp<RootStackParamList, 'Home'>;
@@ -26,6 +25,7 @@ const CATEGORIES_STORAGE_KEY = 'user_categories';
 const HomeScreen: React.FC = () => {
     const navigation = useNavigation<HomeScreenNavigationProp>();
     const route = useRoute<HomeScreenRouteProp>();
+    const { colors, isDark } = useTheme();
 
     const [tasks, setTasks] = useState<Task[]>([]);
     const [filteredTasks, setFilteredTasks] = useState<Task[]>([]);
@@ -35,6 +35,7 @@ const HomeScreen: React.FC = () => {
     const [activeCategory, setActiveCategory] = useState<string | null>(null);
     const [activeCategoryName, setActiveCategoryName] = useState<string | null>(null);
     const [categories, setCategories] = useState<Category[]>([]);
+    const [showThemeSwitcher, setShowThemeSwitcher] = useState(false); // State for theme switcher visibility
 
     // For animations
     const fadeAnim = useState(new Animated.Value(0))[0];
@@ -311,9 +312,14 @@ const HomeScreen: React.FC = () => {
         });
     }, [currentDate]);
 
+    // Toggle theme switcher visibility
+    const toggleThemeSwitcher = useCallback(() => {
+        setShowThemeSwitcher(prev => !prev);
+    }, []);
+
     return (
-        <View style={styles.container}>
-            <StatusBar style="light" />
+        <View style={[styles.container, { backgroundColor: colors.background }]}>
+            <StatusBar style={isDark ? "light" : "dark"} />
 
             <Header
                 fadeAnim={fadeAnim}
@@ -321,7 +327,11 @@ const HomeScreen: React.FC = () => {
                 filterType={selectedFilterType}
                 onCategoryFilterChange={handleCategoryFilter}
                 activeCategory={activeCategory}
+                onThemeToggle={toggleThemeSwitcher} // Add this prop
             />
+
+            {/* Theme Switcher - conditionally rendered */}
+            {showThemeSwitcher && <ThemeSwitcher />}
 
             {/* Date slider */}
             <DateSlider
@@ -345,7 +355,6 @@ const HomeScreen: React.FC = () => {
                     onDeleteTask={handleDeleteTask}
                     onToggleTaskCompletion={handleToggleTaskCompletion}
                     onTaskPress={handleTaskPress}
-
                 />
             </View>
 
@@ -361,7 +370,6 @@ const HomeScreen: React.FC = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: COLORS.background,
         ...Platform.select({
             ios: {
                 paddingTop: 50, // Safe area for iOS

@@ -9,12 +9,13 @@ import {
     ActivityIndicator,
     RefreshControl,
 } from 'react-native';
-import { COLORS, SIZES } from '../../theme';
+import { SIZES } from '../../theme';
 import { Task } from '../../types';
 import TaskItem from './TaskItem';
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
+import { useTheme } from '../../context/ThemeContext';
 
 type TaskSection = {
     title: string;
@@ -44,6 +45,7 @@ const TaskList: React.FC<TaskListProps> = ({
                                                onTaskPress,
                                                onRefresh,
                                            }) => {
+    const { colors, isDark } = useTheme();
     const [refreshing, setRefreshing] = useState(false);
     const [sortType, setSortType] = useState<'priority' | 'created' | 'dueDate'>('priority');
     const [groupByCompleted, setGroupByCompleted] = useState(true);
@@ -173,25 +175,31 @@ const TaskList: React.FC<TaskListProps> = ({
             const isExpanded = expandedSections[section.title] || false;
             return (
                 <TouchableOpacity
-                    style={styles.sectionHeader}
+                    style={[styles.sectionHeader, {
+                        backgroundColor: colors.background + 'F8',
+                        borderBottomColor: colors.border
+                    }]}
                     onPress={() => toggleSection(section.title)}
                     activeOpacity={0.7}
                     accessibilityLabel={`Section ${section.title}`}
                     accessibilityHint="Tap to expand or collapse this section"
                 >
                     <View style={styles.sectionHeaderLeft}>
-                        <Text style={styles.sectionTitle}>{section.title}</Text>
-                        <View style={styles.sectionBadge}>
-                            <Text style={styles.sectionCount}>{section.data.length}</Text>
+                        <Text style={[styles.sectionTitle, { color: colors.text }]}>{section.title}</Text>
+                        <View style={[styles.sectionBadge, { backgroundColor: colors.primary + '40' }]}>
+                            <Text style={[styles.sectionCount, { color: colors.primary }]}>{section.data.length}</Text>
                         </View>
                     </View>
                     <View style={styles.sectionHeaderRight}>
                         {section.title === 'To Do' && (
-                            <View style={styles.progressContainer}>
+                            <View style={[styles.progressContainer, { backgroundColor: colors.border }]}>
                                 <View
                                     style={[
                                         styles.progressBar,
-                                        { width: `${Math.max(0, 100 - (section.data.length / tasks.length * 100))}%` },
+                                        {
+                                            width: `${Math.max(0, 100 - (section.data.length / tasks.length * 100))}%`,
+                                            backgroundColor: colors.success
+                                        },
                                     ]}
                                 />
                             </View>
@@ -199,66 +207,97 @@ const TaskList: React.FC<TaskListProps> = ({
                         <MaterialIcons
                             name={isExpanded ? 'keyboard-arrow-up' : 'keyboard-arrow-down'}
                             size={24}
-                            color={COLORS.text}
+                            color={colors.text}
                         />
                     </View>
                 </TouchableOpacity>
             );
         },
-        [expandedSections, tasks.length]
+        [expandedSections, tasks.length, colors]
     );
 
     const renderListHeader = () => (
         <View style={styles.tasksHeader}>
             <View style={styles.headerTopRow}>
                 <View style={styles.headerDivider}>
-                    <Text style={styles.tasksHeaderTitle}>
+                    <Text style={[styles.tasksHeaderTitle, { color: colors.text }]}>
                         {tasks.length > 0 ? `${tasks.length} Task${tasks.length > 1 ? 's' : ''}` : 'No Tasks'}
                     </Text>
                 </View>
                 <TouchableOpacity
-                    style={styles.filterButton}
+                    style={[styles.filterButton, {
+                        backgroundColor: colors.card + '50',
+                        borderColor: colors.border
+                    }]}
                     onPress={toggleFilterPanel}
                     accessibilityLabel="Filter tasks"
                     accessibilityHint="Tap to open filter options"
                 >
-                    <MaterialIcons name="filter-list" size={22} color={COLORS.text} />
+                    <MaterialIcons name="filter-list" size={22} color={colors.text} />
                 </TouchableOpacity>
             </View>
             {filterVisible && (
                 <Animated.View
-                    style={[styles.filterPanel, { height: filterPanelHeight, opacity: filterPanelOpacity }]}
+                    style={[styles.filterPanel, {
+                        height: filterPanelHeight,
+                        opacity: filterPanelOpacity,
+                        borderColor: colors.border
+                    }]}
                 >
-                    <BlurView intensity={20} tint="dark" style={styles.filterBlur}>
+                    <BlurView intensity={20} tint={isDark ? "dark" : "light"} style={styles.filterBlur}>
                         <View style={styles.filterSection}>
-                            <Text style={styles.filterTitle}>Sort by:</Text>
+                            <Text style={[styles.filterTitle, { color: colors.text }]}>Sort by:</Text>
                             <View style={styles.filterOptions}>
                                 <TouchableOpacity
-                                    style={[styles.filterOption, sortType === 'priority' && styles.filterOptionActive]}
+                                    style={[
+                                        styles.filterOption,
+                                        { backgroundColor: colors.card + '70', borderColor: colors.border },
+                                        sortType === 'priority' && [styles.filterOptionActive, { backgroundColor: colors.primary }]
+                                    ]}
                                     onPress={() => setSortType('priority')}
                                 >
                                     <Text
-                                        style={[styles.filterOptionText, sortType === 'priority' && styles.filterOptionActiveText]}
+                                        style={[
+                                            styles.filterOptionText,
+                                            { color: colors.text + '90' },
+                                            sortType === 'priority' && [styles.filterOptionActiveText, { color: colors.onPrimary }]
+                                        ]}
                                     >
                                         Priority
                                     </Text>
                                 </TouchableOpacity>
                                 <TouchableOpacity
-                                    style={[styles.filterOption, sortType === 'created' && styles.filterOptionActive]}
+                                    style={[
+                                        styles.filterOption,
+                                        { backgroundColor: colors.card + '70', borderColor: colors.border },
+                                        sortType === 'created' && [styles.filterOptionActive, { backgroundColor: colors.primary }]
+                                    ]}
                                     onPress={() => setSortType('created')}
                                 >
                                     <Text
-                                        style={[styles.filterOptionText, sortType === 'created' && styles.filterOptionActiveText]}
+                                        style={[
+                                            styles.filterOptionText,
+                                            { color: colors.text + '90' },
+                                            sortType === 'created' && [styles.filterOptionActiveText, { color: colors.onPrimary }]
+                                        ]}
                                     >
                                         Created
                                     </Text>
                                 </TouchableOpacity>
                                 <TouchableOpacity
-                                    style={[styles.filterOption, sortType === 'dueDate' && styles.filterOptionActive]}
+                                    style={[
+                                        styles.filterOption,
+                                        { backgroundColor: colors.card + '70', borderColor: colors.border },
+                                        sortType === 'dueDate' && [styles.filterOptionActive, { backgroundColor: colors.primary }]
+                                    ]}
                                     onPress={() => setSortType('dueDate')}
                                 >
                                     <Text
-                                        style={[styles.filterOptionText, sortType === 'dueDate' && styles.filterOptionActiveText]}
+                                        style={[
+                                            styles.filterOptionText,
+                                            { color: colors.text + '90' },
+                                            sortType === 'dueDate' && [styles.filterOptionActiveText, { color: colors.onPrimary }]
+                                        ]}
                                     >
                                         Due Date
                                     </Text>
@@ -266,19 +305,24 @@ const TaskList: React.FC<TaskListProps> = ({
                             </View>
                         </View>
                         <View style={styles.filterSection}>
-                            <Text style={styles.filterTitle}>Group:</Text>
-                            <View style={styles.toggleContainer}>
+                            <Text style={[styles.filterTitle, { color: colors.text }]}>Group:</Text>
+                            <View style={[styles.toggleContainer, {
+                                backgroundColor: colors.card + '40',
+                                borderColor: colors.border
+                            }]}>
                                 <TouchableOpacity
                                     style={[
                                         styles.toggleOption,
-                                        groupByCompleted ? styles.toggleOptionActive : styles.toggleOptionInactive,
+                                        groupByCompleted ? [styles.toggleOptionActive, { backgroundColor: colors.primary }] : styles.toggleOptionInactive,
                                     ]}
                                     onPress={() => setGroupByCompleted(true)}
                                 >
                                     <Text
                                         style={[
                                             styles.toggleOptionText,
-                                            groupByCompleted ? styles.toggleOptionActiveText : styles.toggleOptionInactiveText,
+                                            groupByCompleted
+                                                ? [styles.toggleOptionActiveText, { color: colors.onPrimary }]
+                                                : [styles.toggleOptionInactiveText, { color: colors.text + '90' }],
                                         ]}
                                     >
                                         By Status
@@ -287,14 +331,16 @@ const TaskList: React.FC<TaskListProps> = ({
                                 <TouchableOpacity
                                     style={[
                                         styles.toggleOption,
-                                        !groupByCompleted ? styles.toggleOptionActive : styles.toggleOptionInactive,
+                                        !groupByCompleted ? [styles.toggleOptionActive, { backgroundColor: colors.primary }] : styles.toggleOptionInactive,
                                     ]}
                                     onPress={() => setGroupByCompleted(false)}
                                 >
                                     <Text
                                         style={[
                                             styles.toggleOptionText,
-                                            !groupByCompleted ? styles.toggleOptionActiveText : styles.toggleOptionInactiveText,
+                                            !groupByCompleted
+                                                ? [styles.toggleOptionActiveText, { color: colors.onPrimary }]
+                                                : [styles.toggleOptionInactiveText, { color: colors.text + '90' }],
                                         ]}
                                     >
                                         All Together
@@ -307,14 +353,14 @@ const TaskList: React.FC<TaskListProps> = ({
             )}
             <View style={styles.tasksSummary}>
                 <View style={styles.tasksSummaryItem}>
-                    <View style={[styles.tasksSummaryDot, { backgroundColor: COLORS.success }]} />
-                    <Text style={styles.tasksSummaryText}>
+                    <View style={[styles.tasksSummaryDot, { backgroundColor: colors.success }]} />
+                    <Text style={[styles.tasksSummaryText, { color: colors.textSecondary }]}>
                         {tasks.filter(t => t.completed).length} Completed
                     </Text>
                 </View>
                 <View style={styles.tasksSummaryItem}>
-                    <View style={[styles.tasksSummaryDot, { backgroundColor: COLORS.primary }]} />
-                    <Text style={styles.tasksSummaryText}>
+                    <View style={[styles.tasksSummaryDot, { backgroundColor: colors.primary }]} />
+                    <Text style={[styles.tasksSummaryText, { color: colors.textSecondary }]}>
                         {tasks.filter(t => !t.completed).length} Remaining
                     </Text>
                 </View>
@@ -324,27 +370,33 @@ const TaskList: React.FC<TaskListProps> = ({
 
     if (loading) {
         return (
-            <View style={styles.loadingContainer}>
-                <ActivityIndicator color={COLORS.primary} size="large" />
-                <Text style={styles.loadingText}>Loading tasks...</Text>
+            <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
+                <ActivityIndicator color={colors.primary} size="large" />
+                <Text style={[styles.loadingText, { color: colors.text }]}>Loading tasks...</Text>
             </View>
         );
     }
 
     if (tasks.length === 0) {
         return (
-            <View style={styles.emptyContainer}>
+            <View style={[styles.emptyContainer, { backgroundColor: colors.background }]}>
                 <LinearGradient
-                    colors={['rgba(0,0,0,0.2)', 'rgba(0,0,0,0)']}
+                    colors={[colors.border, 'transparent']}
                     style={styles.emptyGradient}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 0, y: 1 }}
                 >
-                    <Ionicons name="calendar-outline" size={70} color={COLORS.text + '40'} />
-                    <Text style={styles.emptyText}>No tasks for {currentDate.toLocaleDateString()}</Text>
-                    <Text style={styles.emptySubtext}>Tap the + button to add a new task</Text>
-                    <TouchableOpacity style={styles.emptyRefreshButton} onPress={handleRefresh}>
-                        <Text style={styles.emptyRefreshButtonText}>Refresh</Text>
+                    <Ionicons name="calendar-outline" size={70} color={colors.text + '40'} />
+                    <Text style={[styles.emptyText, { color: colors.text }]}>No tasks for {currentDate.toLocaleDateString()}</Text>
+                    <Text style={[styles.emptySubtext, { color: colors.textSecondary }]}>Tap the + button to add a new task</Text>
+                    <TouchableOpacity
+                        style={[styles.emptyRefreshButton, {
+                            backgroundColor: colors.primary + '30',
+                            borderColor: colors.primary + '50'
+                        }]}
+                        onPress={handleRefresh}
+                    >
+                        <Text style={[styles.emptyRefreshButtonText, { color: colors.primary }]}>Refresh</Text>
                     </TouchableOpacity>
                 </LinearGradient>
             </View>
@@ -366,7 +418,7 @@ const TaskList: React.FC<TaskListProps> = ({
                         index={index}
                         taskOpacity={taskOpacity}
                         totalTasks={section.data.length}
-                        allTasks={tasks} // Add this line
+                        allTasks={tasks}
                         onDelete={onDeleteTask}
                         onToggleComplete={onToggleTaskCompletion}
                         onPress={onTaskPress}
@@ -379,15 +431,14 @@ const TaskList: React.FC<TaskListProps> = ({
                 <RefreshControl
                     refreshing={refreshing}
                     onRefresh={handleRefresh}
-                    colors={[COLORS.primary]}
-                    tintColor={COLORS.primary}
+                    colors={[colors.primary]}
+                    tintColor={colors.primary}
+                    progressBackgroundColor={colors.card}
                 />
             }
         />
     );
 };
-
-export default TaskList;
 
 const styles = StyleSheet.create({
     tasksHeader: {
@@ -406,7 +457,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     tasksHeaderTitle: {
-        color: COLORS.text,
         fontSize: SIZES.large,
         fontWeight: 'bold',
         letterSpacing: 0.5,
@@ -415,11 +465,9 @@ const styles = StyleSheet.create({
         width: 40,
         height: 40,
         borderRadius: 20,
-        backgroundColor: COLORS.card + '50',
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.1)',
     },
     filterPanel: {
         marginVertical: 8,
@@ -427,7 +475,6 @@ const styles = StyleSheet.create({
         overflow: 'hidden',
         marginHorizontal: 4,
         borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.1)',
     },
     filterBlur: {
         padding: 15,
@@ -437,7 +484,6 @@ const styles = StyleSheet.create({
         marginBottom: 12,
     },
     filterTitle: {
-        color: COLORS.text,
         fontSize: SIZES.small + 1,
         fontWeight: '600',
         marginBottom: 8,
@@ -453,28 +499,22 @@ const styles = StyleSheet.create({
         borderRadius: 20,
         marginRight: 8,
         marginBottom: 8,
-        backgroundColor: COLORS.card + '70',
         borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.1)',
     },
     filterOptionActive: {
-        backgroundColor: COLORS.primary,
+        // Styles set dynamically with theme colors
     },
     filterOptionText: {
-        color: COLORS.text + '90',
         fontSize: SIZES.small,
     },
     filterOptionActiveText: {
-        color: COLORS.background,
         fontWeight: '600',
     },
     toggleContainer: {
         flexDirection: 'row',
         borderRadius: 20,
         overflow: 'hidden',
-        backgroundColor: COLORS.card + '40',
         borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.05)',
         alignSelf: 'flex-start',
     },
     toggleOption: {
@@ -482,7 +522,7 @@ const styles = StyleSheet.create({
         paddingVertical: 8,
     },
     toggleOptionActive: {
-        backgroundColor: COLORS.primary,
+        // Styles set dynamically with theme colors
     },
     toggleOptionInactive: {
         backgroundColor: 'transparent',
@@ -491,11 +531,10 @@ const styles = StyleSheet.create({
         fontSize: SIZES.small,
     },
     toggleOptionActiveText: {
-        color: COLORS.background,
         fontWeight: '600',
     },
     toggleOptionInactiveText: {
-        color: COLORS.text + '90',
+        // Colors set dynamically with theme
     },
     tasksSummary: {
         flexDirection: 'row',
@@ -513,31 +552,26 @@ const styles = StyleSheet.create({
         marginRight: 6,
     },
     tasksSummaryText: {
-        color: COLORS.text + '80',
         fontSize: SIZES.small,
     },
     sectionHeader: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        backgroundColor: COLORS.background + 'F8',
         paddingVertical: 12,
         paddingHorizontal: 16,
         borderBottomWidth: 1,
-        borderBottomColor: 'rgba(255,255,255,0.05)',
     },
     sectionHeaderLeft: {
         flexDirection: 'row',
         alignItems: 'center',
     },
     sectionTitle: {
-        color: COLORS.text,
         fontSize: SIZES.medium,
         fontWeight: '600',
         letterSpacing: 0.5,
     },
     sectionBadge: {
-        backgroundColor: COLORS.primary + '40',
         borderRadius: 12,
         paddingHorizontal: 8,
         paddingVertical: 2,
@@ -546,7 +580,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     sectionCount: {
-        color: COLORS.primary,
         fontSize: SIZES.small - 1,
         fontWeight: '600',
     },
@@ -557,14 +590,12 @@ const styles = StyleSheet.create({
     progressContainer: {
         width: 80,
         height: 4,
-        backgroundColor: 'rgba(255,255,255,0.1)',
         borderRadius: 2,
         marginRight: 12,
         overflow: 'hidden',
     },
     progressBar: {
         height: '100%',
-        backgroundColor: COLORS.success,
         borderRadius: 2,
     },
     taskList: {
@@ -578,7 +609,6 @@ const styles = StyleSheet.create({
         paddingBottom: 40,
     },
     loadingText: {
-        color: COLORS.text,
         fontSize: SIZES.medium,
         marginTop: 16,
     },
@@ -597,7 +627,6 @@ const styles = StyleSheet.create({
         borderRadius: 16,
     },
     emptyText: {
-        color: COLORS.text,
         fontSize: SIZES.large,
         fontWeight: '600',
         textAlign: 'center',
@@ -605,7 +634,6 @@ const styles = StyleSheet.create({
         marginBottom: 10,
     },
     emptySubtext: {
-        color: COLORS.text + '80',
         fontSize: SIZES.medium,
         textAlign: 'center',
         marginBottom: 24,
@@ -613,14 +641,13 @@ const styles = StyleSheet.create({
     emptyRefreshButton: {
         paddingHorizontal: 24,
         paddingVertical: 12,
-        backgroundColor: COLORS.primary + '30',
         borderRadius: 24,
         borderWidth: 1,
-        borderColor: COLORS.primary + '50',
     },
     emptyRefreshButtonText: {
-        color: COLORS.primary,
         fontSize: SIZES.medium,
         fontWeight: '600',
     },
 });
+
+export default TaskList;

@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
-import { COLORS, SIZES } from '../../theme';
+import { SIZES } from '../../theme';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Category } from '../AddTaskComponents/CategorySelector'; // Import the Category type
+import { useTheme } from '../../context/ThemeContext';
 
 interface CategoryFilterChipsProps {
     onSelectCategory: (category: string | null) => void;
@@ -25,6 +26,7 @@ const CategoryFilterChips: React.FC<CategoryFilterChipsProps> = ({
                                                                      onSelectCategory,
                                                                      selectedCategory
                                                                  }) => {
+    const { colors } = useTheme();
     const [categories, setCategories] = useState<Category[]>([]);
 
     // Load categories from storage when component mounts
@@ -69,7 +71,14 @@ const CategoryFilterChips: React.FC<CategoryFilterChipsProps> = ({
             <TouchableOpacity
                 style={[
                     styles.chip,
-                    selectedCategory === null && styles.selectedChip
+                    {
+                        backgroundColor: colors.card,
+                        borderColor: colors.border
+                    },
+                    selectedCategory === null && [
+                        styles.selectedChip,
+                        { backgroundColor: colors.primary, borderColor: colors.primary }
+                    ]
                 ]}
                 onPress={() => onSelectCategory(null)}
                 accessible={true}
@@ -80,12 +89,13 @@ const CategoryFilterChips: React.FC<CategoryFilterChipsProps> = ({
                 <Ionicons
                     name="apps-outline"
                     size={16}
-                    color={selectedCategory === null ? COLORS.background : COLORS.text}
+                    color={selectedCategory === null ? colors.onPrimary : colors.text}
                 />
                 <Text
                     style={[
                         styles.chipText,
-                        selectedCategory === null && styles.selectedChipText
+                        { color: colors.text },
+                        selectedCategory === null && { color: colors.onPrimary }
                     ]}
                 >
                     All
@@ -98,8 +108,14 @@ const CategoryFilterChips: React.FC<CategoryFilterChipsProps> = ({
                     key={category.id}
                     style={[
                         styles.chip,
-                        selectedCategory === category.id && styles.selectedChip,
-                        selectedCategory === category.id && { backgroundColor: category.color }
+                        {
+                            backgroundColor: colors.card,
+                            borderColor: colors.border
+                        },
+                        selectedCategory === category.id && [
+                            styles.selectedChip,
+                            { backgroundColor: category.color, borderColor: category.color }
+                        ]
                     ]}
                     onPress={() => onSelectCategory(category.id)}
                     accessible={true}
@@ -110,12 +126,12 @@ const CategoryFilterChips: React.FC<CategoryFilterChipsProps> = ({
                     <Ionicons
                         name={category.icon as any}
                         size={16}
-                        color={selectedCategory === category.id ? COLORS.background : category.color}
+                        color={selectedCategory === category.id ? colors.background : category.color}
                     />
                     <Text
                         style={[
                             styles.chipText,
-                            { color: selectedCategory === category.id ? COLORS.background : COLORS.text }
+                            { color: selectedCategory === category.id ? colors.background : colors.text }
                         ]}
                         numberOfLines={1}
                         ellipsizeMode="tail"
@@ -140,28 +156,21 @@ const styles = StyleSheet.create({
     chip: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: COLORS.card,
         paddingHorizontal: 12,
         paddingVertical: 8,
         borderRadius: 20,
         marginRight: 10,
         borderWidth: 1,
-        borderColor: COLORS.border,
         maxWidth: 130, // Limit the width to prevent very long category names
     },
     selectedChip: {
-        backgroundColor: COLORS.primary,
-        borderColor: COLORS.primary,
+        // Colors applied inline with theme
     },
     chipText: {
-        color: COLORS.text,
         marginLeft: 5,
         fontWeight: '500',
         fontSize: SIZES.font - 2,
         flexShrink: 1, // Allow the text to shrink if needed
-    },
-    selectedChipText: {
-        color: COLORS.background,
     }
 });
 
