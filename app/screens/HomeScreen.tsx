@@ -315,7 +315,6 @@ const HomeScreen: React.FC = () => {
         <View style={styles.container}>
             <StatusBar style="light" />
 
-            {/* Header */}
             <Header
                 fadeAnim={fadeAnim}
                 onFilterTypeChange={toggleDateFilterType}
@@ -341,25 +340,15 @@ const HomeScreen: React.FC = () => {
                     tasks={filteredTasks}
                     taskOpacity={taskOpacity}
                     loading={loading}
-                    refreshing={refreshing}
+                    // refreshing={refreshing}
                     currentDate={currentDate}
-                    onRefresh={handleRefresh}
                     onDeleteTask={handleDeleteTask}
                     onToggleTaskCompletion={handleToggleTaskCompletion}
                     onTaskPress={handleTaskPress}
-                    emptyComponent={
-                        <EmptyState
-                            type={loading ? 'loading' : 'no-data'}
-                            message={loading
-                                ? 'Loading your tasks...'
-                                : `No tasks for ${formattedDate}${activeCategoryName ? ` in ${activeCategoryName}` : ''}`
-                            }
-                        />
-                    }
+
                 />
             </View>
 
-            {/* Floating add button */}
             <AddButton
                 onPress={handleAddTask}
                 size={60}

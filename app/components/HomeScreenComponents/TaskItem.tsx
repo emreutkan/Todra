@@ -1,5 +1,14 @@
 import React, { useMemo, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Animated, PanResponder, Dimensions } from 'react-native';
+import {
+    View,
+    Text,
+    StyleSheet,
+    TouchableOpacity,
+    Animated,
+    PanResponder,
+    Dimensions,
+    Alert
+} from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { COLORS, PRIORITY_COLORS, SIZES } from '../../theme';
 import { Task, TaskPriority } from '../../types';
@@ -7,11 +16,13 @@ import { Task, TaskPriority } from '../../types';
 const { width } = Dimensions.get('window');
 const SWIPE_THRESHOLD = -100;
 
+// In TaskItem.tsx
 interface TaskItemProps {
     item: Task;
     index: number;
     taskOpacity: Animated.Value;
     totalTasks: number;
+    allTasks: Task[]; // Add this line
     onDelete: (id: string) => void;
     onToggleComplete: (id: string) => void;
     onPress: (id: string) => void;
@@ -22,11 +33,39 @@ const TaskItem: React.FC<TaskItemProps> = ({
                                                index,
                                                taskOpacity,
                                                totalTasks,
+                                               allTasks,
                                                onDelete,
                                                onToggleComplete,
                                                onPress,
                                            }) => {
     const translateX = useRef(new Animated.Value(0)).current;
+
+    // Check if all predecessor tasks are completed
+    const canComplete = useMemo(() => {
+        if (!item.predecessorIds || item.predecessorIds.length === 0) return true;
+
+        return item.predecessorIds.every(predId => {
+            const predTask = allTasks.find(t => t.id === predId);
+            return predTask?.completed;
+        });
+    }, [item.predecessorIds, allTasks]);
+
+    // Get predecessor tasks information
+    const predecessorInfo = useMemo(() => {
+        if (!item.predecessorIds || item.predecessorIds.length === 0) {
+            return null;
+        }
+
+        const completedCount = item.predecessorIds.reduce((count, predId) => {
+            const predTask = allTasks.find(t => t.id === predId);
+            return predTask?.completed ? count + 1 : count;
+        }, 0);
+
+        return {
+            total: item.predecessorIds.length,
+            completed: completedCount,
+        };
+    }, [item.predecessorIds, allTasks]);
 
     const panResponder = useMemo(
         () =>
@@ -37,14 +76,12 @@ const TaskItem: React.FC<TaskItemProps> = ({
                 },
                 onPanResponderRelease: (_, gestureState) => {
                     if (gestureState.dx < SWIPE_THRESHOLD) {
-                        // Animate off-screen before deleting
                         Animated.timing(translateX, {
                             toValue: -width,
                             duration: 250,
                             useNativeDriver: true,
                         }).start(() => onDelete(item.id));
                     } else {
-                        // Reset position
                         Animated.spring(translateX, {
                             toValue: 0,
                             useNativeDriver: true,
@@ -54,6 +91,18 @@ const TaskItem: React.FC<TaskItemProps> = ({
             }),
         [translateX, onDelete, item.id]
     );
+
+    const handleToggleComplete = () => {
+        if (!item.completed && !canComplete) {
+            Alert.alert(
+                'Cannot Complete Task',
+                'You must complete all predecessor tasks first.',
+                [{ text: 'OK' }]
+            );
+            return;
+        }
+        onToggleComplete(item.id);
+    };
 
     const taskAnimStyle = {
         transform: [{ translateX }],
@@ -82,8 +131,12 @@ const TaskItem: React.FC<TaskItemProps> = ({
                     accessibilityHint="Tap to view task details"
                 >
                     <TouchableOpacity
-                        style={[styles.checkbox, item.completed && styles.checkboxChecked]}
-                        onPress={() => onToggleComplete(item.id)}
+                        style={[
+                            styles.checkbox,
+                            item.completed && styles.checkboxChecked,
+                            !canComplete && !item.completed && styles.checkboxDisabled
+                        ]}
+                        onPress={handleToggleComplete}
                         accessibilityLabel="Toggle task completion"
                         accessibilityHint="Marks this task as complete or incomplete"
                     >
@@ -110,10 +163,29 @@ const TaskItem: React.FC<TaskItemProps> = ({
                                 {item.description}
                             </Text>
                         ) : null}
-                        <View
-                            style={[styles.priorityBadge, { backgroundColor: PRIORITY_COLORS[item.priority] }]}
-                        >
-                            <Text style={styles.priorityText}>{getPriorityLabel(item.priority)}</Text>
+
+                        <View style={styles.taskMetaContainer}>
+                            <View
+                                style={[
+                                    styles.priorityBadge,
+                                    { backgroundColor: PRIORITY_COLORS[item.priority] }
+                                ]}
+                            >
+                                <Text style={styles.priorityText}>
+                                    {getPriorityLabel(item.priority)}
+                                </Text>
+                            </View>
+
+                            {predecessorInfo && (
+                                <View style={styles.predecessorBadge}>
+                                    <Text style={styles.predecessorText}>
+                                        {`${predecessorInfo.completed}/${predecessorInfo.total} prereqs`}
+                                    </Text>
+                                    {!canComplete && !item.completed && (
+                                        <Text style={styles.lockIcon}>🔒</Text>
+                                    )}
+                                </View>
+                            )}
                         </View>
                     </View>
                 </TouchableOpacity>
@@ -156,6 +228,10 @@ const styles = StyleSheet.create({
         backgroundColor: COLORS.primary,
         borderColor: COLORS.primary,
     },
+    checkboxDisabled: {
+        borderColor: COLORS.text + '40',
+        backgroundColor: COLORS.text + '10',
+    },
     checkmark: {
         alignItems: 'center',
         justifyContent: 'center',
@@ -183,17 +259,39 @@ const styles = StyleSheet.create({
         textDecorationLine: 'line-through',
         opacity: 0.6,
     },
+    taskMetaContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        flexWrap: 'wrap',
+        gap: 8,
+    },
     priorityBadge: {
         alignSelf: 'flex-start',
         paddingHorizontal: 10,
         paddingVertical: 3,
         borderRadius: 12,
-        marginTop: 4,
     },
     priorityText: {
         color: COLORS.text,
         fontSize: SIZES.small - 1,
         fontWeight: '600',
+    },
+    predecessorBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: COLORS.text + '10',
+        paddingHorizontal: 8,
+        paddingVertical: 3,
+        borderRadius: 12,
+        gap: 4,
+    },
+    predecessorText: {
+        color: COLORS.text + '80',
+        fontSize: SIZES.small - 1,
+        fontWeight: '500',
+    },
+    lockIcon: {
+        fontSize: SIZES.small,
     },
 });
 

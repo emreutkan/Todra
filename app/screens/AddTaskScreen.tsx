@@ -1,11 +1,12 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
     View,
     StyleSheet,
     KeyboardAvoidingView,
     Platform,
     Alert,
-    ScrollView
+    ScrollView,
+    ActivityIndicator
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -23,6 +24,7 @@ import TaskDescription from '../components/AddTaskComponents/TaskDescription';
 import PrioritySelector from '../components/AddTaskComponents/PrioritySelector';
 import DateTimePicker from '../components/AddTaskComponents/DateTimePicker';
 import CategorySelector from '../components/AddTaskComponents/CategorySelector';
+import PredecessorTaskSelector from '../components/AddTaskComponents/PredecessorTaskSelector';
 
 type AddTaskScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'AddTask'>;
 type AddTaskScreenRouteProp = RouteProp<RootStackParamList, 'AddTask'>;
@@ -40,13 +42,51 @@ const AddTaskScreen: React.FC = () => {
     const [dueDate, setDueDate] = useState<Date>(selectedDate);
     const [category, setCategory] = useState<string>('personal');
     const [isFormValid, setIsFormValid] = useState(false);
+    const [loading, setLoading] = useState(false);
+
+    // New state for predecessor functionality
+    const [predecessorIds, setPredecessorIds] = useState<string[]>([]);
+    const [availableTasks, setAvailableTasks] = useState<Task[]>([]);
+
+    // Load available tasks for predecessor selection
+    useEffect(() => {
+        const loadAvailableTasks = async () => {
+            try {
+                const tasks = await storageService.loadTasks();
+                setAvailableTasks(tasks);
+            } catch (error) {
+                console.error('Error loading tasks:', error);
+                Alert.alert('Error', 'Failed to load available tasks');
+            }
+        };
+        loadAvailableTasks();
+    }, []);
 
     // Check form validity whenever title changes
-    React.useEffect(() => {
+    useEffect(() => {
         setIsFormValid(title.trim().length > 0);
     }, [title]);
 
-// In your handleSave function, update it like this:
+    // Function to check for circular dependencies
+    const checkForCircularDependencies = (
+        taskIds: string[],
+        currentId: string,
+        visited: Set<string>,
+        tasks: Task[]
+    ): boolean => {
+        if (visited.has(currentId)) return true;
+        visited.add(currentId);
+
+        const task = tasks.find(t => t.id === currentId);
+        if (!task) return false;
+
+        for (const predId of task.predecessorIds || []) {
+            if (taskIds.includes(predId) || checkForCircularDependencies(taskIds, predId, visited, tasks)) {
+                return true;
+            }
+        }
+        return false;
+    };
 
     const handleSave = useCallback(async () => {
         if (!isFormValid) {
@@ -55,20 +95,18 @@ const AddTaskScreen: React.FC = () => {
         }
 
         try {
-            // Add a loading state
-            // setLoading(true); // Uncomment if you add a loading state
-
-            console.log('Creating new task with:', {
-                title: title.trim(),
-                description: description.trim(),
-                priority,
-                dueDate: new Date(dueDate).toISOString(),
-                category
-            });
+            setLoading(true);
 
             // Load existing tasks
             const existingTasks = await storageService.loadTasks();
-            console.log(`Loaded ${existingTasks.length} existing tasks`);
+
+            // Check for circular dependencies
+            for (const predId of predecessorIds) {
+                if (checkForCircularDependencies(predecessorIds, predId, new Set(), existingTasks)) {
+                    Alert.alert('Error', 'Cannot add these predecessors as they would create a circular dependency');
+                    return;
+                }
+            }
 
             // Create new task
             const newTask: Task = {
@@ -79,34 +117,33 @@ const AddTaskScreen: React.FC = () => {
                 completed: false,
                 createdAt: selectedDate.getTime(),
                 dueDate: dueDate.getTime(),
-                category
+                category,
+                predecessorIds
             };
 
-            console.log('New task created:', newTask);
-
-            // Save tasks (add new task to existing ones)
+            // Save tasks
             const updatedTasks = [...existingTasks, newTask];
             await storageService.saveTasks(updatedTasks);
-            console.log('Task saved successfully!');
 
-            // Navigate back to home screen with success message
+            // Navigate back with success message
             navigation.navigate('Home', {
                 showSuccessMessage: true,
                 message: 'Task added successfully',
-                timestamp: Date.now() // Add this to force a refresh on the home screen
+                timestamp: Date.now()
             });
         } catch (error) {
             console.error('Error saving task:', error);
             Alert.alert(
                 'Error Saving Task',
-                'Failed to save task. Please try again. Error: ' + (error instanceof Error ? error.message : 'Unknown error')
+                'Failed to save task. Please try again.'
             );
         } finally {
-            // setLoading(false); // Uncomment if you add a loading state
+            setLoading(false);
         }
-    }, [title, description, priority, dueDate, category, isFormValid, navigation, selectedDate]);
+    }, [title, description, priority, dueDate, category, predecessorIds, isFormValid, navigation, selectedDate]);
+
     const handleCancel = useCallback(() => {
-        if (title.trim() || description.trim()) {
+        if (title.trim() || description.trim() || predecessorIds.length > 0) {
             Alert.alert(
                 'Discard Changes?',
                 'You have unsaved changes. Are you sure you want to discard them?',
@@ -118,7 +155,15 @@ const AddTaskScreen: React.FC = () => {
         } else {
             navigation.goBack();
         }
-    }, [title, description, navigation]);
+    }, [title, description, predecessorIds, navigation]);
+
+    if (loading) {
+        return (
+            <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color={COLORS.primary} />
+            </View>
+        );
+    }
 
     return (
         <KeyboardAvoidingView
@@ -160,6 +205,18 @@ const AddTaskScreen: React.FC = () => {
                     initialDate={selectedDate}
                 />
 
+                <PredecessorTaskSelector
+                    availableTasks={availableTasks}
+                    selectedPredecessors={predecessorIds}
+                    onSelectPredecessor={(taskId) => {
+                        setPredecessorIds(prev =>
+                            prev.includes(taskId)
+                                ? prev.filter(id => id !== taskId)
+                                : [...prev, taskId]
+                        );
+                    }}
+                />
+
                 <TaskDescription
                     value={description}
                     onChangeText={setDescription}
@@ -186,6 +243,12 @@ const styles = StyleSheet.create({
     scrollContent: {
         padding: SIZES.medium,
         paddingBottom: SIZES.extraLarge * 2,
+    },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: COLORS.background,
     }
 });
 
