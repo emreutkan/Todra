@@ -4,14 +4,17 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { COLORS, FONTS, SIZES } from '../theme';
+import { COLORS, SIZES } from '../theme';
 import { RootStackParamList } from '../types';
 
 type WelcomeSliderNavigationProp = NativeStackNavigationProp<RootStackParamList, 'WelcomeSlider'>;
 
 const { width, height } = Dimensions.get('window');
 
-// Slide data - you can customize these with your own content and images
+// Key for AsyncStorage
+const FIRST_LAUNCH_KEY = 'APP_FIRST_LAUNCH';
+
+// Slide data
 const slides = [
     {
         id: '1',
@@ -40,18 +43,18 @@ const WelcomeSliderScreen = () => {
     const [currentIndex, setCurrentIndex] = useState(0);
     const slidesRef = useRef<FlatList>(null);
 
-    // Function to mark onboarding as completed
-    const markOnboardingComplete = async () => {
+    // Function to mark app as launched - this ensures it never shows again
+    const markAppAsLaunched = async () => {
         try {
-            await AsyncStorage.setItem('hasSeenOnboarding', 'true');
+            await AsyncStorage.setItem(FIRST_LAUNCH_KEY, 'true');
         } catch (error) {
-            console.error('Error saving onboarding status:', error);
+            console.error('Error saving first launch status:', error);
         }
     };
 
     // Function to handle skip
     const handleSkip = async () => {
-        await markOnboardingComplete();
+        await markAppAsLaunched();
         navigation.replace('Home');
     };
 
@@ -67,7 +70,7 @@ const WelcomeSliderScreen = () => {
 
     // Function to handle get started
     const handleGetStarted = async () => {
-        await markOnboardingComplete();
+        await markAppAsLaunched();
         navigation.replace('Home');
     };
 
