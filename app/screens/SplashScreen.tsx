@@ -5,6 +5,7 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types';
 import { StatusBar } from 'expo-status-bar';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type SplashScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Splash'>;
 
@@ -61,19 +62,26 @@ const SplashScreen = () => {
         // This could be expanded to check authentication status, etc.
         const checkInitialSetup = async () => {
             try {
+                // Check if user has seen onboarding
+                const hasSeenOnboarding = await AsyncStorage.getItem('hasSeenOnboarding');
+
                 // You could add actual data loading logic here
                 const loadingDelay = Platform.OS === 'ios' ? 2200 : 1800; // iOS animations are smoother, so allow more time
 
-                // Simulate loading data and navigate to Home
+                // Simulate loading data and navigate to appropriate screen
                 const timer = setTimeout(() => {
-                    navigation.replace('Home');
+                    if (hasSeenOnboarding === 'true') {
+                        navigation.replace('Home');
+                    } else {
+                        navigation.replace('WelcomeSlider');
+                    }
                 }, loadingDelay);
 
                 return () => clearTimeout(timer);
             } catch (error) {
                 console.error('Error during app initialization:', error);
-                // Navigate anyway, but could show an error screen instead
-                navigation.replace('Home');
+                // Navigate to welcome slider by default in case of error
+                navigation.replace('WelcomeSlider');
             }
         };
 
