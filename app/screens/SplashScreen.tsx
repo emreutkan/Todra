@@ -5,8 +5,12 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types';
 import { StatusBar } from 'expo-status-bar';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type SplashScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Splash'>;
+
+// Key for AsyncStorage
+const FIRST_LAUNCH_KEY = 'APP_FIRST_LAUNCH';
 
 const SplashScreen = () => {
     const navigation = useNavigation<SplashScreenNavigationProp>();
@@ -57,32 +61,38 @@ const SplashScreen = () => {
         spinAnimation.start();
         entryAnimations.start();
 
-        // Check if there's stored data or user preferences
-        // This could be expanded to check authentication status, etc.
-        const checkInitialSetup = async () => {
+        // Check if this is the first launch
+        const checkFirstLaunch = async () => {
             try {
-                // You could add actual data loading logic here
-                const loadingDelay = Platform.OS === 'ios' ? 2200 : 1800; // iOS animations are smoother, so allow more time
+                const hasLaunchedBefore = await AsyncStorage.getItem(FIRST_LAUNCH_KEY);
 
-                // Simulate loading data and navigate to Home
-                const timer = setTimeout(() => {
-                    navigation.replace('Home');
+                // iOS animations are smoother, so allow more time
+                const loadingDelay = Platform.OS === 'ios' ? 2200 : 1800;
+
+                // Navigate based on whether it's the first launch
+                const timer = setTimeout(async () => {
+                    if (hasLaunchedBefore === 'true') {
+                        // Not first launch, go directly to Home
+                        navigation.replace('Home');
+                    } else {
+                        // First launch, show welcome slider
+                        navigation.replace('WelcomeSlider');
+                    }
                 }, loadingDelay);
 
                 return () => clearTimeout(timer);
             } catch (error) {
-                console.error('Error during app initialization:', error);
-                // Navigate anyway, but could show an error screen instead
-                navigation.replace('Home');
+                console.error('Error checking first launch:', error);
+                // In case of error, default to welcome slider
+                navigation.replace('WelcomeSlider');
             }
         };
 
-        checkInitialSetup();
+        checkFirstLaunch();
 
         // Cleanup function
         return () => {
             spinAnimation.stop();
-            // No need to manually clear the animation sequences as they're naturally completed
         };
     }, [navigation, spinValue, scaleValue, opacityValue, textOpacityValue]);
 

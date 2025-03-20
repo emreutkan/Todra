@@ -3,12 +3,15 @@ import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
 import { ThemeProvider, useTheme } from './app/context/ThemeContext';
+import { COLORS } from './app/theme';
 
 // Import screens
 import SplashScreen from './app/screens/SplashScreen';
+import WelcomeSliderScreen from './app/screens/WelcomeSliderScreen';
 import HomeScreen from './app/screens/HomeScreen';
 import AddTaskScreen from './app/screens/AddTaskScreen';
 import TaskDetailsScreen from './app/screens/TaskDetailsScreen';
+
 // Import types
 import { RootStackParamList } from './app/types';
 
@@ -27,20 +30,18 @@ function AppContent() {
         ...(isDark ? DarkTheme : DefaultTheme),
         colors: {
             ...(isDark ? DarkTheme.colors : DefaultTheme.colors),
-            background: colors.background,
-            card: colors.card,
-            text: colors.text,
-            border: colors.border,
-            primary: colors.primary,
+            background: colors.background || COLORS.background,
+            card: colors.card || COLORS.card,
+            text: colors.text || COLORS.text,
+            border: colors.border || COLORS.border,
+            primary: colors.primary || COLORS.primary,
         },
     };
 
     // Simulate loading resources
     useEffect(() => {
-        // This could be a place to load fonts or other resources
         const prepareApp = async () => {
             try {
-                // Simulate some loading time
                 await new Promise(resolve => setTimeout(resolve, 1000));
                 setIsReady(true);
             } catch (e) {
@@ -52,7 +53,6 @@ function AppContent() {
     }, []);
 
     if (!isReady) {
-        // Show nothing while the app is preparing
         return null;
     }
 
@@ -63,23 +63,16 @@ function AppContent() {
                 initialRouteName="Splash"
                 screenOptions={{
                     headerShown: false,
-                    contentStyle: { backgroundColor: colors.background },
+                    contentStyle: { backgroundColor: colors.background || COLORS.background },
                     animation: 'fade',
                 }}
             >
                 <Stack.Screen name="Splash" component={SplashScreen} />
+                <Stack.Screen name="WelcomeSlider" component={WelcomeSliderScreen} />
                 <Stack.Screen name="Home" component={HomeScreen} />
                 <Stack.Screen name="AddTask" component={AddTaskScreen} />
-                <Stack.Screen
-                    name="EditTask"
-                    component={AddTaskScreen}
-                    initialParams={{ taskId: '' }}
-                />
-                <Stack.Screen
-                    name="TaskDetails"
-                    component={TaskDetailsScreen}
-                    initialParams={{ taskId: '' }}
-                />
+                <Stack.Screen name="EditTask" component={AddTaskScreen} initialParams={{ taskId: '' }} />
+                <Stack.Screen name="TaskDetails" component={TaskDetailsScreen} initialParams={{ taskId: '' }} />
             </Stack.Navigator>
         </NavigationContainer>
     );

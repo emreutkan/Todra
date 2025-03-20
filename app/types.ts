@@ -13,6 +13,7 @@ export type TaskPriority = 'low' | 'normal' | 'high';
 
 export type RootStackParamList = {
     Splash: undefined;
+    WelcomeSlider: undefined; // Add the new welcome slider screen
     Home: undefined;
     AddTask: undefined;
     EditTask: { taskId: string };
