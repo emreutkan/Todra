@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
+import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
+import { ThemeProvider, useTheme } from './app/context/ThemeContext';
 import { COLORS } from './app/theme';
 
 // Import screens
@@ -17,29 +18,30 @@ import { RootStackParamList } from './app/types';
 // Create stack navigator
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
-// Create custom theme for NavigationContainer
-const MyTheme = {
-    ...DefaultTheme,
-    colors: {
-        ...DefaultTheme.colors,
-        background: COLORS.background,
-        card: COLORS.card,
-        text: COLORS.text,
-        border: COLORS.border,
-        primary: COLORS.primary,
-    },
-};
+function AppContent() {
+    // Use the theme context
+    const { colors, isDark } = useTheme();
 
-export default function App() {
     // This will be set to true once the app has loaded
     const [isReady, setIsReady] = useState(false);
 
+    // Create custom theme for NavigationContainer based on the current mode
+    const MyTheme = {
+        ...(isDark ? DarkTheme : DefaultTheme),
+        colors: {
+            ...(isDark ? DarkTheme.colors : DefaultTheme.colors),
+            background: colors.background || COLORS.background,
+            card: colors.card || COLORS.card,
+            text: colors.text || COLORS.text,
+            border: colors.border || COLORS.border,
+            primary: colors.primary || COLORS.primary,
+        },
+    };
+
     // Simulate loading resources
     useEffect(() => {
-        // This could be a place to load fonts or other resources
         const prepareApp = async () => {
             try {
-                // Simulate some loading time
                 await new Promise(resolve => setTimeout(resolve, 1000));
                 setIsReady(true);
             } catch (e) {
@@ -51,18 +53,17 @@ export default function App() {
     }, []);
 
     if (!isReady) {
-        // Show nothing while the app is preparing
         return null;
     }
 
     return (
         <NavigationContainer theme={MyTheme}>
-            <StatusBar style="light" />
+            <StatusBar style={isDark ? "light" : "dark"} />
             <Stack.Navigator
                 initialRouteName="Splash"
                 screenOptions={{
                     headerShown: false,
-                    contentStyle: { backgroundColor: COLORS.background },
+                    contentStyle: { backgroundColor: colors.background || COLORS.background },
                     animation: 'fade',
                 }}
             >
@@ -70,17 +71,17 @@ export default function App() {
                 <Stack.Screen name="WelcomeSlider" component={WelcomeSliderScreen} />
                 <Stack.Screen name="Home" component={HomeScreen} />
                 <Stack.Screen name="AddTask" component={AddTaskScreen} />
-                <Stack.Screen
-                    name="EditTask"
-                    component={AddTaskScreen} // We'll reuse AddTaskScreen for editing
-                    initialParams={{ taskId: '' }}
-                />
-                <Stack.Screen
-                    name="TaskDetails"
-                    component={TaskDetailsScreen}
-                    initialParams={{ taskId: '' }}
-                />
+                <Stack.Screen name="EditTask" component={AddTaskScreen} initialParams={{ taskId: '' }} />
+                <Stack.Screen name="TaskDetails" component={TaskDetailsScreen} initialParams={{ taskId: '' }} />
             </Stack.Navigator>
         </NavigationContainer>
+    );
+}
+
+export default function App() {
+    return (
+        <ThemeProvider>
+            <AppContent />
+        </ThemeProvider>
     );
 }
