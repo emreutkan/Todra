@@ -9,20 +9,19 @@ import {
     Dimensions,
     Alert
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { COLORS, PRIORITY_COLORS, SIZES } from '../../theme';
+import { PRIORITY_COLORS, SIZES } from '../../theme';
 import { Task, TaskPriority } from '../../types';
+import { useTheme } from '../../context/ThemeContext';
 
 const { width } = Dimensions.get('window');
 const SWIPE_THRESHOLD = -100;
 
-// In TaskItem.tsx
 interface TaskItemProps {
     item: Task;
     index: number;
     taskOpacity: Animated.Value;
     totalTasks: number;
-    allTasks: Task[]; // Add this line
+    allTasks: Task[];
     onDelete: (id: string) => void;
     onToggleComplete: (id: string) => void;
     onPress: (id: string) => void;
@@ -38,6 +37,7 @@ const TaskItem: React.FC<TaskItemProps> = ({
                                                onToggleComplete,
                                                onPress,
                                            }) => {
+    const { colors } = useTheme();
     const translateX = useRef(new Animated.Value(0)).current;
 
     // Check if all predecessor tasks are completed
@@ -114,14 +114,21 @@ const TaskItem: React.FC<TaskItemProps> = ({
 
     return (
         <Animated.View
-            style={[styles.taskItemContainer, taskAnimStyle, { zIndex: totalTasks - index }]}
+            style={[
+                styles.taskItemContainer,
+                taskAnimStyle,
+                {
+                    zIndex: totalTasks - index,
+                    shadowColor: colors.text
+                }
+            ]}
             {...panResponder.panHandlers}
         >
-            <LinearGradient
-                colors={[COLORS.card, COLORS.card + '90']}
-                style={styles.taskItem}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
+            <View
+                style={[
+                    styles.taskItem,
+                    { backgroundColor: colors.card }
+                ]}
             >
                 <TouchableOpacity
                     style={styles.taskContent}
@@ -133,8 +140,15 @@ const TaskItem: React.FC<TaskItemProps> = ({
                     <TouchableOpacity
                         style={[
                             styles.checkbox,
-                            item.completed && styles.checkboxChecked,
-                            !canComplete && !item.completed && styles.checkboxDisabled
+                            { borderColor: colors.primary },
+                            item.completed && {
+                                backgroundColor: colors.primary,
+                                borderColor: colors.primary
+                            },
+                            !canComplete && !item.completed && {
+                                borderColor: colors.text + '40',
+                                backgroundColor: colors.text + '10'
+                            }
                         ]}
                         onPress={handleToggleComplete}
                         accessibilityLabel="Toggle task completion"
@@ -142,13 +156,17 @@ const TaskItem: React.FC<TaskItemProps> = ({
                     >
                         {item.completed && (
                             <View style={styles.checkmark}>
-                                <Text style={styles.checkmarkText}>✓</Text>
+                                <Text style={{ color: colors.onPrimary, fontSize: 16, fontWeight: 'bold' }}>✓</Text>
                             </View>
                         )}
                     </TouchableOpacity>
                     <View style={styles.taskTextContainer}>
                         <Text
-                            style={[styles.taskTitle, item.completed && styles.taskCompleted]}
+                            style={[
+                                styles.taskTitle,
+                                { color: colors.text },
+                                item.completed && styles.taskCompleted
+                            ]}
                             numberOfLines={1}
                             ellipsizeMode="tail"
                         >
@@ -156,7 +174,11 @@ const TaskItem: React.FC<TaskItemProps> = ({
                         </Text>
                         {item.description ? (
                             <Text
-                                style={[styles.taskDescription, item.completed && styles.taskCompleted]}
+                                style={[
+                                    styles.taskDescription,
+                                    { color: colors.textSecondary },
+                                    item.completed && styles.taskCompleted
+                                ]}
                                 numberOfLines={1}
                                 ellipsizeMode="tail"
                             >
@@ -177,8 +199,14 @@ const TaskItem: React.FC<TaskItemProps> = ({
                             </View>
 
                             {predecessorInfo && (
-                                <View style={styles.predecessorBadge}>
-                                    <Text style={styles.predecessorText}>
+                                <View style={[
+                                    styles.predecessorBadge,
+                                    { backgroundColor: colors.text + '10' }
+                                ]}>
+                                    <Text style={[
+                                        styles.predecessorText,
+                                        { color: colors.textSecondary }
+                                    ]}>
                                         {`${predecessorInfo.completed}/${predecessorInfo.total} prereqs`}
                                     </Text>
                                     {!canComplete && !item.completed && (
@@ -189,7 +217,7 @@ const TaskItem: React.FC<TaskItemProps> = ({
                         </View>
                     </View>
                 </TouchableOpacity>
-            </LinearGradient>
+            </View>
         </Animated.View>
     );
 };
@@ -198,7 +226,6 @@ const styles = StyleSheet.create({
     taskItemContainer: {
         marginBottom: 12,
         borderRadius: 12,
-        shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
         shadowRadius: 3,
@@ -218,40 +245,24 @@ const styles = StyleSheet.create({
         height: 24,
         borderRadius: 12,
         borderWidth: 2,
-        borderColor: COLORS.primary,
         marginRight: 16,
         alignItems: 'center',
         justifyContent: 'center',
         backgroundColor: 'transparent',
     },
-    checkboxChecked: {
-        backgroundColor: COLORS.primary,
-        borderColor: COLORS.primary,
-    },
-    checkboxDisabled: {
-        borderColor: COLORS.text + '40',
-        backgroundColor: COLORS.text + '10',
-    },
     checkmark: {
         alignItems: 'center',
         justifyContent: 'center',
-    },
-    checkmarkText: {
-        color: COLORS.background,
-        fontSize: 16,
-        fontWeight: 'bold',
     },
     taskTextContainer: {
         flex: 1,
     },
     taskTitle: {
-        color: COLORS.text,
         fontSize: SIZES.medium,
         fontWeight: '600',
         marginBottom: 4,
     },
     taskDescription: {
-        color: COLORS.text + '80',
         fontSize: SIZES.small,
         marginBottom: 8,
     },
@@ -272,21 +283,19 @@ const styles = StyleSheet.create({
         borderRadius: 12,
     },
     priorityText: {
-        color: COLORS.text,
+        color: '#FFFFFF',
         fontSize: SIZES.small - 1,
         fontWeight: '600',
     },
     predecessorBadge: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: COLORS.text + '10',
         paddingHorizontal: 8,
         paddingVertical: 3,
         borderRadius: 12,
         gap: 4,
     },
     predecessorText: {
-        color: COLORS.text + '80',
         fontSize: SIZES.small - 1,
         fontWeight: '500',
     },

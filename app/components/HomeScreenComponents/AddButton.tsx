@@ -1,65 +1,65 @@
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet, View, Platform } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { COLORS } from '../../theme';
+import { TouchableOpacity, Text, StyleSheet, View, Platform, Dimensions } from 'react-native';
+import { useTheme } from '../../context/ThemeContext';
+import { Ionicons } from '@expo/vector-icons';
+
+const { width } = Dimensions.get('window');
 
 interface AddButtonProps {
     onPress: () => void;
-    size?: number;
     label?: string;
     showShadow?: boolean;
 }
 
 const AddButton: React.FC<AddButtonProps> = ({
                                                  onPress,
-                                                 size = 60,
-                                                 label,
+                                                 label = "Add New Task",
                                                  showShadow = true
                                              }) => {
-    return (
-        <TouchableOpacity
-            style={[
-                styles.addButton,
-                { width: size, height: size, borderRadius: size / 2 },
-                showShadow && styles.shadow
-            ]}
-            onPress={onPress}
-            activeOpacity={0.7}
-        >
-            <LinearGradient
-                colors={[COLORS.primary, '#FF6B00']}
-                style={[
-                    styles.addButtonGradient,
-                    { borderRadius: size / 2 }
-                ]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-            >
-                <Text style={styles.addButtonText}>+</Text>
-            </LinearGradient>
+    const { colors } = useTheme();
 
-            {label && (
-                <View style={styles.labelContainer}>
-                    <Text style={styles.labelText}>{label}</Text>
+    return (
+        <View style={[
+            styles.container,
+            showShadow && [styles.shadow, { shadowColor: colors.primary }]
+        ]}>
+            <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={onPress}
+                accessibilityLabel={label}
+                accessibilityRole="button"
+                style={[
+                    styles.buttonWrapper,
+                    { backgroundColor: colors.primary }
+                ]}
+            >
+                <View style={styles.buttonContent}>
+                    <Ionicons name="add" size={24} color={colors.onPrimary} />
+                    <Text style={[styles.buttonText, { color: colors.onPrimary }]}>
+                        {label}
+                    </Text>
                 </View>
-            )}
-        </TouchableOpacity>
+            </TouchableOpacity>
+        </View>
     );
 };
 
 const styles = StyleSheet.create({
-    addButton: {
-        position: 'absolute',
-        bottom: 24,
-        right: 24,
+    container: {
+        bottom: 0,
+        left: 0,
+        right: 0,
+        paddingHorizontal: 16,
+        paddingBottom: Platform.OS === 'ios' ? 34 : 16,
+        paddingTop: 10,
+        backgroundColor: 'transparent',
         zIndex: 100,
     },
     shadow: {
         ...Platform.select({
             ios: {
-                shadowColor: COLORS.primary,
-                shadowOffset: { width: 0, height: 4 },
-                shadowOpacity: 0.5,
+                shadowOffset: { width: 0, height: -4 },
+                shadowOpacity: 0.1,
                 shadowRadius: 8,
             },
             android: {
@@ -67,32 +67,22 @@ const styles = StyleSheet.create({
             }
         }),
     },
-    addButtonGradient: {
+    buttonWrapper: {
         width: '100%',
-        height: '100%',
+        borderRadius: 10,
+        overflow: 'hidden',
+    },
+    buttonContent: {
+        flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
+        paddingVertical: 16,
+        width: '100%',
     },
-    addButtonText: {
-        color: COLORS.background,
-        fontSize: 32,
-        fontWeight: 'bold',
-        textAlign: 'center',
-        marginTop: -2, // Small adjustment to vertically center the plus sign
-    },
-    labelContainer: {
-        position: 'absolute',
-        top: -30,
-        right: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.6)',
-        paddingHorizontal: 12,
-        paddingVertical: 4,
-        borderRadius: 16,
-    },
-    labelText: {
-        color: '#FFFFFF',
-        fontSize: 12,
-        fontWeight: 'bold',
+    buttonText: {
+        fontSize: 16,
+        fontWeight: '600',
+        marginLeft: 8,
     }
 });
 

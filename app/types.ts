@@ -9,7 +9,7 @@ export interface Task {
     category: string;
     predecessorIds: string[]; // Add this new field
 }
-export type TaskPriority = 'optional' | 'normal' | 'high' | 'crucial';
+export type TaskPriority = 'low' | 'normal' | 'high';
 
 export type RootStackParamList = {
     Splash: undefined;

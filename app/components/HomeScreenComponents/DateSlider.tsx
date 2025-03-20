@@ -9,12 +9,13 @@ import {
     Animated,
     Platform
 } from 'react-native';
-import { COLORS, SIZES } from '../../theme';
+import { SIZES } from '../../theme';
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '../../context/ThemeContext';
 
 const { width } = Dimensions.get('window');
-const DAY_ITEM_WIDTH = 70;
-const ITEM_SPACING = 8;
+const DAY_ITEM_WIDTH = 60; // Reduced from 70
+const ITEM_SPACING = 6;  // Reduced from 8
 
 interface DateSliderProps {
     fadeAnim: Animated.Value;
@@ -35,6 +36,7 @@ const DateSlider: React.FC<DateSliderProps> = ({
                                                    onDateChange,
                                                    filterType = 'dueDate'
                                                }) => {
+    const { colors } = useTheme();
     const flatListRef = useRef<FlatList>(null);
     const [initialized, setInitialized] = useState(false);
 
@@ -131,40 +133,42 @@ const DateSlider: React.FC<DateSliderProps> = ({
                 accessibilityHint={`Select ${formatDateForAccessibility(date)} as the current date`}
                 style={[
                     styles.dateItem,
-                    _isSelected && styles.selectedDateItem
+                    _isSelected && [styles.selectedDateItem, { backgroundColor: colors.primary + '10', borderColor: colors.primary }]
                 ]}
                 onPress={() => onDateChange(date)}
                 activeOpacity={0.7}
             >
                 {isFirstDayOfMonth && (
-                    <View style={styles.monthBadge}>
-                        <Text style={styles.monthBadgeText}>{monthAbbr}</Text>
+                    <View style={[styles.monthBadge, { backgroundColor: colors.primary + '20' }]}>
+                        <Text style={[styles.monthBadgeText, { color: colors.primary }]}>{monthAbbr}</Text>
                     </View>
                 )}
 
                 <Text style={[
                     styles.dayName,
-                    _isSelected && styles.selectedDayName
+                    { color: colors.text + 'CC' },
+                    _isSelected && [styles.selectedDayName, { color: colors.primary }]
                 ]}>
-                    {date.toLocaleDateString(undefined, { weekday: 'short' })}
+                    {date.toLocaleDateString(undefined, { weekday: 'short' }).substring(0, 2)}
                 </Text>
 
                 <View style={[
                     styles.dateCircle,
-                    _isToday && styles.todayCircle,
-                    _isSelected && styles.selectedCircle
+                    _isToday && [styles.todayCircle, { borderColor: colors.primary, backgroundColor: colors.card }],
+                    _isSelected && [styles.selectedCircle, { backgroundColor: colors.primary }]
                 ]}>
                     <Text style={[
                         styles.dateNumber,
-                        _isToday && !_isSelected && styles.todayText,
-                        _isSelected && styles.selectedDateNumber
+                        { color: colors.text },
+                        _isToday && !_isSelected && [styles.todayText, { color: colors.primary }],
+                        _isSelected && [styles.selectedDateNumber, { color: colors.background }]
                     ]}>
                         {date.getDate()}
                     </Text>
                 </View>
 
                 {_isToday && !_isSelected && (
-                    <View style={styles.todayDot} />
+                    <View style={[styles.todayDot, { backgroundColor: colors.primary }]} />
                 )}
             </TouchableOpacity>
         );
@@ -174,27 +178,29 @@ const DateSlider: React.FC<DateSliderProps> = ({
         <Animated.View
             style={[
                 styles.container,
-                { opacity: fadeAnim }
+                {
+                    opacity: fadeAnim,
+                    backgroundColor: colors.card,
+                    borderBottomColor: colors.border
+                }
             ]}
         >
             <View style={styles.header}>
                 <View style={styles.monthDisplay}>
-                    <Text style={styles.monthText}>{selectedMonth}</Text>
+                    <Text style={[styles.monthText, { color: colors.text }]}>{selectedMonth}</Text>
                     <Ionicons
                         name={filterType === 'dueDate' ? 'hourglass-outline' : 'create-outline'}
-                        size={16}
-                        color={COLORS.text + '80'}
-                        style={{ marginLeft: 8 }}
+                        size={14}
+                        color={colors.textSecondary}
+                        style={{ marginLeft: 6 }}
                     />
                 </View>
 
                 <TouchableOpacity
-                    style={styles.todayButton}
+                    style={[styles.todayButton, { backgroundColor: colors.primary + '15' }]}
                     onPress={() => {
                         if (todayIndex !== -1) {
                             onDateChange(today);
-
-                            // Need to delay a bit to let the state update
                             setTimeout(() => {
                                 flatListRef.current?.scrollToIndex({
                                     index: todayIndex,
@@ -208,8 +214,8 @@ const DateSlider: React.FC<DateSliderProps> = ({
                     accessibilityLabel="Go to today"
                     accessibilityHint="Selects today's date in the calendar"
                 >
-                    <Ionicons name="today-outline" size={16} color={COLORS.primary} />
-                    <Text style={styles.todayButtonText}>Today</Text>
+                    <Ionicons name="today-outline" size={14} color={colors.primary} />
+                    <Text style={[styles.todayButtonText, { color: colors.primary }]}>Today</Text>
                 </TouchableOpacity>
             </View>
 
@@ -240,10 +246,8 @@ const DateSlider: React.FC<DateSliderProps> = ({
 
 const styles = StyleSheet.create({
     container: {
-        backgroundColor: COLORS.card,
-        paddingVertical: 12,
+        paddingVertical: 10, // Reduced from 12
         borderBottomWidth: 1,
-        borderBottomColor: COLORS.border,
         ...Platform.select({
             ios: {
                 shadowColor: '#000',
@@ -260,113 +264,97 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        paddingHorizontal: 20,
-        marginBottom: 12,
+        paddingHorizontal: 16, // Reduced from 20
+        marginBottom: 8, // Reduced from 12
     },
     monthDisplay: {
         flexDirection: 'row',
         alignItems: 'center',
     },
     monthText: {
-        fontSize: SIZES.medium,
+        fontSize: SIZES.small + 1,
         fontWeight: '600',
-        color: COLORS.text,
     },
     todayButton: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: COLORS.primary + '15',
-        paddingHorizontal: 12,
-        paddingVertical: 6,
-        borderRadius: 16,
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        borderRadius: 14,
     },
     todayButtonText: {
-        fontSize: SIZES.font - 1,
+        fontSize: SIZES.small - 1,
         fontWeight: '600',
-        color: COLORS.primary,
         marginLeft: 4,
     },
     listContent: {
         paddingHorizontal: width / 2 - DAY_ITEM_WIDTH / 2,
-        paddingBottom: 4,
+        paddingBottom: 2,
     },
     dateItem: {
         width: DAY_ITEM_WIDTH,
-        height: 80,
+        height: 70, // Reduced from 80
         marginHorizontal: ITEM_SPACING / 2,
         alignItems: 'center',
         justifyContent: 'center',
         borderRadius: SIZES.base,
         backgroundColor: 'transparent',
-        paddingVertical: 8,
+        paddingVertical: 6, // Reduced from 8
         position: 'relative',
     },
     selectedDateItem: {
-        backgroundColor: COLORS.primary + '10',
         borderWidth: 1,
-        borderColor: COLORS.primary,
     },
     dayName: {
-        fontSize: 13,
-        marginBottom: 6,
-        color: COLORS.text + 'CC',
+        fontSize: 12, // Reduced from 13
+        marginBottom: 4, // Reduced from 6
         fontWeight: '500',
     },
     selectedDayName: {
-        color: COLORS.primary,
         fontWeight: '600',
     },
     dateCircle: {
-        width: 36,
-        height: 36,
-        borderRadius: 18,
+        width: 32, // Reduced from 36
+        height: 32, // Reduced from 36
+        borderRadius: 16,
         alignItems: 'center',
         justifyContent: 'center',
         backgroundColor: 'transparent',
     },
     todayCircle: {
         borderWidth: 1,
-        borderColor: COLORS.primary,
-        backgroundColor: COLORS.card,
     },
     selectedCircle: {
-        backgroundColor: COLORS.primary,
         borderWidth: 0,
     },
     dateNumber: {
-        fontSize: 17,
+        fontSize: 15, // Reduced from 17
         fontWeight: '600',
-        color: COLORS.text,
     },
     todayText: {
-        color: COLORS.primary,
         fontWeight: '700',
     },
     selectedDateNumber: {
-        color: COLORS.background,
         fontWeight: '700',
     },
     todayDot: {
-        width: 4,
-        height: 4,
-        borderRadius: 2,
-        backgroundColor: COLORS.primary,
-        marginTop: 3,
+        width: 3, // Reduced from 4
+        height: 3, // Reduced from 4
+        borderRadius: 1.5,
+        marginTop: 2,
     },
     monthBadge: {
         position: 'absolute',
         top: 0,
         right: 0,
-        backgroundColor: COLORS.primary + '20',
-        paddingHorizontal: 6,
-        paddingVertical: 2,
+        paddingHorizontal: 4, // Reduced from 6
+        paddingVertical: 1, // Reduced from 2
         borderRadius: 4,
         borderTopRightRadius: SIZES.base,
     },
     monthBadgeText: {
-        fontSize: 10,
+        fontSize: 9, // Reduced from 10
         fontWeight: '600',
-        color: COLORS.primary,
     }
 });
 
