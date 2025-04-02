@@ -280,10 +280,6 @@ const HomeScreen: React.FC = () => {
         setSelectedMonth(date.toLocaleString('default', { month: 'long', year: 'numeric' }));
     }, []);
 
-    const handleRefresh = useCallback(() => {
-        loadTasks();
-        loadCategories();
-    }, [loadCategories]);
 
     const toggleDateFilterType = useCallback(() => {
         setSelectedFilterType(prev => prev === 'createdAt' ? 'dueDate' : 'createdAt');
@@ -304,15 +300,14 @@ const HomeScreen: React.FC = () => {
     }, [getCategoryDetails]);
 
     // Format the date string for display
-    const formattedDate = useMemo(() => {
+    useMemo(() => {
         return currentDate.toLocaleDateString(undefined, {
             month: 'short',
             day: 'numeric',
             weekday: 'short'
         });
     }, [currentDate]);
-
-    // Toggle theme switcher visibility
+// Toggle theme switcher visibility
     const toggleThemeSwitcher = useCallback(() => {
         setShowThemeSwitcher(prev => !prev);
     }, []);

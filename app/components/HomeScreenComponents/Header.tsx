@@ -88,11 +88,9 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingHorizontal: 20,
+        paddingHorizontal: 16,
         paddingVertical: 15,
-        // marginHorizontal: 20,
-        // marginBottom: 10,
-        // borderRadius: 12,
+
         borderWidth: 1,
     },
     title: {
