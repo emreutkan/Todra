@@ -6,8 +6,9 @@ import {
     ScrollView,
     TouchableOpacity,
 } from 'react-native';
-import { COLORS, SIZES } from '../../theme';
+import { SIZES } from '../../theme';
 import { Task } from '../../types';
+import {useTheme} from "../../context/ThemeContext";
 
 interface PredecessorTaskSelectorProps {
     availableTasks: Task[];
@@ -20,6 +21,77 @@ const PredecessorTaskSelector: React.FC<PredecessorTaskSelectorProps> = ({
                                                                              selectedPredecessors,
                                                                              onSelectPredecessor,
                                                                          }) => {
+
+    const { colors } = useTheme();
+    const styles = StyleSheet.create({
+        container: {
+            marginTop: SIZES.medium,
+            borderWidth: 1,
+            borderColor: colors.border,
+            borderRadius: SIZES.base,
+            padding: SIZES.medium,
+
+        },
+        title: {
+            fontSize: SIZES.medium,
+            fontWeight: '600',
+            color: colors.text,
+            marginBottom: SIZES.small,
+
+        },
+        subtitle: {
+            fontSize: SIZES.small,
+            color: colors.text + '80',
+            marginBottom: SIZES.medium,
+
+        },
+        taskList: {
+            maxHeight: 250,
+        },
+        taskItem: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            padding: SIZES.small,
+            borderRadius: SIZES.base,
+            backgroundColor: colors.card,
+            marginBottom: SIZES.small,
+            justifyContent: 'space-between',
+        },
+        taskItemSelected: {
+            backgroundColor: colors.primary + '20',
+        },
+        taskInfo: {
+            flex: 1,
+            marginRight: SIZES.small,
+        },
+        taskTitle: {
+            fontSize: SIZES.font,
+            color: colors.text,
+            fontWeight: '500',
+        },
+        taskCategory: {
+            fontSize: SIZES.small,
+            color: colors.text + '80',
+            marginTop: 2,
+        },
+        checkbox: {
+            width: 24,
+            height: 24,
+            borderRadius: 12,
+            borderWidth: 2,
+            borderColor: colors.primary,
+            alignItems: 'center',
+            justifyContent: 'center',
+        },
+        checkboxSelected: {
+            backgroundColor: colors.primary,
+        },
+        checkmark: {
+            color: colors.background,
+            fontSize: 16,
+            fontWeight: 'bold',
+        },
+    });
     return (
         <View style={styles.container}>
             <Text style={styles.title}>Select Predecessor Tasks</Text>
@@ -61,67 +133,6 @@ const PredecessorTaskSelector: React.FC<PredecessorTaskSelectorProps> = ({
     );
 };
 
-const styles = StyleSheet.create({
-    container: {
-        marginTop: SIZES.medium,
-    },
-    title: {
-        fontSize: SIZES.medium,
-        fontWeight: '600',
-        color: COLORS.text,
-        marginBottom: SIZES.small,
-    },
-    subtitle: {
-        fontSize: SIZES.small,
-        color: COLORS.text + '80',
-        marginBottom: SIZES.medium,
-    },
-    taskList: {
-        maxHeight: 200,
-    },
-    taskItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        padding: SIZES.small,
-        borderRadius: SIZES.base,
-        backgroundColor: COLORS.card,
-        marginBottom: SIZES.small,
-        justifyContent: 'space-between',
-    },
-    taskItemSelected: {
-        backgroundColor: COLORS.primary + '20',
-    },
-    taskInfo: {
-        flex: 1,
-        marginRight: SIZES.small,
-    },
-    taskTitle: {
-        fontSize: SIZES.font,
-        color: COLORS.text,
-        fontWeight: '500',
-    },
-    taskCategory: {
-        fontSize: SIZES.small,
-        color: COLORS.text + '80',
-        marginTop: 2,
-    },
-    checkbox: {
-        width: 24,
-        height: 24,
-        borderRadius: 12,
-        borderWidth: 2,
-        borderColor: COLORS.primary,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    checkboxSelected: {
-        backgroundColor: COLORS.primary,
-    },
-    checkmark: {
-        color: COLORS.background,
-        fontSize: 16,
-        fontWeight: 'bold',
-    },
-});
+
 
 export default PredecessorTaskSelector;

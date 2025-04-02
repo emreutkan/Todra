@@ -1,7 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet, TextInput } from 'react-native';
-import { COLORS, SIZES } from '../../theme';
+import { SIZES } from '../../theme';
 import FormSection from './FormSection';
+import {useTheme} from "../../context/ThemeContext";
 
 interface TaskTitleInputProps {
     value: string;
@@ -9,6 +10,20 @@ interface TaskTitleInputProps {
 }
 
 const TaskTitleInput: React.FC<TaskTitleInputProps> = ({ value, onChangeText }) => {
+    const { colors } = useTheme();
+
+    const styles = StyleSheet.create({
+        input: {
+            backgroundColor: colors.card,
+            borderRadius: SIZES.base,
+            padding: SIZES.medium,
+            color: colors.text,
+            fontSize: SIZES.medium,
+            borderWidth: 1,
+            borderColor: colors.border,
+        }
+    });
+
     return (
         <FormSection title="Task Name">
             <TextInput
@@ -16,7 +31,7 @@ const TaskTitleInput: React.FC<TaskTitleInputProps> = ({ value, onChangeText }) 
                 value={value}
                 onChangeText={onChangeText}
                 placeholder="What do you need to do?"
-                placeholderTextColor={COLORS.text + '80'}
+                placeholderTextColor={colors.text + '80'}
                 autoCapitalize="sentences"
                 autoFocus
                 returnKeyType="next"
@@ -25,16 +40,5 @@ const TaskTitleInput: React.FC<TaskTitleInputProps> = ({ value, onChangeText }) 
     );
 };
 
-const styles = StyleSheet.create({
-    input: {
-        backgroundColor: COLORS.card,
-        borderRadius: SIZES.base,
-        padding: SIZES.medium,
-        color: COLORS.text,
-        fontSize: SIZES.medium,
-        borderWidth: 1,
-        borderColor: COLORS.border,
-    }
-});
 
 export default TaskTitleInput;

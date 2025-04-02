@@ -1,9 +1,10 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
-import { COLORS, PRIORITY_COLORS, SIZES } from '../../theme';
+import { PRIORITY_COLORS, SIZES } from '../../theme';
 import { TaskPriority } from '../../types';
 import FormSection from './FormSection';
 import { Ionicons } from '@expo/vector-icons';
+import {useTheme} from '../../context/ThemeContext';
 
 interface PrioritySelectorProps {
     selectedPriority: TaskPriority;
@@ -14,7 +15,70 @@ const PrioritySelector: React.FC<PrioritySelectorProps> = ({
                                                                selectedPriority,
                                                                onSelectPriority
                                                            }) => {
-    // Define priority options with labels, icons, and descriptions
+
+    const { colors } = useTheme();
+    const {isDark} = useTheme();
+
+    const styles = StyleSheet.create({
+        priorityContainer: {
+            flexDirection: 'column',
+        },
+        priorityButton: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            borderRadius: SIZES.base,
+            paddingVertical: SIZES.medium,
+            paddingHorizontal: SIZES.medium,
+            marginBottom: SIZES.small,
+            backgroundColor: colors.card,
+            ...Platform.select({
+                ios: {
+                    shadowColor: 'rgba(0,0,0,0.1)',
+                    shadowOffset: { width: 0, height: 1 },
+                    shadowOpacity: 0.8,
+                    shadowRadius: 2,
+                },
+                android: {
+                    elevation: 1,
+                }
+            }),
+        },
+        selectedButton: {
+            borderWidth: 0,
+        },
+        priorityInfo: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            flex: 1,
+        },
+        iconContainer: {
+            width: 36,
+            height: 36,
+            borderRadius: 18,
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginRight: SIZES.medium,
+        },
+        textContainer: {
+            flex: 1,
+        },
+        priorityButtonText: {
+            color: colors.text,
+            fontSize: SIZES.medium,
+            fontWeight: '600',
+        },
+        priorityDescription: {
+            color: colors.text + '80',
+            fontSize: SIZES.font - 2,
+            marginTop: 2,
+        },
+        selectionIndicator: {
+            padding: 6,
+        }
+    });
+
+
     const priorityOptions: {
         value: TaskPriority;
         label: string;
@@ -22,29 +86,24 @@ const PrioritySelector: React.FC<PrioritySelectorProps> = ({
         description: string;
     }[] = [
         {
-            value: 'crucial',
-            label: 'Crucial',
+            value: 'high',
+            label: 'high',
             icon: 'alert-circle',
             description: 'Must be done ASAP'
         },
         {
-            value: 'high',
-            label: 'High',
-            icon: 'warning-outline',
-            description: 'Important task'
-        },
-        {
             value: 'normal',
-            label: 'Normal',
-            icon: 'flag',
+            label: 'normal',
+            icon: 'bookmark',
             description: 'Standard priority'
         },
         {
-            value: 'optional',
-            label: 'Low',
-            icon: 'flag-outline',
-            description: 'Complete if time allows'
-        }
+            value: 'low',
+            label: 'low',
+            icon: 'flag',
+            description: 'Can be done later'
+        },
+
     ];
 
     return (
@@ -61,7 +120,7 @@ const PrioritySelector: React.FC<PrioritySelectorProps> = ({
                                 borderLeftColor: PRIORITY_COLORS[option.value],
                             },
                             selectedPriority === option.value && {
-                                backgroundColor: PRIORITY_COLORS[option.value] + '15',
+                                backgroundColor: isDark ? PRIORITY_COLORS[option.value] + '20' : "#f0f0f0",
                             }
                         ]}
                         onPress={() => onSelectPriority(option.value)}
@@ -70,7 +129,7 @@ const PrioritySelector: React.FC<PrioritySelectorProps> = ({
                         <View style={styles.priorityInfo}>
                             <View style={[
                                 styles.iconContainer,
-                                { backgroundColor: PRIORITY_COLORS[option.value] + '20' }
+                                // { backgroundColor: PRIORITY_COLORS[option.value] + '20' }
                             ]}>
                                 <Ionicons
                                     name={option.icon as any}
@@ -105,63 +164,5 @@ const PrioritySelector: React.FC<PrioritySelectorProps> = ({
     );
 };
 
-const styles = StyleSheet.create({
-    priorityContainer: {
-        flexDirection: 'column',
-    },
-    priorityButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        borderRadius: SIZES.base,
-        paddingVertical: SIZES.medium,
-        paddingHorizontal: SIZES.medium,
-        marginBottom: SIZES.small,
-        backgroundColor: COLORS.card,
-        ...Platform.select({
-            ios: {
-                shadowColor: 'rgba(0,0,0,0.1)',
-                shadowOffset: { width: 0, height: 1 },
-                shadowOpacity: 0.8,
-                shadowRadius: 2,
-            },
-            android: {
-                elevation: 1,
-            }
-        }),
-    },
-    selectedButton: {
-        borderWidth: 0,
-    },
-    priorityInfo: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        flex: 1,
-    },
-    iconContainer: {
-        width: 36,
-        height: 36,
-        borderRadius: 18,
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginRight: SIZES.medium,
-    },
-    textContainer: {
-        flex: 1,
-    },
-    priorityButtonText: {
-        color: COLORS.text,
-        fontSize: SIZES.medium,
-        fontWeight: '600',
-    },
-    priorityDescription: {
-        color: COLORS.text + '80',
-        fontSize: SIZES.font - 2,
-        marginTop: 2,
-    },
-    selectionIndicator: {
-        padding: 6,
-    }
-});
 
 export default PrioritySelector;

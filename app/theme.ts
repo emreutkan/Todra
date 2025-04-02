@@ -1,4 +1,6 @@
 // --- Dark + Orange Theme ---
+
+
 export const darkOrangeTheme = {
     primary: '#FF8C00',      // Orange for primary elements
     secondary: '#FF8C00',    // Orange for secondary elements
@@ -68,9 +70,9 @@ export const lightGrayTheme = {
 export const COLORS = darkOrangeTheme;
 
 export const PRIORITY_COLORS = {
-    normal: '#2196F3',    // Blue
-    high: '#FFC107',      // Yellow
-    crucial: '#F44336',   // Red
+    low: '#2196F3',    // Blue
+    normal: '#FFC107',      // Yellow
+    high: '#F44336',   // Red
 };
 
 export const FONTS = {

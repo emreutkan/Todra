@@ -14,7 +14,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../context/ThemeContext';
 
 const { width } = Dimensions.get('window');
-// Calculate item width to fit exactly 5 items
 const VISIBLE_ITEMS = 5;
 const ITEM_SPACING = 6;
 const DAY_ITEM_WIDTH = (width - (ITEM_SPACING * (VISIBLE_ITEMS + 1))) / VISIBLE_ITEMS;
@@ -51,7 +50,6 @@ const DateSlider: React.FC<DateSliderProps> = ({
         );
     }, [dateRange, currentDate]);
 
-    // Find today's index in the date range
     const todayIndex = useMemo(() => {
         return dateRange.findIndex(date =>
             date.getDate() === today.getDate() &&
@@ -121,7 +119,6 @@ const DateSlider: React.FC<DateSliderProps> = ({
         const _isSelected = isSelected(date);
         const isFirstDayOfMonth = date.getDate() === 1;
 
-        // Get month abbreviation for first day of month
         const monthAbbr = isFirstDayOfMonth
             ? date.toLocaleDateString(undefined, { month: 'short' })
             : '';
@@ -181,12 +178,7 @@ const DateSlider: React.FC<DateSliderProps> = ({
             <View style={styles.header}>
                 <View style={styles.monthDisplay}>
                     <Text style={[styles.monthText, { color: colors.text }]}>{selectedMonth}</Text>
-                    <Ionicons
-                        name={filterType === 'dueDate' ? 'hourglass-outline' : 'create-outline'}
-                        size={14}
-                        color={colors.textSecondary}
-                        style={{ marginLeft: 6 }}
-                    />
+
                 </View>
 
                 <TouchableOpacity

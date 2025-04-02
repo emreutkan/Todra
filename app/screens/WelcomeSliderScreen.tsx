@@ -78,7 +78,6 @@ const WelcomeSliderScreen = () => {
     const renderItem = ({ item }: { item: typeof slides[0] }) => {
         return (
             <View style={styles.slide}>
-                <Image source={item.image} style={styles.image} />
                 <Text style={styles.title}>{item.title}</Text>
                 <Text style={styles.description}>{item.description}</Text>
             </View>

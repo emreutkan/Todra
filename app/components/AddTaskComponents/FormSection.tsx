@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { COLORS, SIZES } from '../../theme';
+import { SIZES } from '../../theme';
+import {useTheme} from "../../context/ThemeContext";
 
 interface FormSectionProps {
     title: string;
@@ -13,6 +14,32 @@ const FormSection: React.FC<FormSectionProps> = ({
                                                      children,
                                                      optional = false
                                                  }) => {
+
+    const { colors } = useTheme();
+    const styles = StyleSheet.create({
+        formGroup: {
+            marginBottom: SIZES.large,
+        },
+        labelContainer: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            marginBottom: SIZES.small,
+        },
+        label: {
+            color: colors.text,
+            fontSize: SIZES.medium,
+            fontWeight: '600',
+        },
+        optionalText: {
+            color: colors.text + '80',
+            fontSize: SIZES.font - 2,
+            marginLeft: SIZES.small,
+            fontStyle: 'italic',
+        },
+        content: {
+            width: '100%',
+        }
+    });
     return (
         <View style={styles.formGroup}>
             <View style={styles.labelContainer}>
@@ -28,29 +55,6 @@ const FormSection: React.FC<FormSectionProps> = ({
     );
 };
 
-const styles = StyleSheet.create({
-    formGroup: {
-        marginBottom: SIZES.large,
-    },
-    labelContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: SIZES.small,
-    },
-    label: {
-        color: COLORS.text,
-        fontSize: SIZES.medium,
-        fontWeight: '600',
-    },
-    optionalText: {
-        color: COLORS.text + '80',
-        fontSize: SIZES.font - 2,
-        marginLeft: SIZES.small,
-        fontStyle: 'italic',
-    },
-    content: {
-        width: '100%',
-    }
-});
+
 
 export default FormSection;

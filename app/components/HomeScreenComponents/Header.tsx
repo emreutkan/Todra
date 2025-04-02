@@ -5,17 +5,14 @@ import { useTheme } from '../../context/ThemeContext';
 
 type HeaderProps = {
     fadeAnim: Animated.Value;
-    onFilterTypeChange: () => void;
-    filterType: 'createdAt' | 'dueDate';
     onCategoryFilterChange: (category: string | null) => void;
     activeCategory: string | null;
-    onThemeToggle: () => void; // New prop for theme toggling
+    onThemeToggle: () => void;
 };
 
 const Header: React.FC<HeaderProps> = ({
                                            fadeAnim,
-                                           onFilterTypeChange,
-                                           filterType,
+
                                            onCategoryFilterChange,
                                            activeCategory,
                                            onThemeToggle,
@@ -36,19 +33,7 @@ const Header: React.FC<HeaderProps> = ({
             <Text style={[styles.title, { color: colors.text }]}>Task Planner</Text>
 
             <View style={styles.controls}>
-                {/* Date filter toggle button */}
-                <TouchableOpacity
-                    style={[styles.iconButton, { backgroundColor: colors.surface }]}
-                    onPress={onFilterTypeChange}
-                >
-                    <Ionicons
-                        name={filterType === 'dueDate' ? 'calendar' : 'time'}
-                        size={22}
-                        color={colors.primary}
-                    />
-                </TouchableOpacity>
 
-                {/* Theme toggle button */}
                 <TouchableOpacity
                     style={[styles.iconButton, { backgroundColor: colors.surface }]}
                     onPress={onThemeToggle}
@@ -60,7 +45,6 @@ const Header: React.FC<HeaderProps> = ({
                     />
                 </TouchableOpacity>
 
-                {/* Category filter button */}
                 <TouchableOpacity
                     style={[
                         styles.iconButton,

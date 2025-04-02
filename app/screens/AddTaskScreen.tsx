@@ -12,9 +12,10 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
 
-import { COLORS, SIZES } from '../theme';
+import { SIZES } from '../theme';
 import { Task, TaskPriority, RootStackParamList } from '../types';
 import { storageService } from '../storage';
+import {useTheme} from "../context/ThemeContext";
 
 // Component imports
 import ScreenHeader from '../components/common/ScreenHeader';
@@ -48,6 +49,26 @@ const AddTaskScreen: React.FC = () => {
     const [predecessorIds, setPredecessorIds] = useState<string[]>([]);
     const [availableTasks, setAvailableTasks] = useState<Task[]>([]);
 
+    const { colors } = useTheme();
+    const styles = StyleSheet.create({
+        container: {
+            flex: 1,
+            backgroundColor: colors.background,
+        },
+        content: {
+            flex: 1,
+        },
+        scrollContent: {
+            padding: SIZES.medium,
+            paddingBottom: SIZES.extraLarge * 2,
+        },
+        loadingContainer: {
+            flex: 1,
+            justifyContent: 'center',
+            alignItems: 'center',
+            backgroundColor: colors.background,
+        }
+    });
     // Load available tasks for predecessor selection
     useEffect(() => {
         const loadAvailableTasks = async () => {
@@ -160,7 +181,7 @@ const AddTaskScreen: React.FC = () => {
     if (loading) {
         return (
             <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color={COLORS.primary} />
+                <ActivityIndicator size="large" color={colors.primary} />
             </View>
         );
     }
@@ -169,9 +190,9 @@ const AddTaskScreen: React.FC = () => {
         <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             style={styles.container}
-            keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
+            // keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
         >
-            <StatusBar style="light" />
+            <StatusBar style="dark" />
             <ScreenHeader
                 title="Create New Task"
                 showBackButton
@@ -232,24 +253,6 @@ const AddTaskScreen: React.FC = () => {
     );
 };
 
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: COLORS.background,
-    },
-    content: {
-        flex: 1,
-    },
-    scrollContent: {
-        padding: SIZES.medium,
-        paddingBottom: SIZES.extraLarge * 2,
-    },
-    loadingContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: COLORS.background,
-    }
-});
+
 
 export default AddTaskScreen;

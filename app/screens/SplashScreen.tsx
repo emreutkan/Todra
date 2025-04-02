@@ -1,11 +1,11 @@
 import React, { useEffect, useRef } from 'react';
 import { View, StyleSheet, Text, Animated, Easing, Platform } from 'react-native';
-import { COLORS } from '../theme';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types';
 import { StatusBar } from 'expo-status-bar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useTheme } from '../context/ThemeContext';
 
 type SplashScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Splash'>;
 
@@ -13,9 +13,10 @@ type SplashScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 
 const FIRST_LAUNCH_KEY = 'APP_FIRST_LAUNCH';
 
 const SplashScreen = () => {
+
     const navigation = useNavigation<SplashScreenNavigationProp>();
 
-    // Use useRef for animations to prevent recreation on re-render
+    const { colors } = useTheme();
     const spinValue = useRef(new Animated.Value(0)).current;
     const scaleValue = useRef(new Animated.Value(0.3)).current;
     const opacityValue = useRef(new Animated.Value(0)).current;
@@ -105,7 +106,7 @@ const SplashScreen = () => {
     // Create shadow based on platform
     const logoShadow = Platform.select({
         ios: {
-            shadowColor: COLORS.primary,
+            shadowColor: colors.primary,
             shadowOffset: { width: 0, height: 2 },
             shadowOpacity: 0.8,
             shadowRadius: 8,
@@ -115,6 +116,59 @@ const SplashScreen = () => {
         },
     });
 
+    const styles = StyleSheet.create({
+        container: {
+            flex: 1,
+            backgroundColor: colors.background,
+            alignItems: 'center',
+            justifyContent: 'center',
+            paddingBottom: 40,
+        },
+        content: {
+            alignItems: 'center',
+            justifyContent: 'center',
+        },
+        logoContainer: {
+            marginBottom: 25,
+            borderRadius: 60,
+            padding: 10,
+            backgroundColor: 'rgba(255,255,255,0.05)',
+        },
+        logo: {
+            width: 100,
+            height: 100,
+            borderRadius: 50,
+            backgroundColor: colors.primary,
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderWidth: 2,
+            borderColor: 'rgba(255,255,255,0.2)',
+        },
+        logoText: {
+            color: colors.background,
+            fontSize: 38,
+            fontWeight: 'bold',
+        },
+        appName: {
+            color: colors.text,
+            fontSize: 28,
+            fontWeight: 'bold',
+            textAlign: 'center',
+            marginBottom: 6,
+        },
+        tagline: {
+            color: 'rgba(255,255,255,0.7)',
+            fontSize: 16,
+            textAlign: 'center',
+            fontStyle: 'italic',
+        },
+        versionText: {
+            position: 'absolute',
+            bottom: 20,
+            color: 'rgba(255,255,255,0.4)',
+            fontSize: 12,
+        },
+    });
     return (
         <View style={styles.container}>
             <StatusBar style="light" />
@@ -155,58 +209,6 @@ const SplashScreen = () => {
     );
 };
 
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: COLORS.background,
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingBottom: 40,
-    },
-    content: {
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    logoContainer: {
-        marginBottom: 25,
-        borderRadius: 60,
-        padding: 10,
-        backgroundColor: 'rgba(255,255,255,0.05)',
-    },
-    logo: {
-        width: 100,
-        height: 100,
-        borderRadius: 50,
-        backgroundColor: COLORS.primary,
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderWidth: 2,
-        borderColor: 'rgba(255,255,255,0.2)',
-    },
-    logoText: {
-        color: COLORS.background,
-        fontSize: 38,
-        fontWeight: 'bold',
-    },
-    appName: {
-        color: COLORS.text,
-        fontSize: 28,
-        fontWeight: 'bold',
-        textAlign: 'center',
-        marginBottom: 6,
-    },
-    tagline: {
-        color: 'rgba(255,255,255,0.7)',
-        fontSize: 16,
-        textAlign: 'center',
-        fontStyle: 'italic',
-    },
-    versionText: {
-        position: 'absolute',
-        bottom: 20,
-        color: 'rgba(255,255,255,0.4)',
-        fontSize: 12,
-    },
-});
+
 
 export default SplashScreen;
