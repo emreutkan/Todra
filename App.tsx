@@ -11,6 +11,8 @@ import WelcomeSliderScreen from './app/screens/WelcomeSliderScreen';
 import HomeScreen from './app/screens/HomeScreen';
 import AddTaskScreen from './app/screens/AddTaskScreen';
 import TaskDetailsScreen from './app/screens/TaskDetailsScreen';
+import SettingsScreen from './app/screens/SettingsScreen'; // New import
+import AllTasksScreen from './app/screens/AllTasksScreen'; // New import
 
 // Import types
 import { RootStackParamList } from './app/types';
@@ -73,6 +75,8 @@ function AppContent() {
                 <Stack.Screen name="AddTask" component={AddTaskScreen} />
                 <Stack.Screen name="EditTask" component={AddTaskScreen} initialParams={{ taskId: '' }} />
                 <Stack.Screen name="TaskDetails" component={TaskDetailsScreen} initialParams={{ taskId: '' }} />
+                <Stack.Screen name="Settings" component={SettingsScreen} />
+                <Stack.Screen name="AllTasks" component={AllTasksScreen} />
             </Stack.Navigator>
         </NavigationContainer>
     );

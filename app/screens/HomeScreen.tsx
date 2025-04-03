@@ -7,7 +7,6 @@ import { RootStackParamList } from '../types';
 import { storageService } from '../storage';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
-import ThemeSwitcher from '../components/common/ThemeSwitcher';
 import Header from '../components/HomeScreenComponents/Header';
 import DateSlider from '../components/HomeScreenComponents/DateSlider';
 import TaskList from '../components/HomeScreenComponents/TaskList';
@@ -35,7 +34,6 @@ const HomeScreen: React.FC = () => {
     const [activeCategory, setActiveCategory] = useState<string | null>(null);
     const [activeCategoryName, setActiveCategoryName] = useState<string | null>(null);
     const [categories, setCategories] = useState<Category[]>([]);
-    const [showThemeSwitcher, setShowThemeSwitcher] = useState(false); // State for theme switcher visibility
 
     // For animations
     const fadeAnim = useState(new Animated.Value(0))[0];
@@ -280,7 +278,6 @@ const HomeScreen: React.FC = () => {
         setSelectedMonth(date.toLocaleString('default', { month: 'long', year: 'numeric' }));
     }, []);
 
-
     const toggleDateFilterType = useCallback(() => {
         setSelectedFilterType(prev => prev === 'createdAt' ? 'dueDate' : 'createdAt');
     }, []);
@@ -307,10 +304,11 @@ const HomeScreen: React.FC = () => {
             weekday: 'short'
         });
     }, [currentDate]);
-// Toggle theme switcher visibility
-    const toggleThemeSwitcher = useCallback(() => {
-        setShowThemeSwitcher(prev => !prev);
-    }, []);
+
+    // Handle navigation to Settings screen
+    const handleSettingsPress = useCallback(() => {
+        navigation.navigate('Settings');
+    }, [navigation]);
 
     return (
         <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -318,15 +316,10 @@ const HomeScreen: React.FC = () => {
 
             <Header
                 fadeAnim={fadeAnim}
-                onFilterTypeChange={toggleDateFilterType}
-                filterType={selectedFilterType}
                 onCategoryFilterChange={handleCategoryFilter}
                 activeCategory={activeCategory}
-                onThemeToggle={toggleThemeSwitcher} // Add this prop
+                onSettingsPress={handleSettingsPress}
             />
-
-            {/* Theme Switcher - conditionally rendered */}
-            {showThemeSwitcher && <ThemeSwitcher />}
 
             {/* Date slider */}
             <DateSlider
