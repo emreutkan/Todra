@@ -14,6 +14,8 @@ import AddButton from '../components/HomeScreenComponents/AddButton';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Category } from '../components/AddTaskComponents/CategorySelector';
 import { Task } from '../types';
+import {useSettings} from "../context/SettingsContext";
+import {useSafeAreaInsets} from "react-native-safe-area-context";
 
 type HomeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Home'>;
 type HomeScreenRouteProp = RouteProp<RootStackParamList, 'Home'>;
@@ -236,18 +238,51 @@ const HomeScreen: React.FC = () => {
         navigation.navigate('TaskDetails', { taskId });
     }, [navigation]);
 
+    const {
+        settings,
+
+    } = useSettings();
+
+// Update the handleToggleTaskCompletion function
     const handleToggleTaskCompletion = useCallback(async (taskId: string) => {
         try {
+            // Find the task
+            const taskToUpdate = tasks.find(task => task.id === taskId);
+            if (!taskToUpdate) return;
+
+            // Toggle completion status
+            const newCompletionStatus = !taskToUpdate.completed;
+
+            // Update the task in local state
             const updatedTasks = tasks.map(task =>
-                task.id === taskId ? { ...task, completed: !task.completed } : task
+                task.id === taskId ? { ...task, completed: newCompletionStatus } : task
             );
-            setTasks(updatedTasks);
-            await storageService.saveTasks(updatedTasks);
+
+            // Handle auto-archiving if enabled and task is being marked as completed
+            if (settings.autoArchiveEnabled && newCompletionStatus) {
+                // Find index of task to remove from local state
+                const taskIndex = updatedTasks.findIndex(t => t.id === taskId);
+                if (taskIndex !== -1) {
+                    // Remove the task from the current tasks array
+                    updatedTasks.splice(taskIndex, 1);
+                }
+
+                // Save the updated tasks (without the completed one)
+                setTasks(updatedTasks);
+                await storageService.saveTasks(updatedTasks);
+
+                // Archive the task
+                await storageService.archiveTask(taskId);
+            } else {
+                // Just save the updated tasks normally if not auto-archiving
+                setTasks(updatedTasks);
+                await storageService.saveTasks(updatedTasks);
+            }
         } catch (error) {
             console.error('Error updating task:', error);
             Alert.alert('Error', 'Failed to update task status');
         }
-    }, [tasks]);
+    }, [tasks, settings.autoArchiveEnabled]);
 
     const handleDeleteTask = useCallback(async (taskId: string) => {
         try {
@@ -310,8 +345,9 @@ const HomeScreen: React.FC = () => {
         navigation.navigate('Settings');
     }, [navigation]);
 
+    const insets = useSafeAreaInsets();
     return (
-        <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <View style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top }]}>
             <StatusBar style={isDark ? "light" : "dark"} />
 
             <Header
@@ -356,18 +392,10 @@ const HomeScreen: React.FC = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        ...Platform.select({
-            ios: {
-                paddingTop: 50, // Safe area for iOS
-            },
-            android: {
-                paddingTop: 25, // Account for status bar on Android
-            }
-        })
+
     },
     contentContainer: {
         flex: 1,
-        // paddingHorizontal: 20,
     }
 });
 

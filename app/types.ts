@@ -8,6 +8,7 @@ export interface Task {
     dueDate: number;   // timestamp
     category: string;
     predecessorIds: string[]; // Add this new field
+    archived: boolean; // New field to track archived status
 }
 export type TaskPriority = 'low' | 'normal' | 'high';
 
@@ -18,6 +19,7 @@ export type RootStackParamList = {
     AddTask: undefined;
     EditTask: { taskId: string };
     TaskDetails: { taskId: string };
-    Settings: undefined; // New screen
-    AllTasks: undefined; // New screen for viewing all tasks
+    Settings: undefined;
+    AllTasks: undefined;
+    ArchivedTasks: undefined; // New screen for viewing archived tasks
 };

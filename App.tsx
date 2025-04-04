@@ -17,6 +17,7 @@ import AllTasksScreen from './app/screens/AllTasksScreen'; // New import
 
 // Import types
 import { RootStackParamList } from './app/types';
+import ArchivedTasksScreen from "./app/screens/ArchivedTasksScreen";
 
 // Create stack navigator
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -78,6 +79,7 @@ function AppContent() {
                 <Stack.Screen name="TaskDetails" component={TaskDetailsScreen} initialParams={{ taskId: '' }} />
                 <Stack.Screen name="Settings" component={SettingsScreen} />
                 <Stack.Screen name="AllTasks" component={AllTasksScreen} />
+                <Stack.Screen name="ArchivedTasks" component={ArchivedTasksScreen} />
             </Stack.Navigator>
         </NavigationContainer>
     );
