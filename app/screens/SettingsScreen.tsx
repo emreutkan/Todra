@@ -252,6 +252,7 @@ const SettingsScreen: React.FC = () => {
                 </View>
 
                 {/* Data Management Section */}
+
                 <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.border }]}>
                     <Text style={[styles.sectionTitle, { color: colors.text }]}>Data Management</Text>
                     <TouchableOpacity
@@ -260,6 +261,15 @@ const SettingsScreen: React.FC = () => {
                     >
                         <Ionicons name="list-outline" size={22} color={colors.primary} style={styles.settingIcon} />
                         <Text style={[styles.settingButtonText, { color: colors.text }]}>View All Tasks</Text>
+                        <Ionicons name="chevron-forward" size={18} color={colors.text} />
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        style={[styles.settingButton, { backgroundColor: colors.surface, marginTop: 8 }]}
+                        onPress={() => navigation.navigate('ArchivedTasks')}
+                    >
+                        <Ionicons name="archive-outline" size={22} color={colors.primary} style={styles.settingIcon} />
+                        <Text style={[styles.settingButtonText, { color: colors.text }]}>View Archived Tasks</Text>
                         <Ionicons name="chevron-forward" size={18} color={colors.text} />
                     </TouchableOpacity>
 
