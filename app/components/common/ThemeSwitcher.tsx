@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme, ThemeType } from '../../context/ThemeContext';
 
@@ -31,76 +31,65 @@ const ThemeSwitcher: React.FC = () => {
     ];
 
     return (
-        <View style={[styles.container, { backgroundColor: colors.card }]}>
-            <Text style={[styles.title, { color: colors.text }]}>Theme</Text>
-            <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.optionsContainer}
-            >
-                {themeOptions.map((option) => (
+        <View style={styles.themeSelectorContainer}>
+            <View style={[styles.segmentedControl, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                {themeOptions.map((option, index) => (
                     <TouchableOpacity
                         key={option.key}
                         style={[
-                            styles.themeOption,
+                            styles.segmentedOption,
                             {
-                                backgroundColor: option.key === theme
-                                    ? colors.primary
-                                    : colors.surface,
-                                borderColor: colors.border,
+                                backgroundColor: option.key === theme ? colors.primary : 'transparent',
+                                borderRightWidth: index < themeOptions.length - 1 ? 1 : 0,
+                                borderRightColor: colors.border,
                             }
                         ]}
                         onPress={() => setTheme(option.key)}
                     >
                         <Ionicons
                             name={option.icon as any}
-                            size={24}
+                            size={20}
                             color={option.key === theme ? colors.onPrimary : colors.textSecondary}
+                            style={styles.optionIcon}
                         />
-                        <Text style={[
-                            styles.themeLabel,
-                            { color: option.key === theme
-                                    ? colors.onPrimary
-                                    : colors.text
-                            }
-                        ]}>
+                        <Text
+                            style={[
+                                styles.optionText,
+                                { color: option.key === theme ? colors.onPrimary : colors.text }
+                            ]}
+                        >
                             {option.label}
                         </Text>
                     </TouchableOpacity>
                 ))}
-            </ScrollView>
+            </View>
         </View>
     );
 };
 
 const styles = StyleSheet.create({
-    container: {
-        marginHorizontal: 20,
-        marginVertical: 10,
-        padding: 15,
-        borderRadius: 12,
+    themeSelectorContainer: {
+        width: '100%',
     },
-    title: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        marginBottom: 12,
-    },
-    optionsContainer: {
+    segmentedControl: {
         flexDirection: 'row',
-        alignItems: 'center',
-    },
-    themeOption: {
-        flexDirection: 'row',
-        alignItems: 'center',
         borderRadius: 8,
-        padding: 8,
-        marginRight: 12,
         borderWidth: 1,
+        overflow: 'hidden',
     },
-    themeLabel: {
-        fontSize: 14,
+    segmentedOption: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 10,
+    },
+    optionIcon: {
+        marginRight: 6,
+    },
+    optionText: {
+        fontSize: 12,
         fontWeight: '500',
-        marginLeft: 8,
     }
 });
 

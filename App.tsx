@@ -3,6 +3,7 @@ import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
 import { ThemeProvider, useTheme } from './app/context/ThemeContext';
+import { SettingsProvider } from './app/context/SettingsContext';
 import { COLORS } from './app/theme';
 
 // Import screens
@@ -85,7 +86,9 @@ function AppContent() {
 export default function App() {
     return (
         <ThemeProvider>
-            <AppContent />
+            <SettingsProvider>
+                <AppContent />
+            </SettingsProvider>
         </ThemeProvider>
     );
 }
