@@ -45,7 +45,7 @@ const ArchivedTasksScreen: React.FC = () => {
 
     const handleUnarchiveTask = async (taskId: string) => {
         try {
-            await storageService.unarchiveTask(taskId);
+            await storageService.restoreTask(taskId);
             // Refresh the task list
             loadArchivedTasks();
             Alert.alert('Success', 'Task restored to active tasks');
