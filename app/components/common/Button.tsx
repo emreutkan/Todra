@@ -1,7 +1,8 @@
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import { TouchableOpacity, Text, StyleSheet, ActivityIndicator, ViewStyle, TextStyle } from 'react-native';
 import { SIZES } from '../../theme';
 import { useTheme } from '../../context/ThemeContext';
+import { Ionicons } from '@expo/vector-icons';
 
 interface ButtonProps {
     title: string;
@@ -11,9 +12,11 @@ interface ButtonProps {
     disabled?: boolean;
     loading?: boolean;
     fullWidth?: boolean;
-    style?: any;
-    textStyle?: any;
+    style?: ViewStyle;
+    textStyle?: TextStyle;
     accessibilityLabel?: string;
+    icon?: string;
+    iconPosition?: 'left' | 'right';
 }
 
 const Button: React.FC<ButtonProps> = ({
@@ -27,10 +30,12 @@ const Button: React.FC<ButtonProps> = ({
                                            style,
                                            textStyle,
                                            accessibilityLabel,
+                                           icon,
+                                           iconPosition = 'left'
                                        }) => {
-    const { colors } = useTheme();
+    const { colors, isDark } = useTheme();
 
-    // Set button colors based on variant
+    // Get button colors based on variant
     const getButtonStyles = () => {
         switch (variant) {
             case 'primary':
@@ -41,7 +46,7 @@ const Button: React.FC<ButtonProps> = ({
                 };
             case 'secondary':
                 return {
-                    backgroundColor: colors.card,
+                    backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
                     borderColor: colors.border,
                     textColor: colors.text,
                 };
@@ -72,32 +77,38 @@ const Button: React.FC<ButtonProps> = ({
         }
     };
 
-    // Set button size
-    const getButtonSize = () => {
+    // Get button dimensions based on size
+    const getButtonDimensions = () => {
         switch (size) {
             case 'small':
                 return {
-                    paddingVertical: SIZES.small / 2,
-                    paddingHorizontal: SIZES.medium,
-                    fontSize: SIZES.font,
+                    paddingVertical: 8,
+                    paddingHorizontal: 16,
+                    fontSize: 14,
+                    iconSize: 16,
+                    borderRadius: 12,
                 };
             case 'large':
                 return {
-                    paddingVertical: SIZES.medium,
-                    paddingHorizontal: SIZES.extraLarge,
-                    fontSize: SIZES.large,
+                    paddingVertical: 16,
+                    paddingHorizontal: 24,
+                    fontSize: 18,
+                    iconSize: 22,
+                    borderRadius: 20,
                 };
-            default:
+            default: // medium
                 return {
-                    paddingVertical: SIZES.small,
-                    paddingHorizontal: SIZES.medium,
-                    fontSize: SIZES.medium,
+                    paddingVertical: 12,
+                    paddingHorizontal: 20,
+                    fontSize: 16,
+                    iconSize: 20,
+                    borderRadius: 16,
                 };
         }
     };
 
     const buttonStyles = getButtonStyles();
-    const buttonSize = getButtonSize();
+    const buttonDimensions = getButtonDimensions();
 
     return (
         <TouchableOpacity
@@ -106,15 +117,18 @@ const Button: React.FC<ButtonProps> = ({
                 {
                     backgroundColor: buttonStyles.backgroundColor,
                     borderColor: buttonStyles.borderColor,
-                    paddingVertical: buttonSize.paddingVertical,
-                    paddingHorizontal: buttonSize.paddingHorizontal,
+                    paddingVertical: buttonDimensions.paddingVertical,
+                    paddingHorizontal: buttonDimensions.paddingHorizontal,
+                    borderRadius: buttonDimensions.borderRadius,
                     opacity: disabled ? 0.6 : 1,
-                    width: fullWidth ? '100%' : 'auto',
+                    width: fullWidth ? '100%' : undefined,
+                    borderWidth: variant === 'outlined' || variant === 'secondary' ? 1 : 0,
                 },
                 style,
             ]}
             onPress={onPress}
             disabled={disabled || loading}
+            activeOpacity={0.7}
             accessibilityLabel={accessibilityLabel || title}
             accessibilityRole="button"
             accessibilityState={{ disabled }}
@@ -122,18 +136,36 @@ const Button: React.FC<ButtonProps> = ({
             {loading ? (
                 <ActivityIndicator size="small" color={buttonStyles.textColor} />
             ) : (
-                <Text
-                    style={[
-                        styles.buttonText,
-                        {
-                            color: buttonStyles.textColor,
-                            fontSize: buttonSize.fontSize,
-                        },
-                        textStyle,
-                    ]}
-                >
-                    {title}
-                </Text>
+                <>
+                    {icon && iconPosition === 'left' && (
+                        <Ionicons
+                            name={icon as any}
+                            size={buttonDimensions.iconSize}
+                            color={buttonStyles.textColor}
+                            style={styles.leftIcon}
+                        />
+                    )}
+                    <Text
+                        style={[
+                            styles.buttonText,
+                            {
+                                color: buttonStyles.textColor,
+                                fontSize: buttonDimensions.fontSize,
+                            },
+                            textStyle,
+                        ]}
+                    >
+                        {title}
+                    </Text>
+                    {icon && iconPosition === 'right' && (
+                        <Ionicons
+                            name={icon as any}
+                            size={buttonDimensions.iconSize}
+                            color={buttonStyles.textColor}
+                            style={styles.rightIcon}
+                        />
+                    )}
+                </>
             )}
         </TouchableOpacity>
     );
@@ -141,15 +173,28 @@ const Button: React.FC<ButtonProps> = ({
 
 const styles = StyleSheet.create({
     button: {
-        borderRadius: SIZES.base,
-        borderWidth: 1,
+        flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        minWidth: 80,
+        shadowColor: "#000",
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.1,
+        shadowRadius: 3,
+        elevation: 2,
     },
     buttonText: {
         fontWeight: '600',
+        textAlign: 'center',
     },
+    leftIcon: {
+        marginRight: 8,
+    },
+    rightIcon: {
+        marginLeft: 8,
+    }
 });
 
 export default Button;

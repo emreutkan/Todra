@@ -1,4 +1,4 @@
-import React, {useEffect, useMemo, useRef} from 'react';
+import React, { useRef, useEffect, useMemo } from 'react';
 import {
     View,
     Text,
@@ -10,18 +10,17 @@ import {
     Alert,
     Vibration
 } from 'react-native';
-import { PRIORITY_COLORS, SIZES } from '../../theme';
-import { Task, TaskPriority } from '../../types';
 import { useTheme } from '../../context/ThemeContext';
-import Icon from 'react-native-vector-icons/MaterialIcons';
+import { Task } from '../../types';
+import { Ionicons } from '@expo/vector-icons';
+import { format, isToday, isTomorrow, isYesterday } from 'date-fns';
 
 const { width } = Dimensions.get('window');
-const SWIPE_THRESHOLD = -80; // Reduced threshold for easier deletion
+const SWIPE_THRESHOLD = -100;
 
 interface TaskItemProps {
     item: Task;
     index: number;
-    taskOpacity: Animated.Value;
     totalTasks: number;
     allTasks: Task[];
     onDelete: (id: string) => void;
@@ -32,7 +31,6 @@ interface TaskItemProps {
 const TaskItem: React.FC<TaskItemProps> = ({
                                                item,
                                                index,
-                                               taskOpacity,
                                                totalTasks,
                                                allTasks,
                                                onDelete,
@@ -41,24 +39,30 @@ const TaskItem: React.FC<TaskItemProps> = ({
                                            }) => {
     const { colors } = useTheme();
     const translateX = useRef(new Animated.Value(0)).current;
-    const scaleValue = useRef(new Animated.Value(1)).current;
+    const scale = useRef(new Animated.Value(1)).current;
+    const opacity = useRef(new Animated.Value(1)).current;
+    const checkScale = useRef(new Animated.Value(item.completed ? 1 : 0)).current;
     const deleteButtonOpacity = useRef(new Animated.Value(0)).current;
-    const prerequisitePulse = useRef(new Animated.Value(0.8)).current;
 
-    // Check if all predecessor tasks are completed
-    const canComplete = useMemo(() => {
-        if (!item.predecessorIds || item.predecessorIds.length === 0) return true;
+    // Format due date
+    const formattedDueDate = useMemo(() => {
+        if (!item.dueDate) return '';
+        const date = new Date(item.dueDate);
 
-        return item.predecessorIds.every(predId => {
-            const predTask = allTasks.find(t => t.id === predId);
-            return predTask?.completed;
-        });
-    }, [item.predecessorIds, allTasks]);
+        if (isToday(date)) {
+            return `Today, ${format(date, 'h:mm a')}`;
+        } else if (isTomorrow(date)) {
+            return `Tomorrow, ${format(date, 'h:mm a')}`;
+        } else if (isYesterday(date)) {
+            return `Yesterday, ${format(date, 'h:mm a')}`;
+        }
+        return format(date, 'MMM d, h:mm a');
+    }, [item.dueDate]);
 
-    // Get predecessor tasks information
-    const predecessorInfo = useMemo(() => {
+    // Check if task can be completed (all prerequisites met)
+    const prereqStatus = useMemo(() => {
         if (!item.predecessorIds || item.predecessorIds.length === 0) {
-            return null;
+            return { canComplete: true, completedCount: 0, total: 0 };
         }
 
         const completedCount = item.predecessorIds.reduce((count, predId) => {
@@ -66,515 +70,395 @@ const TaskItem: React.FC<TaskItemProps> = ({
             return predTask?.completed ? count + 1 : count;
         }, 0);
 
-        const incompletePrereqs = item.predecessorIds
-            .map(predId => allTasks.find(t => t.id === predId))
-            .filter(task => task && !task.completed);
-
         return {
-            total: item.predecessorIds.length,
-            completed: completedCount,
-            incompletePrereqs: incompletePrereqs,
+            canComplete: completedCount === item.predecessorIds.length,
+            completedCount,
+            total: item.predecessorIds.length
         };
     }, [item.predecessorIds, allTasks]);
 
-    // Animate the prerequisite indicator if prerequisites are not met
+    // Update check animation when completion status changes
     useEffect(() => {
-        if (predecessorInfo && predecessorInfo.completed < predecessorInfo.total && !item.completed) {
-            Animated.loop(
-                Animated.sequence([
-                    Animated.timing(prerequisitePulse, {
-                        toValue: 1.1,
-                        duration: 1000,
-                        useNativeDriver: true,
-                    }),
-                    Animated.timing(prerequisitePulse, {
-                        toValue: 0.8,
-                        duration: 1000,
-                        useNativeDriver: true,
-                    }),
-                ])
-            ).start();
-        } else {
-            prerequisitePulse.setValue(1);
-        }
-    }, [prerequisitePulse, predecessorInfo, item.completed]);
+        Animated.spring(checkScale, {
+            toValue: item.completed ? 1 : 0,
+            friction: 6,
+            tension: 80,
+            useNativeDriver: true
+        }).start();
+    }, [item.completed]);
 
-    const panResponder = useMemo(
-        () =>
+    // Pan responder for swipe to delete
+    const panResponder = useMemo(() =>
             PanResponder.create({
                 onStartShouldSetPanResponder: () => true,
                 onPanResponderGrant: () => {
-                    // Provide feedback when user starts dragging
-                    Animated.spring(scaleValue, {
+                    Animated.spring(scale, {
                         toValue: 0.98,
-                        friction: 7,
-                        useNativeDriver: true,
+                        friction: 8,
+                        useNativeDriver: true
                     }).start();
                 },
                 onPanResponderMove: (_, gestureState) => {
-                    translateX.setValue(gestureState.dx);
-                    // Show delete button as user swipes
+                    // Only allow left swipe
                     if (gestureState.dx < 0) {
+                        translateX.setValue(gestureState.dx);
                         const opacity = Math.min(Math.abs(gestureState.dx) / Math.abs(SWIPE_THRESHOLD), 1);
                         deleteButtonOpacity.setValue(opacity);
                     }
                 },
                 onPanResponderRelease: (_, gestureState) => {
                     // Reset scale
-                    Animated.spring(scaleValue, {
+                    Animated.spring(scale, {
                         toValue: 1,
-                        friction: 7,
-                        useNativeDriver: true,
+                        friction: 8,
+                        useNativeDriver: true
                     }).start();
 
                     if (gestureState.dx < SWIPE_THRESHOLD) {
-                        // Vibration feedback when threshold is crossed
-                        Vibration.vibrate(100);
+                        // Delete confirmed
+                        Vibration.vibrate(50);
 
+                        // Animate off screen then delete
                         Animated.timing(translateX, {
                             toValue: -width,
                             duration: 250,
-                            useNativeDriver: true,
+                            useNativeDriver: true
+                        }).start();
+
+                        Animated.timing(opacity, {
+                            toValue: 0,
+                            duration: 300,
+                            useNativeDriver: true
                         }).start(() => onDelete(item.id));
                     } else {
-                        Animated.parallel([
-                            Animated.spring(translateX, {
-                                toValue: 0,
-                                tension: 40,
-                                friction: 7,
-                                useNativeDriver: true,
-                            }),
-                            Animated.timing(deleteButtonOpacity, {
-                                toValue: 0,
-                                duration: 200,
-                                useNativeDriver: true,
-                            })
-                        ]).start();
-                    }
-                },
-            }),
-        [translateX, scaleValue, deleteButtonOpacity, onDelete, item.id]
-    );
+                        // Return to original position
+                        Animated.spring(translateX, {
+                            toValue: 0,
+                            friction: 8,
+                            useNativeDriver: true
+                        }).start();
 
+                        Animated.timing(deleteButtonOpacity, {
+                            toValue: 0,
+                            duration: 200,
+                            useNativeDriver: true
+                        }).start();
+                    }
+                }
+            }),
+        [item.id, onDelete]);
+
+    // Handle task completion toggle with prerequisites check
     const handleToggleComplete = () => {
-        if (!item.completed && !canComplete) {
-            // Error vibration feedback
+        if (!item.completed && !prereqStatus.canComplete) {
             Vibration.vibrate([0, 50, 50, 50]);
 
-            // Show more specific error with prerequisite task information
-            const incompletePrereqs = predecessorInfo?.incompletePrereqs || [];
+            // Get incomplete prerequisite tasks
+            const incompletePrereqs = item.predecessorIds
+                ?.map(predId => allTasks.find(t => t.id === predId))
+                .filter(task => task && !task.completed);
+
             const prereqNames = incompletePrereqs
-                .map(task => `• ${task?.title}`)
+                ?.map(task => `• ${task?.title}`)
                 .join('\n');
 
             Alert.alert(
                 'Prerequisites Required',
-                `You need to complete these tasks first:\n\n${prereqNames}`,
-                [{
-                    text: 'View First Task',
-                    onPress: () => incompletePrereqs[0] && onPress(incompletePrereqs[0].id)
-                },
-                    { text: 'OK' }]
+                `Complete these tasks first:\n\n${prereqNames}`,
+                [
+                    { text: 'View First Task', onPress: () => incompletePrereqs?.[0] && onPress(incompletePrereqs[0].id) },
+                    { text: 'OK' }
+                ]
             );
             return;
         }
 
-        // Success vibration feedback
-        Vibration.vibrate(50);
-
+        // Success vibration
+        Vibration.vibrate(40);
         onToggleComplete(item.id);
     };
 
-    const taskAnimStyle = {
-        transform: [{ translateX }, { scale: scaleValue }],
-        opacity: taskOpacity,
+    // Priority color mapping
+    const getPriorityColor = (priority: string) => {
+        switch (priority.toLowerCase()) {
+            case 'high': return colors.error;
+            case 'normal': return colors.warning;
+            case 'low': return colors.info;
+            default: return colors.textSecondary;
+        }
     };
 
-    const getPriorityLabel = (priority: TaskPriority) =>
-        priority.charAt(0).toUpperCase() + priority.slice(1);
-
-    const checkmarkScale = useRef(new Animated.Value(item.completed ? 1 : 0)).current;
-
-    useEffect(() => {
-        Animated.spring(checkmarkScale, {
-            toValue: item.completed ? 1 : 0,
-            friction: 4,
-            useNativeDriver: true,
-        }).start();
-    }, [item.completed, checkmarkScale]);
-
-    // Calculate visual indicators based on prerequisite status
-    const hasPrerequisites = predecessorInfo && predecessorInfo.total > 0;
-    const allPrerequisitesComplete = predecessorInfo &&
-        predecessorInfo.completed === predecessorInfo.total;
-    const prerequisiteProgress = predecessorInfo ?
-        (predecessorInfo.completed / predecessorInfo.total) * 100 : 0;
-
     return (
-        <View style={styles.containerWrapper}>
-            {/* Delete button behind the card */}
-                <Animated.View
+        <View style={styles.container}>
+            {/* Delete button (revealed on swipe) */}
+            <Animated.View
+                style={[
+                    styles.deleteButton,
+                    {
+                        backgroundColor: colors.error,
+                        opacity: deleteButtonOpacity
+                    }
+                ]}
+            >
+                <Ionicons name="trash-outline" size={24} color="#FFFFFF" />
+            </Animated.View>
+
+            {/* Prerequisites indicator */}
+            {item.predecessorIds?.length > 0 && !item.completed && (
+                <View style={[
+                    styles.prerequisiteIndicator,
+                    {
+                        backgroundColor: prereqStatus.canComplete ?
+                            colors.success + '20' :
+                            colors.warning + '20'
+                    }
+                ]}>
+                    <Ionicons
+                        name={prereqStatus.canComplete ? "checkmark-circle" : "time-outline"}
+                        size={14}
+                        color={prereqStatus.canComplete ? colors.success : colors.warning}
+                    />
+                    <Text style={[
+                        styles.prerequisiteText,
+                        { color: prereqStatus.canComplete ? colors.success : colors.warning }
+                    ]}>
+                        {prereqStatus.completedCount}/{prereqStatus.total}
+                    </Text>
+                </View>
+            )}
+
+            {/* Main task card */}
+            <Animated.View
+                style={[
+                    styles.taskCard,
+                    {
+                        backgroundColor: colors.card,
+                        borderLeftColor: getPriorityColor(item.priority),
+                        transform: [{ translateX }, { scale }],
+                        opacity
+                    }
+                ]}
+                {...panResponder.panHandlers}
+            >
+                {/* Checkbox */}
+                <TouchableOpacity
                     style={[
-                        styles.deleteButton,
+                        styles.checkbox,
                         {
-                            opacity: deleteButtonOpacity,
-                            backgroundColor: colors.error || '#FF3B30'
+                            borderColor: item.completed ? colors.primary : colors.border,
+                            backgroundColor: item.completed ? colors.primary : 'transparent'
                         }
                     ]}
+                    onPress={handleToggleComplete}
+                    disabled={!prereqStatus.canComplete && !item.completed}
+                    accessibilityLabel={item.completed ? "Mark as incomplete" : "Mark as complete"}
                 >
-                    <Icon name="delete" size={24} color="#fff" />
-                </Animated.View>
-
-                {/* Prerequisite visual indicator - shown on left side of card */}
-                {hasPrerequisites && !item.completed && (
-                    <Animated.View
-                        style={[
-                            styles.prerequisiteIndicator,
-                            {
-                                transform: [{ scale: prerequisitePulse }],
-                                backgroundColor: allPrerequisitesComplete ?
-                                    colors.success + '30' : colors.warning + '30'
-                            }
-                        ]}
-                    >
-                        <Icon
-                            name={allPrerequisitesComplete ? "check-circle" : "hourglass-top"}
-                            size={14}
-                            color={allPrerequisitesComplete ? colors.success : colors.warning}
-                        />
+                    <Animated.View style={{
+                        transform: [{ scale: checkScale }],
+                        opacity: checkScale
+                    }}>
+                        <Ionicons name="checkmark" size={18} color="#FFFFFF" />
                     </Animated.View>
-                )}
+                </TouchableOpacity>
 
-                <Animated.View
-                    style={[
-                        styles.taskItemContainer,
-                        taskAnimStyle,
-                        {
-                            zIndex: totalTasks - index,
-                            shadowColor: colors.text,
-                            borderLeftWidth: 4,
-                            borderLeftColor: PRIORITY_COLORS[item.priority]
-                        }
-                    ]}
-                    {...panResponder.panHandlers}
+                {/* Task content */}
+                <TouchableOpacity
+                    style={styles.taskContent}
+                    onPress={() => onPress(item.id)}
+                    activeOpacity={0.7}
+                    accessibilityLabel={`Task: ${item.title}`}
                 >
-                    <View
-                        style={[
-                            styles.taskItem,
-                            { backgroundColor: colors.card }
-                        ]}
-                    >
-                        {/* Prerequisite progress bar - shown at top of card */}
-                        {hasPrerequisites && !item.completed && (
-                            <View style={styles.prereqProgressContainer}>
-                                <View
-                                    style={[
-                                        styles.prereqProgressBar,
-                                        {
-                                            width: `${prerequisiteProgress}%`,
-                                            backgroundColor: allPrerequisitesComplete ?
-                                                colors.success : colors.warning
-                                        }
-                                    ]}
+                    <View style={styles.taskHeader}>
+                        <Text
+                            style={[
+                                styles.taskTitle,
+                                {
+                                    color: colors.text,
+                                    textDecorationLine: item.completed ? 'line-through' : 'none',
+                                    opacity: item.completed ? 0.7 : 1
+                                }
+                            ]}
+                            numberOfLines={1}
+                        >
+                            {item.title}
+                        </Text>
+
+                        {item.category && (
+                            <View style={[
+                                styles.categoryBadge,
+                                { backgroundColor: colors.primary + '20' }
+                            ]}>
+                                <Text style={[
+                                    styles.categoryText,
+                                    { color: colors.primary }
+                                ]}>
+                                    {item.category}
+                                </Text>
+                            </View>
+                        )}
+                    </View>
+
+                    {item.description && (
+                        <Text
+                            style={[
+                                styles.taskDescription,
+                                {
+                                    color: colors.textSecondary,
+                                    opacity: item.completed ? 0.6 : 0.9
+                                }
+                            ]}
+                            numberOfLines={2}
+                        >
+                            {item.description}
+                        </Text>
+                    )}
+
+                    <View style={styles.taskFooter}>
+                        {item.dueDate && (
+                            <View style={styles.dueDate}>
+                                <Ionicons
+                                    name="calendar-outline"
+                                    size={14}
+                                    color={colors.textSecondary}
+                                    style={styles.footerIcon}
                                 />
+                                <Text style={[
+                                    styles.dueText,
+                                    { color: colors.textSecondary }
+                                ]}>
+                                    {formattedDueDate}
+                                </Text>
                             </View>
                         )}
 
-                        <TouchableOpacity
-                            style={styles.taskContent}
-                            onPress={() => onPress(item.id)}
-                            activeOpacity={0.7}
-                            accessibilityLabel={`Task: ${item.title}${item.completed ? ', completed' : ''}`}
-                            accessibilityHint="Tap to view task details"
-                            accessibilityRole="button"
-                        >
-                            <TouchableOpacity
-                                style={[
-                                    styles.checkbox,
-                                    {
-                                        borderColor: item.completed ? colors.primary : colors.border
-                                    },
-                                    item.completed && { backgroundColor: colors.primary },
-                                    !canComplete && !item.completed && {
-                                        borderColor: colors.warning,
-                                        borderStyle: 'dashed',
-                                    }
-                                ]}
-                                onPress={handleToggleComplete}
-                                accessibilityLabel={item.completed ? "Mark as incomplete" : "Mark as complete"}
-                                accessibilityRole="checkbox"
-                                accessibilityState={{ checked: item.completed }}
-                            >
-                                {item.completed ? (
-                                    <Animated.View style={{ transform: [{ scale: checkmarkScale }] }}>
-                                        <Icon name="check" size={18} color={colors.onPrimary} />
-                                    </Animated.View>
-                                ) : !canComplete ? (
-                                    <Animated.View
-                                        style={{
-                                            transform: [{ scale: prerequisitePulse }],
-                                            opacity: 0.9
-                                        }}
-                                    >
-                                        <Icon name="lock" size={16} color={colors.warning} />
-                                    </Animated.View>
-                                ) : null}
-                            </TouchableOpacity>
-
-                            <View style={styles.taskTextContainer}>
-                                <Text
-                                    style={[
-                                        styles.taskTitle,
-                                        { color: colors.text },
-                                        item.completed && styles.taskCompleted,
-                                        !canComplete && !item.completed && { color: colors.textSecondary }
-                                    ]}
-                                    numberOfLines={2}
-                                    ellipsizeMode="tail"
-                                >
-                                    {item.title}
-                                </Text>
-
-                                {item.description ? (
-                                    <Text
-                                        style={[
-                                            styles.taskDescription,
-                                            { color: colors.textSecondary },
-                                            item.completed && styles.taskCompleted
-                                        ]}
-                                        numberOfLines={2}
-                                        ellipsizeMode="tail"
-                                    >
-                                        {item.description}
-                                    </Text>
-                                ) : null}
-
-                                <View style={styles.taskMetaContainer}>
-                                    <View
-                                        style={[
-                                            styles.priorityBadge,
-                                            { backgroundColor: PRIORITY_COLORS[item.priority] + 'E6' }
-                                        ]}
-                                    >
-                                        <Text style={styles.priorityText}>
-                                            {getPriorityLabel(item.priority)}
-                                        </Text>
-                                    </View>
-
-                                    {predecessorInfo && (
-                                        <TouchableOpacity
-                                            onPress={() => {
-                                                if (!canComplete && predecessorInfo.incompletePrereqs.length > 0) {
-                                                    const incompletePrereqs = predecessorInfo.incompletePrereqs;
-                                                    const prereqNames = incompletePrereqs
-                                                        .map(task => `• ${task?.title}`)
-                                                        .join('\n');
-
-                                                    Alert.alert(
-                                                        'Prerequisite Tasks',
-                                                        `Complete these tasks first:\n\n${prereqNames}`,
-                                                        [
-                                                            {
-                                                                text: 'View First Task',
-                                                                onPress: () => incompletePrereqs[0] && onPress(incompletePrereqs[0].id)
-                                                            },
-                                                            { text: 'OK' }
-                                                        ]
-                                                    );
-                                                }
-                                            }}
-                                            style={[
-                                                styles.predecessorBadge,
-                                                {
-                                                    backgroundColor: allPrerequisitesComplete
-                                                        ? colors.success + '20'
-                                                        : colors.warning + '20',
-                                                    borderColor: allPrerequisitesComplete
-                                                        ? colors.success + '40'
-                                                        : colors.warning + '40',
-                                                    borderWidth: 1
-                                                }
-                                            ]}
-                                        >
-                                            <Icon
-                                                name={allPrerequisitesComplete ? "check-circle" : "link"}
-                                                size={14}
-                                                color={allPrerequisitesComplete ? colors.success : colors.warning}
-                                                style={styles.linkIcon}
-                                            />
-                                            <Text style={[
-                                                styles.predecessorText,
-                                                {
-                                                    color: allPrerequisitesComplete
-                                                        ? colors.success
-                                                        : colors.warning,
-                                                    fontWeight: '600'
-                                                }
-                                            ]}>
-                                                {`${predecessorInfo.completed}/${predecessorInfo.total} prereqs`}
-                                            </Text>
-                                            {!canComplete && !item.completed && (
-                                                <Icon
-                                                    name="info-outline"
-                                                    size={14}
-                                                    color={colors.warning}
-                                                    style={styles.infoIcon}
-                                                />
-                                            )}
-                                        </TouchableOpacity>
-                                    )}
-
-
-                                </View>
-                            </View>
-                        </TouchableOpacity>
+                        <View style={[
+                            styles.priorityBadge,
+                            { backgroundColor: getPriorityColor(item.priority) + '20' }
+                        ]}>
+                            <Text style={[
+                                styles.priorityText,
+                                { color: getPriorityColor(item.priority) }
+                            ]}>
+                                {item.priority.charAt(0).toUpperCase() + item.priority.slice(1)}
+                            </Text>
+                        </View>
                     </View>
-                </Animated.View>
+                </TouchableOpacity>
+            </Animated.View>
         </View>
     );
 };
 
 const styles = StyleSheet.create({
-    containerWrapper: {
+    container: {
+        marginHorizontal: 16,
+        marginVertical: 6,
         position: 'relative',
-        marginBottom: 16,
+    },
+    taskCard: {
+        flexDirection: 'row',
+        borderRadius: 12,
+        borderLeftWidth: 5,
+        overflow: 'hidden',
+        paddingVertical: 14,
+        paddingHorizontal: 16,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.1,
+        shadowRadius: 3,
+        elevation: 2,
+    },
+    checkbox: {
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        borderWidth: 2,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 16,
+        marginTop: 2,
+    },
+    taskContent: {
+        flex: 1,
+    },
+    taskHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 4,
+    },
+    taskTitle: {
+        fontSize: 16,
+        fontWeight: '600',
+        flex: 1,
+        marginRight: 8,
+    },
+    categoryBadge: {
+        paddingHorizontal: 8,
+        paddingVertical: 3,
+        borderRadius: 12,
+    },
+    categoryText: {
+        fontSize: 12,
+        fontWeight: '600',
+    },
+    taskDescription: {
+        fontSize: 14,
+        marginBottom: 8,
+        lineHeight: 18,
+    },
+    taskFooter: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    dueDate: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    footerIcon: {
+        marginRight: 4,
+    },
+    dueText: {
+        fontSize: 12,
+    },
+    priorityBadge: {
+        paddingHorizontal: 8,
+        paddingVertical: 2,
+        borderRadius: 10,
+    },
+    priorityText: {
+        fontSize: 12,
+        fontWeight: '500',
     },
     deleteButton: {
         position: 'absolute',
-        right: 20,
-        top: '50%',
-        marginTop: -18,
-        width: 36,
-        height: 36,
-        borderRadius: 18,
-        alignItems: 'center',
+        right: 0,
+        top: 0,
+        bottom: 0,
+        width: 80,
+        borderRadius: 12,
         justifyContent: 'center',
-        zIndex: 0,
-
-    },
-    taskItemContainer: {
-        marginHorizontal: 12,
-        // borderRadius: 14,
-        // shadowOffset: { width: 0, height: 3 },
-        // shadowOpacity: 0.12,
-        // shadowRadius: 5,
-        // elevation: 3,
-        borderRadius: SIZES.base * 1.5,  // More consistent rounding
-        marginVertical: SIZES.small / 2, // Consistent spacing
-        elevation: 3,                   // More consistent shadow on Android
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 3,
-    },
-    taskItem: {
-        // borderRadius: 14,
-        overflow: 'hidden',
-        borderRadius: SIZES.base * 1.5,  // Match container radius
-
-    },
-    taskContent: {
-        padding: 16,
-        flexDirection: 'row',
-        alignItems: 'flex-start',
-    },
-    checkbox: {
-        width: 22,
-        height: 22,
-        borderRadius: 12,
-        borderWidth: 2,
-        marginRight: 16,
-        marginTop: 2,
         alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: 'transparent',
+        zIndex: -1,
     },
-    taskTextContainer: {
-        flex: 1,
-    },
-    taskTitle: {
-        fontSize: SIZES.medium,
-        fontWeight: '600',
-        marginBottom: 6,
-        lineHeight: SIZES.medium * 1.4,
-    },
-    taskDescription: {
-        fontSize: SIZES.small,
-        marginBottom: 10,
-        lineHeight: SIZES.small * 1.3,
-    },
-    taskCompleted: {
-        textDecorationLine: 'line-through',
-        opacity: 0.6,
-    },
-    taskMetaContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        flexWrap: 'wrap',
-        gap: 8,
-        marginTop: 4,
-    },
-    priorityBadge: {
-        alignSelf: 'flex-start',
-        paddingHorizontal: 10,
-        paddingVertical: 4,
-        borderRadius: 12,
-    },
-    priorityText: {
-        color: '#FFFFFF',
-        fontSize: SIZES.small - 1,
-        fontWeight: '600',
-    },
-    predecessorBadge: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        borderRadius: 12,
-        gap: 4,
-    },
-    predecessorText: {
-        fontSize: SIZES.small - 1,
-    },
-    linkIcon: {
-        marginLeft: 1,
-    },
-    infoIcon: {
-        marginLeft: 2,
-    },
-    lockIcon: {
-        marginLeft: 2,
-    },
-
     prerequisiteIndicator: {
         position: 'absolute',
-        left: 0,
+        left: -8,
         top: '50%',
-        width: 20,
-        height: 20,
-        borderRadius: 10,
+        marginTop: -16,
+        flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 10,
-        marginTop: -10,
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.3,
-        shadowRadius: 3,
-        elevation: 5,
+        paddingHorizontal: 6,
+        paddingVertical: 3,
+        borderRadius: 10,
+        zIndex: 1,
     },
-    prereqProgressContainer: {
-        height: 3,
-        width: '100%',
-        backgroundColor: 'rgba(0,0,0,0.05)',
-        borderTopLeftRadius: 14,
-        borderTopRightRadius: 14,
-        overflow: 'hidden',
-    },
-    prereqProgressBar: {
-        height: 3,
-        borderTopLeftRadius: 14,
-    },
+    prerequisiteText: {
+        fontSize: 10,
+        fontWeight: 'bold',
+        marginLeft: 2,
+    }
 });
 
-
-
-export default React.memo(TaskItem);
+export default TaskItem;
