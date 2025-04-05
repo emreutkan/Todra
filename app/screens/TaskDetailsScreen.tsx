@@ -6,6 +6,7 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { storageService } from '../storage';
 import { StatusBar } from 'expo-status-bar';
+import {deleteTask, getActiveTasks, getArchivedTasks, updateTask} from "../utils/taskStorage";
 
 type TaskDetailsScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'TaskDetails'>;
 type TaskDetailsScreenRouteProp = RouteProp<RootStackParamList, 'TaskDetails'>;
@@ -24,8 +25,15 @@ const TaskDetailsScreen = () => {
 
     const loadTask = async () => {
         try {
-            const tasks = await storageService.loadTasks();
-            const foundTask = tasks.find(t => t.id === taskId);
+            // First check active tasks
+            const activeTasks = await getActiveTasks();
+            let foundTask = activeTasks.find(t => t.id === taskId);
+
+            // If not found, check archived tasks
+            if (!foundTask) {
+                const archivedTasks = await getArchivedTasks();
+                foundTask = archivedTasks.find(t => t.id === taskId);
+            }
 
             if (foundTask) {
                 setTask(foundTask);
@@ -47,23 +55,22 @@ const TaskDetailsScreen = () => {
         if (!task) return;
 
         try {
-            const tasks = await storageService.loadTasks();
-            const updatedTasks = tasks.map(t =>
-                t.id === taskId ? { ...t, completed: !t.completed } : t
-            );
-
-            await storageService.saveTasks(updatedTasks);
-            setTask({ ...task, completed: !task.completed });
+            const updatedTask = { ...task, completed: !task.completed };
+            await updateTask(updatedTask);
+            setTask(updatedTask);
         } catch (error) {
             console.error('Error updating task:', error);
             Alert.alert('Error', 'Failed to update task');
         }
     };
 
+
     const handleEdit = () => {
         navigation.navigate('EditTask', { taskId });
     };
 
+
+// Update handleDelete:
     const handleDelete = async () => {
         Alert.alert(
             'Delete Task',
@@ -75,9 +82,7 @@ const TaskDetailsScreen = () => {
                     style: 'destructive',
                     onPress: async () => {
                         try {
-                            const tasks = await storageService.loadTasks();
-                            const updatedTasks = tasks.filter(t => t.id !== taskId);
-                            await storageService.saveTasks(updatedTasks);
+                            await deleteTask(taskId);
                             navigation.navigate('Home');
                         } catch (error) {
                             console.error('Error deleting task:', error);

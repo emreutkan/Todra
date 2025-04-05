@@ -26,6 +26,7 @@ import PrioritySelector from '../components/AddTaskComponents/PrioritySelector';
 import DateTimePicker from '../components/AddTaskComponents/DateTimePicker';
 import CategorySelector from '../components/AddTaskComponents/CategorySelector';
 import PredecessorTaskSelector from '../components/AddTaskComponents/PredecessorTaskSelector';
+import {addTask, getActiveTasks} from "../utils/taskStorage";
 
 type AddTaskScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'AddTask'>;
 type AddTaskScreenRouteProp = RouteProp<RootStackParamList, 'AddTask'>;
@@ -73,7 +74,7 @@ const AddTaskScreen: React.FC = () => {
     useEffect(() => {
         const loadAvailableTasks = async () => {
             try {
-                const tasks = await storageService.loadTasks();
+                const tasks = await getActiveTasks();
                 setAvailableTasks(tasks);
             } catch (error) {
                 console.error('Error loading tasks:', error);
@@ -109,6 +110,8 @@ const AddTaskScreen: React.FC = () => {
         return false;
     };
 
+
+// Update handleSave:
     const handleSave = useCallback(async () => {
         if (!isFormValid) {
             Alert.alert('Error', 'Please enter a task title');
@@ -119,7 +122,7 @@ const AddTaskScreen: React.FC = () => {
             setLoading(true);
 
             // Load existing tasks
-            const existingTasks = await storageService.loadTasks();
+            const existingTasks = await getActiveTasks();
 
             // Check for circular dependencies
             for (const predId of predecessorIds) {
@@ -139,12 +142,12 @@ const AddTaskScreen: React.FC = () => {
                 createdAt: selectedDate.getTime(),
                 dueDate: dueDate.getTime(),
                 category,
-                predecessorIds
+                predecessorIds,
+                archived: false // Make sure to include this property
             };
 
-            // Save tasks
-            const updatedTasks = [...existingTasks, newTask];
-            await storageService.saveTasks(updatedTasks);
+            // Save task
+            await addTask(newTask);
 
             // Navigate back with success message
             navigation.navigate('Home', {
