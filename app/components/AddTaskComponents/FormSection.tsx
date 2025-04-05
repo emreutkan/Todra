@@ -1,37 +1,49 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { SIZES } from '../../theme';
-import {useTheme} from "../../context/ThemeContext";
+import { useTheme } from "../../context/ThemeContext";
 
 interface FormSectionProps {
     title: string;
     children: React.ReactNode;
     optional?: boolean;
+    subtitle?: string;
 }
 
 const FormSection: React.FC<FormSectionProps> = ({
                                                      title,
                                                      children,
-                                                     optional = false
+                                                     optional = false,
+                                                     subtitle
                                                  }) => {
-
     const { colors } = useTheme();
+
     const styles = StyleSheet.create({
         formGroup: {
-            marginBottom: SIZES.large,
+            marginBottom: SIZES.extraLarge,
+            backgroundColor: colors.background,
+            borderRadius: 12,
         },
         labelContainer: {
             flexDirection: 'row',
             alignItems: 'center',
             marginBottom: SIZES.small,
         },
+        labelContent: {
+            flex: 1,
+        },
         label: {
             color: colors.text,
             fontSize: SIZES.medium,
-            fontWeight: '600',
+            fontWeight: '700',
+        },
+        subtitle: {
+            color: colors.textSecondary,
+            fontSize: SIZES.font - 1,
+            marginTop: 2,
         },
         optionalText: {
-            color: colors.text + '80',
+            color: colors.textSecondary,
             fontSize: SIZES.font - 2,
             marginLeft: SIZES.small,
             fontStyle: 'italic',
@@ -40,10 +52,14 @@ const FormSection: React.FC<FormSectionProps> = ({
             width: '100%',
         }
     });
+
     return (
         <View style={styles.formGroup}>
             <View style={styles.labelContainer}>
-                <Text style={styles.label}>{title}</Text>
+                <View style={styles.labelContent}>
+                    <Text style={styles.label}>{title}</Text>
+                    {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
+                </View>
                 {optional && (
                     <Text style={styles.optionalText}>Optional</Text>
                 )}
@@ -54,7 +70,5 @@ const FormSection: React.FC<FormSectionProps> = ({
         </View>
     );
 };
-
-
 
 export default FormSection;

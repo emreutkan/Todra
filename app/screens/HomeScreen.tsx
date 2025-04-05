@@ -22,6 +22,7 @@ import {
     taskStorageService
 } from "../services/taskStorageService";
 import {STORAGE_KEYS} from "../constants/StorageKeys";
+import ScreenHeader from "../components/common/ScreenHeader";
 
 type HomeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Home'>;
 type HomeScreenRouteProp = RouteProp<RootStackParamList, 'Home'>;
@@ -366,6 +367,7 @@ const HomeScreen: React.FC = () => {
                 activeCategory={activeCategory}
                 onSettingsPress={handleSettingsPress}
             />
+
 
             {/* Date slider */}
             <DateSlider

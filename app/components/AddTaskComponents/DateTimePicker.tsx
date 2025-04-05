@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
     View,
     Text,
@@ -6,12 +6,13 @@ import {
     TouchableOpacity,
     Modal,
     FlatList,
-    Dimensions,
-    Platform
+    Animated,
+    Dimensions
 } from 'react-native';
-import { COLORS, SIZES } from '../../theme';
 import FormSection from './FormSection';
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '../../context/ThemeContext';
+import { format, addDays, isSameDay, isToday, isTomorrow, getHours, getMinutes } from 'date-fns';
 
 interface DateTimePickerProps {
     dueDate: Date;
@@ -19,345 +20,294 @@ interface DateTimePickerProps {
     initialDate?: Date;
 }
 
-const SCREEN_WIDTH = Dimensions.get('window').width;
-const DAY_ITEM_WIDTH = 70;
-const TIME_ITEM_WIDTH = 80;
+const { width } = Dimensions.get('window');
 
 const DateTimePicker: React.FC<DateTimePickerProps> = ({
                                                            dueDate,
                                                            onDateChange,
                                                            initialDate = new Date()
                                                        }) => {
+    const { colors } = useTheme();
     const [isModalVisible, setModalVisible] = useState(false);
-    const [modalMode, setModalMode] = useState<'date' | 'time'>('date');
-    const [selectedDate, setSelectedDate] = useState(dueDate);
-    const [dateListData, setDateListData] = useState<Array<{date: Date, label: string}>>([]);
-    const [timeListData, setTimeListData] = useState<Array<{time: string, label: string}>>([]);
-    const [selectedDateIndex, setSelectedDateIndex] = useState(0);
-    const [selectedTimeIndex, setSelectedTimeIndex] = useState(0);
-    const dateListRef = React.useRef<FlatList>(null);
-    const timeListRef = React.useRef<FlatList>(null);
+    const [activeTab, setActiveTab] = useState<'date' | 'time'>('date');
+    const [tempDate, setTempDate] = useState<Date>(new Date(dueDate));
+    const [animation] = useState(new Animated.Value(0));
 
-    // Generate 30 days starting from today for the date selection
-    useEffect(() => {
+    // Generate dates (30 days)
+    const generateDates = useCallback(() => {
         const dates = [];
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
-        for (let i = 0; i < 60; i++) {
-            const date = new Date(today);
-            date.setDate(today.getDate() + i);
-
-            let label = '';
-            if (i === 0) {
-                label = 'Today';
-            } else if (i === 1) {
-                label = 'Tomorrow';
-            } else {
-                label = date.toLocaleDateString(undefined, {
-                    weekday: 'short',
-                    day: 'numeric',
-                    month: 'short'
-                });
-            }
-
-            dates.push({ date, label });
+        for (let i = 0; i < 30; i++) {
+            const date = addDays(today, i);
+            dates.push(date);
         }
-        setDateListData(dates);
-
-        // Find index of current selected date in the list
-        const currentDay = new Date(dueDate);
-        currentDay.setHours(0, 0, 0, 0);
-
-        const indexOfToday = dates.findIndex(item =>
-            item.date.getDate() === currentDay.getDate() &&
-            item.date.getMonth() === currentDay.getMonth() &&
-            item.date.getFullYear() === currentDay.getFullYear()
-        );
-
-        setSelectedDateIndex(indexOfToday >= 0 ? indexOfToday : 0);
+        return dates;
     }, []);
 
-    // Generate time slots in 30-minute intervals
-    useEffect(() => {
-        const times = [];
+    // Generate hours
+    const generateTimeSlots = useCallback(() => {
+        const slots = [];
         for (let hour = 0; hour < 24; hour++) {
             for (let minute of [0, 30]) {
-                // Format: 9:00 AM
-                const timeString = `${hour}:${minute === 0 ? '00' : minute}`;
-                const date = new Date();
-                date.setHours(hour);
-                date.setMinutes(minute);
-
-                const formattedTime = date.toLocaleTimeString([], {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    hour12: true
-                });
-
-                times.push({
-                    time: timeString,
-                    label: formattedTime
-                });
+                const time = new Date();
+                time.setHours(hour, minute, 0, 0);
+                slots.push(time);
             }
         }
-        setTimeListData(times);
-
-        // Find index of current selected time in the list
-        const currentHour = dueDate.getHours();
-        const currentMinute = dueDate.getMinutes();
-        const roundedMinute = currentMinute < 30 ? 0 : 30;
-
-        const timeString = `${currentHour}:${roundedMinute === 0 ? '00' : roundedMinute}`;
-        const indexOfTime = times.findIndex(item => item.time === timeString);
-
-        setSelectedTimeIndex(indexOfTime >= 0 ? indexOfTime : 0);
+        return slots;
     }, []);
 
-    const showDateModal = () => {
-        setModalMode('date');
-        setModalVisible(true);
+    const dates = generateDates();
+    const timeSlots = generateTimeSlots();
 
-        // Scroll to the selected date
-        setTimeout(() => {
-            dateListRef.current?.scrollToIndex({
-                index: selectedDateIndex,
-                animated: true,
-                viewPosition: 0.5
-            });
-        }, 100);
+    const formatDateLabel = (date: Date) => {
+        if (isToday(date)) return 'Today';
+        if (isTomorrow(date)) return 'Tomorrow';
+        return format(date, 'EEE, MMM d');
     };
 
-    const showTimeModal = () => {
-        setModalMode('time');
-        setModalVisible(true);
-
-        // Scroll to the selected time
-        setTimeout(() => {
-            timeListRef.current?.scrollToIndex({
-                index: selectedTimeIndex,
-                animated: true,
-                viewPosition: 0.5
-            });
-        }, 100);
+    const handleTabChange = (tab: 'date' | 'time') => {
+        setActiveTab(tab);
+        Animated.timing(animation, {
+            toValue: tab === 'date' ? 0 : 1,
+            duration: 300,
+            useNativeDriver: false
+        }).start();
     };
 
-    const hideModal = () => {
+    const handleDateSelection = (date: Date) => {
+        const newDate = new Date(tempDate);
+        newDate.setFullYear(date.getFullYear());
+        newDate.setMonth(date.getMonth());
+        newDate.setDate(date.getDate());
+        setTempDate(newDate);
+        handleTabChange('time');
+    };
+
+    const handleTimeSelection = (time: Date) => {
+        const newDate = new Date(tempDate);
+        newDate.setHours(getHours(time));
+        newDate.setMinutes(getMinutes(time));
+        setTempDate(newDate);
+    };
+
+    const handleSave = () => {
+        onDateChange(tempDate);
         setModalVisible(false);
     };
 
-    const handleConfirmSelection = () => {
-        if (modalMode === 'date') {
-            const newDate = dateListData[selectedDateIndex].date;
-            const updatedDate = new Date(selectedDate);
-            updatedDate.setFullYear(newDate.getFullYear());
-            updatedDate.setMonth(newDate.getMonth());
-            updatedDate.setDate(newDate.getDate());
-            setSelectedDate(updatedDate);
-
-            // Optionally, show time modal right after selecting date
-            hideModal();
-            setTimeout(() => {
-                showTimeModal();
-            }, 300);
-        } else {
-            // Apply selected time
-            const [hours, minutes] = timeListData[selectedTimeIndex].time.split(':').map(Number);
-            const updatedDate = new Date(selectedDate);
-            updatedDate.setHours(hours);
-            updatedDate.setMinutes(minutes);
-            setSelectedDate(updatedDate);
-            onDateChange(updatedDate);
-            hideModal();
-        }
+    const openModal = () => {
+        setTempDate(new Date(dueDate));
+        setActiveTab('date');
+        animation.setValue(0);
+        setModalVisible(true);
     };
 
-    const handleSelectDate = (index: number) => {
-        setSelectedDateIndex(index);
-    };
-
-    const handleSelectTime = (index: number) => {
-        setSelectedTimeIndex(index);
-    };
-
-    const formatDate = (date: Date) => {
-        return date.toLocaleDateString(undefined, {
-            weekday: 'short',
-            month: 'short',
-            day: 'numeric',
-            year: date.getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined
-        });
-    };
-
-    const formatTime = (date: Date) => {
-        return date.toLocaleTimeString(undefined, {
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: true
-        });
-    };
-
-    const isToday = (date: Date) => {
-        const today = new Date();
-        return date.getDate() === today.getDate() &&
-            date.getMonth() === today.getMonth() &&
-            date.getFullYear() === today.getFullYear();
-    };
-
-    const isTomorrow = (date: Date) => {
-        const tomorrow = new Date();
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        return date.getDate() === tomorrow.getDate() &&
-            date.getMonth() === tomorrow.getMonth() &&
-            date.getFullYear() === tomorrow.getFullYear();
-    };
-
-    const getRelativeDay = (date: Date) => {
-        if (isToday(date)) return 'Today';
-        if (isTomorrow(date)) return 'Tomorrow';
-        return formatDate(date);
-    };
+    const translateX = animation.interpolate({
+        inputRange: [0, 1],
+        outputRange: [0, -width]
+    });
 
     return (
         <FormSection title="Due Date & Time">
-            <View style={styles.dateTimeContainer}>
-                <TouchableOpacity
-                    style={styles.datePickerButton}
-                    onPress={showDateModal}
-                >
-                    <View style={styles.pickerContent}>
-                        <Ionicons name="calendar-outline" size={20} color={COLORS.primary} />
-                        <Text style={styles.dateText}>{getRelativeDay(dueDate)}</Text>
+            <TouchableOpacity
+                style={styles.dateTimeButton}
+                onPress={openModal}
+                activeOpacity={0.7}
+            >
+                <View style={[styles.dateTimeDisplay, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                    <View style={styles.dateSection}>
+                        <Ionicons name="calendar-outline" size={20} color={colors.primary} style={styles.icon} />
+                        <Text style={[styles.dateText, { color: colors.text }]}>
+                            {isToday(dueDate) ? 'Today' :
+                                isTomorrow(dueDate) ? 'Tomorrow' :
+                                    format(dueDate, 'EEE, MMM d, yyyy')}
+                        </Text>
                     </View>
-                    <Ionicons name="chevron-down" size={16} color={COLORS.text + '80'} />
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                    style={styles.timePickerButton}
-                    onPress={showTimeModal}
-                >
-                    <View style={styles.pickerContent}>
-                        <Ionicons name="time-outline" size={20} color={COLORS.primary} />
-                        <Text style={styles.dateText}>{formatTime(dueDate)}</Text>
+                    <View style={[styles.divider, { backgroundColor: colors.border }]} />
+                    <View style={styles.timeSection}>
+                        <Ionicons name="time-outline" size={20} color={colors.primary} style={styles.icon} />
+                        <Text style={[styles.timeText, { color: colors.text }]}>
+                            {format(dueDate, 'h:mm a')}
+                        </Text>
                     </View>
-                    <Ionicons name="chevron-down" size={16} color={COLORS.text + '80'} />
-                </TouchableOpacity>
-            </View>
+                </View>
+            </TouchableOpacity>
 
-            {/* Custom Modal for Date and Time picker */}
             <Modal
                 visible={isModalVisible}
                 transparent
-                animationType="slide"
-                onRequestClose={hideModal}
+                animationType="fade"
+                onRequestClose={() => setModalVisible(false)}
             >
                 <View style={styles.modalOverlay}>
-                    <View style={styles.modalContainer}>
-                        <View style={styles.modalHeader}>
-                            <Text style={styles.modalTitle}>
-                                {modalMode === 'date' ? 'Select Date' : 'Select Time'}
+                    <View style={[styles.modalContainer, {
+                        backgroundColor: colors.background,
+                        borderColor: colors.border
+                    }]}>
+                        <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
+                            <Text style={[styles.modalTitle, { color: colors.text }]}>
+                                Set Due Date & Time
                             </Text>
-                            <TouchableOpacity onPress={hideModal} style={styles.closeButton}>
-                                <Ionicons name="close" size={24} color={COLORS.text} />
+                            <TouchableOpacity
+                                style={styles.closeButton}
+                                onPress={() => setModalVisible(false)}
+                            >
+                                <Ionicons name="close" size={24} color={colors.text} />
+                            </TouchableOpacity>
+                        </View>
+
+                        <View style={styles.tabContainer}>
+                            <TouchableOpacity
+                                style={[
+                                    styles.tab,
+                                    activeTab === 'date' && [styles.activeTab, { borderBottomColor: colors.primary }]
+                                ]}
+                                onPress={() => handleTabChange('date')}
+                            >
+                                <Text style={[
+                                    styles.tabText,
+                                    { color: activeTab === 'date' ? colors.primary : colors.textSecondary }
+                                ]}>
+                                    Date
+                                </Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                style={[
+                                    styles.tab,
+                                    activeTab === 'time' && [styles.activeTab, { borderBottomColor: colors.primary }]
+                                ]}
+                                onPress={() => handleTabChange('time')}
+                            >
+                                <Text style={[
+                                    styles.tabText,
+                                    { color: activeTab === 'time' ? colors.primary : colors.textSecondary }
+                                ]}>
+                                    Time
+                                </Text>
                             </TouchableOpacity>
                         </View>
 
                         <View style={styles.pickerContainer}>
-                            {modalMode === 'date' ? (
-                                <FlatList
-                                    ref={dateListRef}
-                                    data={dateListData}
-                                    keyExtractor={(item, index) => `date-${index}`}
-                                    horizontal
-                                    showsHorizontalScrollIndicator={false}
-                                    contentContainerStyle={styles.listContent}
-                                    snapToInterval={DAY_ITEM_WIDTH}
-                                    decelerationRate="fast"
-                                    renderItem={({ item, index }) => (
-                                        <TouchableOpacity
-                                            style={[
-                                                styles.dateItem,
-                                                selectedDateIndex === index && styles.selectedDateItem
-                                            ]}
-                                            onPress={() => handleSelectDate(index)}
-                                        >
-                                            <Text style={[
-                                                styles.dateItemWeekday,
-                                                selectedDateIndex === index && styles.selectedDateText
-                                            ]}>
-                                                {index < 2 ? '' : item.date.toLocaleDateString(undefined, { weekday: 'short' })}
-                                            </Text>
-                                            <Text style={[
-                                                styles.dateItemNumber,
-                                                selectedDateIndex === index && styles.selectedDateText
-                                            ]}>
-                                                {item.label}
-                                            </Text>
-                                            {index < 2 && (
+                            <Animated.View
+                                style={[styles.pickerContent, {
+                                    transform: [{ translateX }],
+                                    width: width * 2,
+                                }]}
+                            >
+                                <View style={[styles.datePickerContainer, { width }]}>
+                                    <FlatList
+                                        data={dates}
+                                        keyExtractor={(item) => item.toISOString()}
+                                        renderItem={({ item }) => (
+                                            <TouchableOpacity
+                                                style={[
+                                                    styles.dateItem,
+                                                    isSameDay(item, tempDate) && [styles.selectedItem, {
+                                                        backgroundColor: colors.primary + '20',
+                                                        borderColor: colors.primary
+                                                    }],
+                                                    { backgroundColor: colors.card }
+                                                ]}
+                                                onPress={() => handleDateSelection(item)}
+                                            >
                                                 <Text style={[
-                                                    styles.dateItemDate,
-                                                    selectedDateIndex === index && styles.selectedDateText
+                                                    styles.dayText,
+                                                    { color: isSameDay(item, tempDate) ? colors.primary : colors.text }
                                                 ]}>
-                                                    {item.date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                                                    {format(item, 'EEE')}
                                                 </Text>
-                                            )}
-                                        </TouchableOpacity>
-                                    )}
-                                    onMomentumScrollEnd={(e) => {
-                                        const index = Math.round(e.nativeEvent.contentOffset.x / DAY_ITEM_WIDTH);
-                                        if (index >= 0 && index < dateListData.length) {
-                                            setSelectedDateIndex(index);
-                                        }
-                                    }}
-                                />
-                            ) : (
-                                <FlatList
-                                    ref={timeListRef}
-                                    data={timeListData}
-                                    keyExtractor={(item, index) => `time-${index}`}
-                                    horizontal
-                                    showsHorizontalScrollIndicator={false}
-                                    contentContainerStyle={styles.listContent}
-                                    snapToInterval={TIME_ITEM_WIDTH}
-                                    decelerationRate="fast"
-                                    renderItem={({ item, index }) => (
-                                        <TouchableOpacity
-                                            style={[
-                                                styles.timeItem,
-                                                selectedTimeIndex === index && styles.selectedTimeItem
-                                            ]}
-                                            onPress={() => handleSelectTime(index)}
-                                        >
-                                            <Text style={[
-                                                styles.timeItemText,
-                                                selectedTimeIndex === index && styles.selectedTimeText
-                                            ]}>
-                                                {item.label}
-                                            </Text>
-                                        </TouchableOpacity>
-                                    )}
-                                    onMomentumScrollEnd={(e) => {
-                                        const index = Math.round(e.nativeEvent.contentOffset.x / TIME_ITEM_WIDTH);
-                                        if (index >= 0 && index < timeListData.length) {
-                                            setSelectedTimeIndex(index);
-                                        }
-                                    }}
-                                />
-                            )}
+                                                <Text style={[
+                                                    styles.dateNumber,
+                                                    { color: isSameDay(item, tempDate) ? colors.primary : colors.text }
+                                                ]}>
+                                                    {format(item, 'd')}
+                                                </Text>
+                                                <Text style={[
+                                                    styles.monthText,
+                                                    { color: isSameDay(item, tempDate) ? colors.primary : colors.textSecondary }
+                                                ]}>
+                                                    {format(item, 'MMM')}
+                                                </Text>
+                                                {(isToday(item) || isTomorrow(item)) && (
+                                                    <View style={[
+                                                        styles.todayBadge,
+                                                        {
+                                                            backgroundColor: isToday(item) ? colors.primary : colors.success,
+                                                            borderColor: isToday(item) ? colors.primary : colors.success
+                                                        }
+                                                    ]}>
+                                                        <Text style={styles.todayText}>
+                                                            {isToday(item) ? 'Today' : 'Tmrw'}
+                                                        </Text>
+                                                    </View>
+                                                )}
+                                            </TouchableOpacity>
+                                        )}
+                                        numColumns={4}
+                                        showsVerticalScrollIndicator={false}
+                                    />
+                                </View>
+
+                                <View style={[styles.timePickerContainer, { width }]}>
+                                    <FlatList
+                                        data={timeSlots}
+                                        keyExtractor={(item) => item.toISOString()}
+                                        renderItem={({ item }) => {
+                                            const isSelected =
+                                                getHours(item) === getHours(tempDate) &&
+                                                getMinutes(item) === getMinutes(tempDate);
+
+                                            return (
+                                                <TouchableOpacity
+                                                    style={[
+                                                        styles.timeItem,
+                                                        isSelected && [styles.selectedItem, {
+                                                            backgroundColor: colors.primary + '20',
+                                                            borderColor: colors.primary
+                                                        }],
+                                                        { backgroundColor: colors.card }
+                                                    ]}
+                                                    onPress={() => handleTimeSelection(item)}
+                                                >
+                                                    <Text style={[
+                                                        styles.timeText,
+                                                        { color: isSelected ? colors.primary : colors.text }
+                                                    ]}>
+                                                        {format(item, 'h:mm a')}
+                                                    </Text>
+                                                </TouchableOpacity>
+                                            );
+                                        }}
+                                        numColumns={3}
+                                        showsVerticalScrollIndicator={false}
+                                    />
+                                </View>
+                            </Animated.View>
                         </View>
 
-                        <View style={styles.selectorIndicator}>
-                            <View style={styles.selectorLine} />
-                        </View>
+                        <View style={styles.modalFooter}>
+                            <TouchableOpacity
+                                style={[styles.footerButton, styles.cancelButton, { borderColor: colors.border }]}
+                                onPress={() => setModalVisible(false)}
+                            >
+                                <Text style={[styles.cancelButtonText, { color: colors.text }]}>
+                                    Cancel
+                                </Text>
+                            </TouchableOpacity>
 
-                        <TouchableOpacity
-                            style={styles.confirmButton}
-                            onPress={handleConfirmSelection}
-                        >
-                            <Text style={styles.confirmButtonText}>
-                                {modalMode === 'date' ? 'Select Date' : 'Set Time'}
-                            </Text>
-                        </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[styles.footerButton, styles.saveButton, { backgroundColor: colors.primary }]}
+                                onPress={handleSave}
+                            >
+                                <Text style={styles.saveButtonText}>
+                                    Set Date & Time
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
                     </View>
                 </View>
             </Modal>
@@ -365,177 +315,184 @@ const DateTimePicker: React.FC<DateTimePickerProps> = ({
     );
 };
 
-export default DateTimePicker;
-
 const styles = StyleSheet.create({
-    dateTimeContainer: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
+    dateTimeButton: {
+        width: '100%',
     },
-    datePickerButton: {
+    dateTimeDisplay: {
+        flexDirection: 'row',
+        borderRadius: 12,
+        borderWidth: 1,
+        overflow: 'hidden',
+        height: 54,
+        alignItems: 'center',
+    },
+    dateSection: {
         flex: 3,
         flexDirection: 'row',
-        justifyContent: 'space-between',
         alignItems: 'center',
-        backgroundColor: COLORS.card,
-        borderRadius: SIZES.base,
-        borderWidth: 1,
-        borderColor: COLORS.border,
-        padding: SIZES.medium,
-        marginRight: SIZES.small,
+        paddingHorizontal: 12,
     },
-    timePickerButton: {
+    timeSection: {
         flex: 2,
         flexDirection: 'row',
-        justifyContent: 'space-between',
         alignItems: 'center',
-        backgroundColor: COLORS.card,
-        borderRadius: SIZES.base,
-        borderWidth: 1,
-        borderColor: COLORS.border,
-        padding: SIZES.medium,
+        paddingHorizontal: 12,
     },
-    pickerContent: {
-        flexDirection: 'row',
-        alignItems: 'center',
+    divider: {
+        width: 1,
+        height: '70%',
+    },
+    icon: {
+        marginRight: 8,
     },
     dateText: {
-        color: COLORS.text,
-        fontSize: SIZES.font,
-        marginLeft: SIZES.small,
+        fontSize: 15,
+        fontWeight: '500',
     },
     timeText: {
-        color: COLORS.text,
-        fontSize: SIZES.font,
-        marginLeft: SIZES.small,
+        fontSize: 15,
+        fontWeight: '500',
     },
     modalOverlay: {
         flex: 1,
         backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        justifyContent: 'flex-end',
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 16,
     },
     modalContainer: {
-        backgroundColor: COLORS.background,
-        borderTopLeftRadius: 20,
-        borderTopRightRadius: 20,
-        paddingBottom: Platform.OS === 'ios' ? 40 : 20,
+        width: '100%',
+        maxWidth: 500,
+        borderRadius: 16,
+        borderWidth: 1,
+        overflow: 'hidden',
+        maxHeight: '80%',
     },
     modalHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        padding: SIZES.medium,
+        padding: 16,
         borderBottomWidth: 1,
-        borderBottomColor: COLORS.border,
     },
     modalTitle: {
-        color: COLORS.text,
-        fontSize: SIZES.large,
-        fontWeight: '600',
+        fontSize: 18,
+        fontWeight: 'bold',
     },
     closeButton: {
-        padding: 8,
+        padding: 4,
     },
-    pickerContainer: {
-        height: 120,
-        marginVertical: SIZES.medium,
+    tabContainer: {
+        flexDirection: 'row',
     },
-    listContent: {
-        paddingHorizontal: SCREEN_WIDTH / 2 - DAY_ITEM_WIDTH / 2,
-        paddingVertical: SIZES.small,
+    tab: {
+        flex: 1,
         alignItems: 'center',
+        paddingVertical: 14,
+        borderBottomWidth: 2,
+        borderBottomColor: 'transparent',
     },
-    dateItem: {
-        width: DAY_ITEM_WIDTH,
-        height: 80,
-        justifyContent: 'center',
-        alignItems: 'center',
-        borderRadius: 8,
-        marginHorizontal: 2,
+    activeTab: {
+        borderBottomWidth: 3,
     },
-    selectedDateItem: {
-        backgroundColor: COLORS.primary + '20',
-        borderWidth: 2,
-        borderColor: COLORS.primary,
-    },
-    dateItemWeekday: {
-        color: COLORS.text + '80',
-        fontSize: 13,
-        marginBottom: 4,
-        fontWeight: '500',
-    },
-    dateItemNumber: {
-        color: COLORS.text,
+    tabText: {
         fontSize: 16,
         fontWeight: '600',
     },
-    dateItemDate: {
-        color: COLORS.text + '80',
-        fontSize: 12,
-        marginTop: 4,
+    pickerContainer: {
+        overflow: 'hidden',
+        maxHeight: 400,
     },
-    selectedDateText: {
-        color: COLORS.primary,
-        fontWeight: '700',
+    pickerContent: {
+        flexDirection: 'row',
+    },
+    datePickerContainer: {
+        padding: 12,
+    },
+    timePickerContainer: {
+        padding: 12,
+    },
+    dateItem: {
+        flex: 1,
+        margin: 6,
+        height: 80,
+        borderRadius: 12,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: 'transparent',
+        overflow: 'hidden',
+        position: 'relative',
     },
     timeItem: {
-        width: TIME_ITEM_WIDTH,
-        height: 80,
+        flex: 1,
+        margin: 6,
+        height: 48,
+        borderRadius: 12,
         justifyContent: 'center',
         alignItems: 'center',
-        borderRadius: 8,
-        marginHorizontal: 2,
+        borderWidth: 1,
+        borderColor: 'transparent',
     },
-    selectedTimeItem: {
-        backgroundColor: COLORS.primary + '20',
+    selectedItem: {
         borderWidth: 2,
-        borderColor: COLORS.primary,
     },
-    timeItemText: {
-        color: COLORS.text,
-        fontSize: 18,
-        fontWeight: '500',
+    dayText: {
+        fontSize: 12,
+        marginBottom: 4,
     },
-    selectedTimeText: {
-        color: COLORS.primary,
-        fontWeight: '700',
+    dateNumber: {
+        fontSize: 20,
+        fontWeight: 'bold',
     },
-    selectorIndicator: {
+    monthText: {
+        fontSize: 12,
+        marginTop: 2,
+    },
+    todayBadge: {
         position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
+        top: 4,
+        right: 4,
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderRadius: 8,
+        borderWidth: 1,
+    },
+    todayText: {
+        color: 'white',
+        fontSize: 9,
+        fontWeight: 'bold',
+    },
+    modalFooter: {
+        flexDirection: 'row',
+        padding: 16,
+        borderTopWidth: 1,
+        borderTopColor: '#EEEEEE',
+    },
+    footerButton: {
+        flex: 1,
+        height: 48,
+        borderRadius: 12,
         justifyContent: 'center',
         alignItems: 'center',
-        pointerEvents: 'none',  // Allow touches to pass through
     },
-    selectorLine: {
-        position: 'absolute',
-        width: DAY_ITEM_WIDTH + 20,
-        height: 2,
-        backgroundColor: COLORS.primary + '40',
+    cancelButton: {
+        marginRight: 8,
+        borderWidth: 1,
     },
-    confirmButton: {
-        backgroundColor: COLORS.primary,
-        marginHorizontal: SIZES.medium,
-        marginTop: SIZES.medium,
-        paddingVertical: SIZES.medium,
-        borderRadius: 10,
-        alignItems: 'center',
-        justifyContent: 'center',
-        shadowColor: '#000',
-        shadowOffset: {
-            width: 0,
-            height: 2,
-        },
-        shadowOpacity: 0.25,
-        shadowRadius: 3.84,
-        elevation: 5,
+    saveButton: {
+        marginLeft: 8,
     },
-    confirmButtonText: {
-        color: COLORS.background,
-        fontSize: SIZES.medium,
+    cancelButtonText: {
+        fontSize: 16,
+        fontWeight: '600',
+    },
+    saveButtonText: {
+        color: 'white',
+        fontSize: 16,
         fontWeight: '600',
     },
 });
+
+export default DateTimePicker;

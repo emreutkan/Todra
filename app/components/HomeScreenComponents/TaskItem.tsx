@@ -450,18 +450,27 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         zIndex: 0,
+
     },
     taskItemContainer: {
         marginHorizontal: 12,
-        borderRadius: 14,
-        shadowOffset: { width: 0, height: 3 },
-        shadowOpacity: 0.12,
-        shadowRadius: 5,
-        elevation: 3,
+        // borderRadius: 14,
+        // shadowOffset: { width: 0, height: 3 },
+        // shadowOpacity: 0.12,
+        // shadowRadius: 5,
+        // elevation: 3,
+        borderRadius: SIZES.base * 1.5,  // More consistent rounding
+        marginVertical: SIZES.small / 2, // Consistent spacing
+        elevation: 3,                   // More consistent shadow on Android
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 3,
     },
     taskItem: {
-        borderRadius: 14,
+        // borderRadius: 14,
         overflow: 'hidden',
+        borderRadius: SIZES.base * 1.5,  // Match container radius
+
     },
     taskContent: {
         padding: 16,
@@ -469,8 +478,8 @@ const styles = StyleSheet.create({
         alignItems: 'flex-start',
     },
     checkbox: {
-        width: 24,
-        height: 24,
+        width: 22,
+        height: 22,
         borderRadius: 12,
         borderWidth: 2,
         marginRight: 16,
@@ -565,5 +574,7 @@ const styles = StyleSheet.create({
         borderTopLeftRadius: 14,
     },
 });
+
+
 
 export default React.memo(TaskItem);

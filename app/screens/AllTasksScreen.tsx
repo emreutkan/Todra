@@ -17,6 +17,7 @@ import { useTheme } from '../context/ThemeContext';
 import { useSettings, Task } from '../context/SettingsContext';
 import { RootStackParamList } from '../types';
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import ScreenHeader from '../components/common/ScreenHeader';
 
 type AllTasksScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'AllTasks'>;
 
@@ -177,33 +178,31 @@ const AllTasksScreen: React.FC = () => {
             <StatusBar style={isDark ? "light" : "dark"} />
 
             {/* Header */}
-            <View style={[styles.header, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                <TouchableOpacity
-                    style={styles.backButton}
-                    onPress={handleBackPress}
-                >
-                    <Ionicons name="arrow-back" size={24} color={colors.text} />
-                </TouchableOpacity>
-                <Text style={[styles.headerTitle, { color: colors.text }]}>All Tasks</Text>
-
-                {selectedCategory === 'current' && (
-                    <TouchableOpacity style={styles.actionButton} onPress={handleArchiveAllCompleted}>
-                        <Ionicons name="archive-outline" size={24} color={colors.primary} />
-                    </TouchableOpacity>
-                )}
-
-                {selectedCategory === 'archived' && (
-                    <View style={{ width: 32 }} />
-                )}
-            </View>
-            {__DEV__ && (
-                <TouchableOpacity
-                    style={[styles.debugButton, { backgroundColor: colors.card }]}
-                    onPress={debugCheckStorage}
-                >
-                    <Text style={{ color: colors.text }}>Debug Storage</Text>
-                </TouchableOpacity>
-            )}
+            <ScreenHeader
+                title="All Tasks"
+                showBackButton={true}
+                onBackPress={handleBackPress}
+                rightComponent={
+                    selectedCategory === 'current' ? (
+                        <TouchableOpacity
+                            style={styles.actionButton}
+                            onPress={handleArchiveAllCompleted}
+                            accessibilityLabel="Archive completed tasks"
+                        >
+                            <Ionicons name="archive-outline" size={24} color={colors.primary} />
+                        </TouchableOpacity>
+                    ) : null
+                }
+            />
+            {/*{__DEV__ && (*/}
+            {/*    */}
+            {/*    <TouchableOpacity*/}
+            {/*        style={[styles.debugButton, { backgroundColor: colors.card }]}*/}
+            {/*        onPress={debugCheckStorage}*/}
+            {/*    >*/}
+            {/*        <Text style={{ color: colors.text }}>Debug Storage</Text>*/}
+            {/*    </TouchableOpacity>*/}
+            {/*)}*/}
             {/* Category Tabs */}
             <View style={[styles.tabContainer, { backgroundColor: colors.card, borderColor: colors.border }]}>
                 <TouchableOpacity

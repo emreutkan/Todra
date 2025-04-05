@@ -285,15 +285,23 @@ const styles = StyleSheet.create({
         paddingRight: 16,
     },
     categoryChip: {
-        paddingHorizontal: 16,
-        paddingVertical: 8,
-        borderRadius: 20,
-        marginRight: 8,
+        // paddingHorizontal: 16,
+        // paddingVertical: 8,
+        // borderRadius: 20,
+        // marginRight: 8,
         borderWidth: 1,
+        borderRadius: 20,
+        marginRight: SIZES.small,
+        paddingHorizontal: SIZES.medium,
+        paddingVertical: 8,
+        elevation: 1,                   // Subtle shadow for depth
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.05,
+        shadowRadius: 2,
     },
     categoryChipText: {
         fontSize: SIZES.small,
-        fontWeight: '600',
+        fontWeight: '500',
     },
     tasksSummary: {
         flexDirection: 'row',
@@ -360,15 +368,21 @@ const styles = StyleSheet.create({
         flex: 1,
         alignItems: 'center',
         justifyContent: 'center',
-        paddingHorizontal: 20,
+        paddingHorizontal: SIZES.medium,
         paddingVertical: 40,
     },
     emptyContent: {
         width: '100%',
-        alignItems: 'center',
         justifyContent: 'center',
-        paddingVertical: 40,
-        borderRadius: 16,
+        borderRadius: SIZES.base * 1.5,  // More consistent rounding
+        paddingVertical: SIZES.extraLarge * 1.5,
+        paddingHorizontal: SIZES.medium,
+        marginTop: SIZES.extraLarge,
+        alignItems: 'center',
+        elevation: 3,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 3,
     },
     emptyText: {
         fontSize: SIZES.large,
@@ -383,10 +397,12 @@ const styles = StyleSheet.create({
         marginBottom: 24,
     },
     emptyRefreshButton: {
-        paddingHorizontal: 24,
-        paddingVertical: 12,
-        borderRadius: 24,
+
         borderWidth: 1,
+        marginTop: SIZES.large,
+        paddingVertical: SIZES.small,
+        paddingHorizontal: SIZES.medium * 1.5,
+        borderRadius: SIZES.base * 1.5,  // Match container radius
     },
     emptyRefreshButtonText: {
         fontSize: SIZES.medium,

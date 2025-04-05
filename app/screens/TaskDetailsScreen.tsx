@@ -7,6 +7,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
 import {useTheme} from "../context/ThemeContext";
 import {deleteTask, getActiveTasks, getArchivedTasks, updateTask} from "../services/taskStorageService";
+import ScreenHeader from "../components/common/ScreenHeader";
 
 type TaskDetailsScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'TaskDetails'>;
 type TaskDetailsScreenRouteProp = RouteProp<RootStackParamList, 'TaskDetails'>;
@@ -263,12 +264,11 @@ const TaskDetailsScreen = () => {
     return (
         <View style={styles.container}>
             <StatusBar style="light" />
-            <View style={styles.header}>
-                <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-                    <Text style={styles.backButtonText}>← Back</Text>
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>Task Details</Text>
-            </View>
+            <ScreenHeader
+                title="Task Details"
+                showBackButton={true}
+                onBackPress={() => navigation.goBack()}
+            />
 
             <ScrollView style={styles.content} contentContainerStyle={styles.scrollContent}>
                 <View style={styles.taskHeader}>
