@@ -37,6 +37,9 @@ const AllTasksScreen: React.FC = () => {
             const current = await getCurrentTasks();
             const archived = await getArchivedTasks();
 
+            console.log('Current tasks:', current);  // Add this
+            console.log('Archived tasks:', archived); // Add this
+
             setCurrentTasks(current);
             setArchivedTasks(archived);
         } catch (error) {

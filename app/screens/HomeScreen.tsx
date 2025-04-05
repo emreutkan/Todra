@@ -5,7 +5,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
 import { RootStackParamList } from '../types';
 import { useTheme } from '../context/ThemeContext';
-import Header from '../components/HomeScreenComponents/Header';
+import Header from '../components/common/Header';
 import DateSlider from '../components/HomeScreenComponents/DateSlider';
 import TaskList from '../components/HomeScreenComponents/TaskList';
 import AddButton from '../components/HomeScreenComponents/AddButton';
@@ -14,13 +14,11 @@ import { Category } from '../components/AddTaskComponents/CategorySelector';
 import { Task } from '../types';
 import {useSettings} from "../context/SettingsContext";
 import {useSafeAreaInsets} from "react-native-safe-area-context";
-import {getActiveTasks, getAllTasks, taskStorageService} from "../services/taskStorageService";
+import { getAllTasks, taskStorageService} from "../services/taskStorageService";
+import {STORAGE_KEYS} from "../constants/StorageKeys";
 
 type HomeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Home'>;
 type HomeScreenRouteProp = RouteProp<RootStackParamList, 'Home'>;
-
-const { width } = Dimensions.get('window');
-const CATEGORIES_STORAGE_KEY = 'user_categories';
 
 const HomeScreen: React.FC = () => {
     const navigation = useNavigation<HomeScreenNavigationProp>();
@@ -76,7 +74,7 @@ const HomeScreen: React.FC = () => {
     // Load categories from AsyncStorage
     const loadCategories = useCallback(async () => {
         try {
-            const storedCategories = await AsyncStorage.getItem(CATEGORIES_STORAGE_KEY);
+            const storedCategories = await AsyncStorage.getItem(STORAGE_KEYS.CATEGORIES);
             if (storedCategories) {
                 const parsedCategories: Category[] = JSON.parse(storedCategories);
                 setCategories(parsedCategories);
@@ -213,8 +211,8 @@ const HomeScreen: React.FC = () => {
     const loadTasks = async () => {
         setRefreshing(true);
         try {
-            const loadedTasks = await getActiveTasks();
-            setTasks(loadedTasks);
+            const { active } = await getAllTasks(); // Extract the active tasks
+            setTasks(active); // Set only the active tasks
         } catch (error) {
             console.error('Error loading tasks:', error);
             Alert.alert(

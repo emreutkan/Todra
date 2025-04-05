@@ -1,10 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Task } from '../types';
-
-// Storage Keys - using a more standard naming convention
-const ACTIVE_TASKS_KEY = '@taskplanner:active_tasks';
-const ARCHIVED_TASKS_KEY = '@taskplanner:archived_tasks';
-const CATEGORIES_KEY = '@taskplanner:categories';
+import {STORAGE_KEYS} from "../constants/StorageKeys";
 
 /**
  * Unified Task Storage Service
@@ -14,7 +10,7 @@ export const taskStorageService = {
     // Get active tasks
     getActiveTasks: async (): Promise<Task[]> => {
         try {
-            const tasksJson = await AsyncStorage.getItem(ACTIVE_TASKS_KEY);
+            const tasksJson = await AsyncStorage.getItem(STORAGE_KEYS.ACTIVE_TASKS);
             if (!tasksJson) {
                 console.log('No active tasks found in storage, returning empty array');
                 return [];
@@ -41,7 +37,7 @@ export const taskStorageService = {
     // Get archived tasks
     getArchivedTasks: async (): Promise<Task[]> => {
         try {
-            const tasksJson = await AsyncStorage.getItem(ARCHIVED_TASKS_KEY);
+            const tasksJson = await AsyncStorage.getItem(STORAGE_KEYS.ARCHIVED_TASKS);
             if (!tasksJson) {
                 console.log('No archived tasks found in storage, returning empty array');
                 return [];
@@ -60,7 +56,7 @@ export const taskStorageService = {
     saveActiveTasks: async (tasks: Task[]): Promise<boolean> => {
         try {
             console.log('Saving active tasks:', JSON.stringify(tasks));
-            await AsyncStorage.setItem(ACTIVE_TASKS_KEY, JSON.stringify(tasks));
+            await AsyncStorage.setItem(STORAGE_KEYS.ACTIVE_TASKS, JSON.stringify(tasks));
             console.log('Active tasks saved successfully');
             return true;
         } catch (error) {
@@ -72,7 +68,7 @@ export const taskStorageService = {
     // Save archived tasks
     saveArchivedTasks: async (tasks: Task[]): Promise<boolean> => {
         try {
-            await AsyncStorage.setItem(ARCHIVED_TASKS_KEY, JSON.stringify(tasks));
+            await AsyncStorage.setItem(STORAGE_KEYS.ARCHIVED_TASKS, JSON.stringify(tasks));
             console.log('Archived tasks saved successfully');
             return true;
         } catch (error) {
@@ -257,8 +253,8 @@ export const taskStorageService = {
     // Clear all tasks (both active and archived)
     clearAllTasks: async (): Promise<boolean> => {
         try {
-            await AsyncStorage.removeItem(ACTIVE_TASKS_KEY);
-            await AsyncStorage.removeItem(ARCHIVED_TASKS_KEY);
+            await AsyncStorage.removeItem(STORAGE_KEYS.ACTIVE_TASKS);
+            await AsyncStorage.removeItem(STORAGE_KEYS.ARCHIVED_TASKS);
             console.log('All tasks cleared from storage');
             return true;
         } catch (error) {
@@ -270,7 +266,7 @@ export const taskStorageService = {
     // Clear only archived tasks
     clearArchivedTasks: async (): Promise<boolean> => {
         try {
-            await AsyncStorage.removeItem(ARCHIVED_TASKS_KEY);
+            await AsyncStorage.removeItem(STORAGE_KEYS.ARCHIVED_TASKS);
             console.log('All archived tasks cleared from storage');
             return true;
         } catch (error) {

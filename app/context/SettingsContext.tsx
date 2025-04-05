@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {Platform} from "react-native";
+import {STORAGE_KEYS} from "../constants/StorageKeys";
 
 // Define task-related types
 export interface Task {
@@ -46,12 +47,7 @@ type SettingsContextType = {
     getLastBackupDate: () => string | null;
 };
 
-// Storage keys
-const STORAGE_KEYS = {
-    SETTINGS: '@taskplanner_settings',
-    CURRENT_TASKS: '@taskplanner_current_tasks',
-    ARCHIVED_TASKS: '@taskplanner_archived_tasks',
-};
+
 
 // Create the context
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
@@ -115,7 +111,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     // Get current (active) tasks
     const getCurrentTasks = async (): Promise<Task[]> => {
         try {
-            const tasksData = await AsyncStorage.getItem(STORAGE_KEYS.CURRENT_TASKS);
+            const tasksData = await AsyncStorage.getItem(STORAGE_KEYS.ACTIVE_TASKS);
             return tasksData ? JSON.parse(tasksData) : [];
         } catch (error) {
             console.error('Failed to get current tasks:', error);
@@ -137,7 +133,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     // Save current tasks
     const saveCurrentTasks = async (tasks: Task[]): Promise<void> => {
         try {
-            await AsyncStorage.setItem(STORAGE_KEYS.CURRENT_TASKS, JSON.stringify(tasks));
+            await AsyncStorage.setItem(STORAGE_KEYS.ACTIVE_TASKS, JSON.stringify(tasks));
         } catch (error) {
             console.error('Failed to save current tasks:', error);
         }
@@ -250,7 +246,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const clearAllTasks = async (): Promise<boolean> => {
         try {
             // Clear both current and archived tasks
-            await AsyncStorage.removeItem(STORAGE_KEYS.CURRENT_TASKS);
+            await AsyncStorage.removeItem(STORAGE_KEYS.ACTIVE_TASKS);
             await AsyncStorage.removeItem(STORAGE_KEYS.ARCHIVED_TASKS);
             return true;
         } catch (error) {

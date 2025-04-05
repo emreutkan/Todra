@@ -163,7 +163,6 @@ const SettingsScreen: React.FC = () => {
         <View style={[styles.container, { backgroundColor: colors.background }]}>
             <StatusBar style={isDark ? "light" : "dark"} />
 
-            {/* Header */}
             <View style={[styles.header, { backgroundColor: colors.card, borderColor: colors.border }]}>
                 <TouchableOpacity
                     style={styles.backButton}

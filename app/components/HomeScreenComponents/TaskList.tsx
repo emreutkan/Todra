@@ -14,7 +14,6 @@ import { SIZES } from '../../theme';
 import { Task, TaskPriority } from '../../types';
 import TaskItem from './TaskItem';
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
-import { BlurView } from 'expo-blur';
 import { useTheme } from '../../context/ThemeContext';
 
 type TaskSection = {

@@ -2,6 +2,7 @@ import React, { createContext, useState, useContext, useEffect, ReactNode } from
 import { useColorScheme } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { darkOrangeTheme, darkPurpleTheme, lightGrayTheme } from '../theme';
+import {THEME_STORAGE_KEY} from "../constants/StorageKeys";
 
 // Define theme types
 export type ThemeType = 'darkOrange' | 'darkPurple' | 'lightGray';
@@ -26,7 +27,6 @@ const ThemeContext = createContext<ThemeContextType>({
 });
 
 // Storage key for persisting theme preference
-const THEME_STORAGE_KEY = '@task_planner_theme';
 
 export const ThemeProvider = ({ children }: { children: ReactNode }) => {
     // Get system color scheme
