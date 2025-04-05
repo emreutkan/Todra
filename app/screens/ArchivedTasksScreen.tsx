@@ -6,7 +6,7 @@ import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
 import { RootStackParamList, Task } from '../types';
-import { storageService } from '../storage';
+import {getArchivedTasks, taskStorageService, unarchiveTask} from "../services/taskStorageService";
 
 type ArchivedTasksScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'ArchivedTasks'>;
 
@@ -19,7 +19,7 @@ const ArchivedTasksScreen: React.FC = () => {
     const loadArchivedTasks = useCallback(async () => {
         setLoading(true);
         try {
-            const archivedTasks = await storageService.loadArchivedTasks();
+            const archivedTasks = await getArchivedTasks();
             // Sort tasks by createdAt date (newest first)
             archivedTasks.sort((a, b) => b.createdAt - a.createdAt);
             setTasks(archivedTasks);
@@ -45,7 +45,7 @@ const ArchivedTasksScreen: React.FC = () => {
 
     const handleUnarchiveTask = async (taskId: string) => {
         try {
-            await storageService.restoreTask(taskId);
+            await unarchiveTask(taskId);
             // Refresh the task list
             loadArchivedTasks();
             Alert.alert('Success', 'Task restored to active tasks');

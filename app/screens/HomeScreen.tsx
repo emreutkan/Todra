@@ -4,8 +4,6 @@ import { useNavigation, useFocusEffect, useRoute, RouteProp } from '@react-navig
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
 import { RootStackParamList } from '../types';
-import { storageService } from '../storage';
-import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
 import Header from '../components/HomeScreenComponents/Header';
 import DateSlider from '../components/HomeScreenComponents/DateSlider';
@@ -16,6 +14,7 @@ import { Category } from '../components/AddTaskComponents/CategorySelector';
 import { Task } from '../types';
 import {useSettings} from "../context/SettingsContext";
 import {useSafeAreaInsets} from "react-native-safe-area-context";
+import {getAllTasks, taskStorageService} from "../services/taskStorageService";
 
 type HomeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Home'>;
 type HomeScreenRouteProp = RouteProp<RootStackParamList, 'Home'>;
@@ -214,7 +213,7 @@ const HomeScreen: React.FC = () => {
     const loadTasks = async () => {
         setRefreshing(true);
         try {
-            const loadedTasks = await storageService.loadTasks();
+            const loadedTasks = await getAllTasks();
             setTasks(loadedTasks);
         } catch (error) {
             console.error('Error loading tasks:', error);
@@ -269,14 +268,14 @@ const HomeScreen: React.FC = () => {
 
                 // Save the updated tasks (without the completed one)
                 setTasks(updatedTasks);
-                await storageService.saveTasks(updatedTasks);
+                await taskStorageService.saveActiveTasks(updatedTasks);
 
                 // Archive the task
-                await storageService.archiveTask(taskId);
+                await taskStorageService.archiveTask(taskId);
             } else {
                 // Just save the updated tasks normally if not auto-archiving
                 setTasks(updatedTasks);
-                await storageService.saveTasks(updatedTasks);
+                await taskStorageService.saveActiveTasks(updatedTasks);
             }
         } catch (error) {
             console.error('Error updating task:', error);
@@ -297,7 +296,7 @@ const HomeScreen: React.FC = () => {
                         onPress: async () => {
                             const updatedTasks = tasks.filter(task => task.id !== taskId);
                             setTasks(updatedTasks);
-                            await storageService.saveTasks(updatedTasks);
+                            await taskStorageService.saveActiveTasks(updatedTasks);
                         }
                     }
                 ]

@@ -14,7 +14,6 @@ import { StatusBar } from 'expo-status-bar';
 
 import { SIZES } from '../theme';
 import { Task, TaskPriority, RootStackParamList } from '../types';
-import { storageService } from '../storage';
 import {useTheme} from "../context/ThemeContext";
 
 // Component imports
@@ -26,7 +25,7 @@ import PrioritySelector from '../components/AddTaskComponents/PrioritySelector';
 import DateTimePicker from '../components/AddTaskComponents/DateTimePicker';
 import CategorySelector from '../components/AddTaskComponents/CategorySelector';
 import PredecessorTaskSelector from '../components/AddTaskComponents/PredecessorTaskSelector';
-import {addTask, getActiveTasks} from "../utils/taskStorage";
+import {addTask, getActiveTasks} from "../services/taskStorageService";
 
 type AddTaskScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'AddTask'>;
 type AddTaskScreenRouteProp = RouteProp<RootStackParamList, 'AddTask'>;
