@@ -14,7 +14,13 @@ import { Category } from '../components/AddTaskComponents/CategorySelector';
 import { Task } from '../types';
 import {useSettings} from "../context/SettingsContext";
 import {useSafeAreaInsets} from "react-native-safe-area-context";
-import { getAllTasks, taskStorageService} from "../services/taskStorageService";
+import {
+    getAllTasks,
+    getArchivedTasks,
+    saveActiveTasks,
+    saveArchivedTasks,
+    taskStorageService
+} from "../services/taskStorageService";
 import {STORAGE_KEYS} from "../constants/StorageKeys";
 
 type HomeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Home'>;
@@ -250,37 +256,44 @@ const HomeScreen: React.FC = () => {
             // Toggle completion status
             const newCompletionStatus = !taskToUpdate.completed;
 
-            // Update the task in local state
-            const updatedTasks = tasks.map(task =>
-                task.id === taskId ? { ...task, completed: newCompletionStatus } : task
-            );
+            // Update the task locally first
+            const updatedTask = {
+                ...taskToUpdate,
+                completed: newCompletionStatus
+            };
 
             // Handle auto-archiving if enabled and task is being marked as completed
             if (settings.autoArchiveEnabled && newCompletionStatus) {
-                // Find index of task to remove from local state
-                const taskIndex = updatedTasks.findIndex(t => t.id === taskId);
-                if (taskIndex !== -1) {
-                    // Remove the task from the current tasks array
-                    updatedTasks.splice(taskIndex, 1);
-                }
+                // Archive the completed task
+                const archivedTask = {
+                    ...updatedTask,
+                    archived: true,
+                    archivedAt: new Date().toISOString()
+                };
 
-                // Save the updated tasks (without the completed one)
+                // Get current archived tasks
+                const archivedTasks = await getArchivedTasks();
+
+                // Add to archived tasks
+                await saveArchivedTasks([...archivedTasks, archivedTask]);
+
+                // Remove from current tasks
+                const updatedTasks = tasks.filter(t => t.id !== taskId);
                 setTasks(updatedTasks);
-                await taskStorageService.saveActiveTasks(updatedTasks);
-
-                // Archive the task
-                await taskStorageService.archiveTask(taskId);
+                await saveActiveTasks(updatedTasks);
             } else {
-                // Just save the updated tasks normally if not auto-archiving
+                // Just update the completion status
+                const updatedTasks = tasks.map(task =>
+                    task.id === taskId ? updatedTask : task
+                );
                 setTasks(updatedTasks);
-                await taskStorageService.saveActiveTasks(updatedTasks);
+                await saveActiveTasks(updatedTasks);
             }
         } catch (error) {
             console.error('Error updating task:', error);
             Alert.alert('Error', 'Failed to update task status');
         }
-    }, [tasks, settings.autoArchiveEnabled]);
-
+    }, [tasks, settings.autoArchiveEnabled, getArchivedTasks, saveArchivedTasks]);
     const handleDeleteTask = useCallback(async (taskId: string) => {
         try {
             Alert.alert(

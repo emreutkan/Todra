@@ -16,6 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
 import { useSettings, Task } from '../context/SettingsContext';
 import { RootStackParamList } from '../types';
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 type AllTasksScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'AllTasks'>;
 
@@ -31,6 +32,19 @@ const AllTasksScreen: React.FC = () => {
     const [archivedTasks, setArchivedTasks] = useState<Task[]>([]);
     const [selectedCategory, setSelectedCategory] = useState<TaskCategory>('current');
 
+    const debugCheckStorage = async () => {
+        try {
+            const keys = await AsyncStorage.getAllKeys();
+            console.log('All storage keys:', keys);
+
+            for (const key of keys) {
+                const value = await AsyncStorage.getItem(key);
+                console.log(`Key: ${key}\nValue:`, value);
+            }
+        } catch (error) {
+            console.error('Debug error:', error);
+        }
+    };
     const fetchTasks = useCallback(async () => {
         setIsLoading(true);
         try {
@@ -182,7 +196,14 @@ const AllTasksScreen: React.FC = () => {
                     <View style={{ width: 32 }} />
                 )}
             </View>
-
+            {__DEV__ && (
+                <TouchableOpacity
+                    style={[styles.debugButton, { backgroundColor: colors.card }]}
+                    onPress={debugCheckStorage}
+                >
+                    <Text style={{ color: colors.text }}>Debug Storage</Text>
+                </TouchableOpacity>
+            )}
             {/* Category Tabs */}
             <View style={[styles.tabContainer, { backgroundColor: colors.card, borderColor: colors.border }]}>
                 <TouchableOpacity

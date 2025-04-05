@@ -120,10 +120,24 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     };
 
     // Get archived tasks
+// Get archived tasks
     const getArchivedTasks = async (): Promise<Task[]> => {
         try {
+            // Debug: Print the key we're using
+            console.log('Looking for archived tasks with key:', STORAGE_KEYS.ARCHIVED_TASKS);
+
             const archivedData = await AsyncStorage.getItem(STORAGE_KEYS.ARCHIVED_TASKS);
-            return archivedData ? JSON.parse(archivedData) : [];
+            // Debug: Print the raw data
+            console.log('Raw archived data:', archivedData);
+
+            if (!archivedData) {
+                console.log('No archived tasks found in storage');
+                return [];
+            }
+
+            const tasks = JSON.parse(archivedData);
+            console.log('Parsed archived tasks:', tasks);
+            return tasks;
         } catch (error) {
             console.error('Failed to get archived tasks:', error);
             return [];
@@ -162,9 +176,16 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
                 return 0; // No tasks to archive
             }
 
+            // Mark tasks as archived and add archived timestamp
+            const tasksToArchive = completedTasks.map(task => ({
+                ...task,
+                archived: true,
+                archivedAt: new Date().toISOString()
+            }));
+
             // Get existing archived tasks and append new ones
             const archivedTasks = await getArchivedTasks();
-            const updatedArchivedTasks = [...archivedTasks, ...completedTasks];
+            const updatedArchivedTasks = [...archivedTasks, ...tasksToArchive];
 
             // Save both lists
             await saveCurrentTasks(activeTasks);
@@ -176,7 +197,6 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             return 0;
         }
     };
-
     // Export data function
     const exportData = async (): Promise<string> => {
         try {
