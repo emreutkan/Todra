@@ -291,61 +291,6 @@ export const taskStorageService = {
         }
     },
 
-    // Migrate data from old storage keys if needed
-    migrateStorageIfNeeded: async (): Promise<boolean> => {
-        try {
-            // Check for data in old keys ('tasks_data' and 'archived_tasks_data')
-            const oldActiveTasks = await AsyncStorage.getItem('tasks_data');
-            const oldArchivedTasks = await AsyncStorage.getItem('archived_tasks_data');
-
-            // Also check for data in the @tasks:active format
-            const oldFormatActive = await AsyncStorage.getItem('@tasks:active');
-            const oldFormatArchived = await AsyncStorage.getItem('@tasks:archived');
-
-            let migrationPerformed = false;
-
-            // Migrate from 'tasks_data' to new format if needed
-            if (oldActiveTasks) {
-                const parsedTasks = JSON.parse(oldActiveTasks);
-                await taskStorageService.saveActiveTasks(parsedTasks);
-                await AsyncStorage.removeItem('tasks_data');
-                migrationPerformed = true;
-                console.log('Migrated active tasks from old format');
-            }
-
-            // Migrate from 'archived_tasks_data' to new format if needed
-            if (oldArchivedTasks) {
-                const parsedTasks = JSON.parse(oldArchivedTasks);
-                await taskStorageService.saveArchivedTasks(parsedTasks);
-                await AsyncStorage.removeItem('archived_tasks_data');
-                migrationPerformed = true;
-                console.log('Migrated archived tasks from old format');
-            }
-
-            // Migrate from '@tasks:active' to new format if needed
-            if (oldFormatActive) {
-                const parsedTasks = JSON.parse(oldFormatActive);
-                await taskStorageService.saveActiveTasks(parsedTasks);
-                await AsyncStorage.removeItem('@tasks:active');
-                migrationPerformed = true;
-                console.log('Migrated active tasks from @tasks:active format');
-            }
-
-            // Migrate from '@tasks:archived' to new format if needed
-            if (oldFormatArchived) {
-                const parsedTasks = JSON.parse(oldFormatArchived);
-                await taskStorageService.saveArchivedTasks(parsedTasks);
-                await AsyncStorage.removeItem('@tasks:archived');
-                migrationPerformed = true;
-                console.log('Migrated archived tasks from @tasks:archived format');
-            }
-
-            return migrationPerformed;
-        } catch (error) {
-            console.error('Failed to migrate storage:', error);
-            return false;
-        }
-    }
 };
 
 // For backward compatibility, expose individual functions

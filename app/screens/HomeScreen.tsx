@@ -14,7 +14,7 @@ import { Category } from '../components/AddTaskComponents/CategorySelector';
 import { Task } from '../types';
 import {useSettings} from "../context/SettingsContext";
 import {useSafeAreaInsets} from "react-native-safe-area-context";
-import {getAllTasks, taskStorageService} from "../services/taskStorageService";
+import {getActiveTasks, getAllTasks, taskStorageService} from "../services/taskStorageService";
 
 type HomeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Home'>;
 type HomeScreenRouteProp = RouteProp<RootStackParamList, 'Home'>;
@@ -213,7 +213,7 @@ const HomeScreen: React.FC = () => {
     const loadTasks = async () => {
         setRefreshing(true);
         try {
-            const loadedTasks = await getAllTasks();
+            const loadedTasks = await getActiveTasks();
             setTasks(loadedTasks);
         } catch (error) {
             console.error('Error loading tasks:', error);
