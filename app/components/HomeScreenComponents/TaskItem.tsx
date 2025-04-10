@@ -11,9 +11,9 @@ import {
     Vibration
 } from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
-import { Task } from '../../types';
+import { Task, TaskPriority } from '../../types';
 import { Ionicons } from '@expo/vector-icons';
-import { format, isToday, isTomorrow, isYesterday } from 'date-fns';
+import { format, isToday, isTomorrow, isYesterday, differenceInDays } from 'date-fns';
 
 const { width } = Dimensions.get('window');
 const SWIPE_THRESHOLD = -100;
@@ -26,6 +26,9 @@ interface TaskItemProps {
     onDelete: (id: string) => void;
     onToggleComplete: (id: string) => void;
     onPress: (id: string) => void;
+    isOverdue?: boolean;
+    arePrereqsMet?: boolean;
+    priority: TaskPriority;
 }
 
 const TaskItem: React.FC<TaskItemProps> = ({
@@ -36,6 +39,9 @@ const TaskItem: React.FC<TaskItemProps> = ({
                                                onDelete,
                                                onToggleComplete,
                                                onPress,
+                                               isOverdue = false,
+                                               arePrereqsMet = true,
+                                               priority,
                                            }) => {
     const { colors } = useTheme();
     const translateX = useRef(new Animated.Value(0)).current;
@@ -44,19 +50,51 @@ const TaskItem: React.FC<TaskItemProps> = ({
     const checkScale = useRef(new Animated.Value(item.completed ? 1 : 0)).current;
     const deleteButtonOpacity = useRef(new Animated.Value(0)).current;
 
-    // Format due date
-    const formattedDueDate = useMemo(() => {
-        if (!item.dueDate) return '';
+    // Format due date with better readability
+    const dueDateInfo = useMemo(() => {
+        if (!item.dueDate) return { text: '', urgent: false };
+
         const date = new Date(item.dueDate);
+        const now = new Date();
+        const daysDiff = differenceInDays(date, now);
 
         if (isToday(date)) {
-            return `Today, ${format(date, 'h:mm a')}`;
+            return {
+                text: `Today at ${format(date, 'h:mm a')}`,
+                urgent: true,
+                icon: 'today'
+            };
         } else if (isTomorrow(date)) {
-            return `Tomorrow, ${format(date, 'h:mm a')}`;
+            return {
+                text: `Tomorrow at ${format(date, 'h:mm a')}`,
+                urgent: false,
+                icon: 'calendar'
+            };
         } else if (isYesterday(date)) {
-            return `Yesterday, ${format(date, 'h:mm a')}`;
+            return {
+                text: `Overdue by 1 day`,
+                urgent: true,
+                icon: 'alert-circle'
+            };
+        } else if (daysDiff < 0) {
+            return {
+                text: `Overdue by ${Math.abs(daysDiff)} days`,
+                urgent: true,
+                icon: 'alert-circle'
+            };
+        } else if (daysDiff <= 3) {
+            return {
+                text: `In ${daysDiff} days`,
+                urgent: false,
+                icon: 'time'
+            };
         }
-        return format(date, 'MMM d, h:mm a');
+
+        return {
+            text: format(date, 'MMM d, yyyy'),
+            urgent: false,
+            icon: 'calendar'
+        };
     }, [item.dueDate]);
 
     // Check if task can be completed (all prerequisites met)
@@ -178,15 +216,17 @@ const TaskItem: React.FC<TaskItemProps> = ({
         onToggleComplete(item.id);
     };
 
-    // Priority color mapping
-    const getPriorityColor = (priority: string) => {
-        switch (priority.toLowerCase()) {
+    // Get color based on priority
+    const getPriorityColor = (priority: TaskPriority) => {
+        switch (priority) {
             case 'high': return colors.error;
             case 'normal': return colors.warning;
-            case 'low': return colors.info;
+            case 'low': return colors.success;
             default: return colors.textSecondary;
         }
     };
+
+    const priorityColor = getPriorityColor(priority);
 
     return (
         <View style={styles.container}>
@@ -233,9 +273,13 @@ const TaskItem: React.FC<TaskItemProps> = ({
                     styles.taskCard,
                     {
                         backgroundColor: colors.card,
-                        borderLeftColor: getPriorityColor(item.priority),
+                        // Visual indicator for status
+                        borderLeftWidth: 4,
+                        borderLeftColor: priorityColor,
                         transform: [{ translateX }, { scale }],
-                        opacity
+                        opacity,
+                        // Optional: add subtle background tint for overdue
+                        backgroundColor: isOverdue ? colors.error + '08' : colors.card,
                     }
                 ]}
                 {...panResponder.panHandlers}
@@ -245,7 +289,9 @@ const TaskItem: React.FC<TaskItemProps> = ({
                     style={[
                         styles.checkbox,
                         {
-                            borderColor: item.completed ? colors.primary : colors.border,
+                            borderColor: item.completed ? colors.primary :
+                                !arePrereqsMet ? colors.warning :
+                                    colors.border,
                             backgroundColor: item.completed ? colors.primary : 'transparent'
                         }
                     ]}
@@ -268,80 +314,71 @@ const TaskItem: React.FC<TaskItemProps> = ({
                     activeOpacity={0.7}
                     accessibilityLabel={`Task: ${item.title}`}
                 >
-                    <View style={styles.taskHeader}>
+                    {/* Task title with category */}
+                    <View style={styles.titleRow}>
                         <Text
                             style={[
                                 styles.taskTitle,
                                 {
-                                    color: colors.text,
+                                    color: isOverdue ? colors.error : colors.text,
                                     textDecorationLine: item.completed ? 'line-through' : 'none',
-                                    opacity: item.completed ? 0.7 : 1
+                                    opacity: item.completed ? 0.7 : 1,
+                                    fontWeight: isOverdue ? '600' : 'normal',
                                 }
                             ]}
-                            numberOfLines={1}
+                            numberOfLines={2}
                         >
                             {item.title}
                         </Text>
 
                         {item.category && (
-                            <View style={[
-                                styles.categoryBadge,
-                                { backgroundColor: colors.primary + '20' }
-                            ]}>
-                                <Text style={[
-                                    styles.categoryText,
-                                    { color: colors.primary }
-                                ]}>
+                            <View style={styles.categoryContainer}>
+                                <Text style={[styles.categoryText, { color: colors.primary }]}>
                                     {item.category}
                                 </Text>
                             </View>
                         )}
                     </View>
 
-                    {item.description && (
-                        <Text
-                            style={[
-                                styles.taskDescription,
-                                {
-                                    color: colors.textSecondary,
-                                    opacity: item.completed ? 0.6 : 0.9
-                                }
-                            ]}
-                            numberOfLines={2}
-                        >
-                            {item.description}
-                        </Text>
-                    )}
-
-                    <View style={styles.taskFooter}>
+                    {/* Task metadata */}
+                    <View style={styles.metadataRow}>
+                        {/* Due date */}
                         {item.dueDate && (
-                            <View style={styles.dueDate}>
+                            <View style={styles.metadataItem}>
                                 <Ionicons
-                                    name="calendar-outline"
+                                    name={dueDateInfo.icon as any}
                                     size={14}
-                                    color={colors.textSecondary}
-                                    style={styles.footerIcon}
+                                    color={dueDateInfo.urgent ? colors.error : colors.textSecondary}
+                                    style={styles.metadataIcon}
                                 />
-                                <Text style={[
-                                    styles.dueText,
-                                    { color: colors.textSecondary }
-                                ]}>
-                                    {formattedDueDate}
+                                <Text
+                                    style={[
+                                        styles.metadataText,
+                                        {
+                                            color: dueDateInfo.urgent ? colors.error : colors.textSecondary,
+                                            fontWeight: dueDateInfo.urgent ? '600' : 'normal',
+                                        }
+                                    ]}
+                                >
+                                    {dueDateInfo.text}
                                 </Text>
                             </View>
                         )}
 
-                        <View style={[
-                            styles.priorityBadge,
-                            { backgroundColor: getPriorityColor(item.priority) + '20' }
-                        ]}>
-                            <Text style={[
-                                styles.priorityText,
-                                { color: getPriorityColor(item.priority) }
-                            ]}>
-                                {item.priority.charAt(0).toUpperCase() + item.priority.slice(1)}
-                            </Text>
-                        </View>
+                        {/* Prerequisite status */}
+                        {!arePrereqsMet && !item.completed && (
+                            <View style={styles.metadataItem}>
+                                <Ionicons
+                                    name="lock-closed"
+                                    size={14}
+                                    color={colors.warning}
+                                    style={styles.metadataIcon}
+                                />
+                                <Text style={[styles.metadataText, { color: colors.warning }]}>
+                                    Blocked by prerequisites
+                                </Text>
+                            </View>
+                        )}
                     </View>
                 </TouchableOpacity>
             </Animated.View>
@@ -351,17 +388,24 @@ const TaskItem: React.FC<TaskItemProps> = ({
 
 const styles = StyleSheet.create({
     container: {
+        marginBottom: 8,
         marginHorizontal: 16,
-        marginVertical: 6,
         position: 'relative',
+    },
+    deleteButton: {
+        position: 'absolute',
+        right: 0,
+        top: 0,
+        bottom: 0,
+        width: 80,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderRadius: 8,
     },
     taskCard: {
         flexDirection: 'row',
-        borderRadius: 12,
-        borderLeftWidth: 5,
-        overflow: 'hidden',
-        paddingVertical: 14,
-        paddingHorizontal: 16,
+        padding: 16,
+        borderRadius: 8,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.1,
@@ -373,92 +417,61 @@ const styles = StyleSheet.create({
         height: 24,
         borderRadius: 12,
         borderWidth: 2,
-        alignItems: 'center',
         justifyContent: 'center',
-        marginRight: 16,
+        alignItems: 'center',
+        marginRight: 12,
         marginTop: 2,
     },
     taskContent: {
         flex: 1,
     },
-    taskHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 4,
+    titleRow: {
+        flexDirection: 'column',
+        marginBottom: 8,
     },
     taskTitle: {
         fontSize: 16,
-        fontWeight: '600',
-        flex: 1,
-        marginRight: 8,
+        marginBottom: 4,
+        lineHeight: 22,
     },
-    categoryBadge: {
-        paddingHorizontal: 8,
-        paddingVertical: 3,
-        borderRadius: 12,
+    categoryContainer: {
+        alignSelf: 'flex-start',
     },
     categoryText: {
         fontSize: 12,
         fontWeight: '600',
+        opacity: 0.8,
     },
-    taskDescription: {
-        fontSize: 14,
-        marginBottom: 8,
-        lineHeight: 18,
+    metadataRow: {
+        flexDirection: 'column',
+        gap: 4,
     },
-    taskFooter: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-    },
-    dueDate: {
+    metadataItem: {
         flexDirection: 'row',
         alignItems: 'center',
     },
-    footerIcon: {
+    metadataIcon: {
         marginRight: 4,
     },
-    dueText: {
+    metadataText: {
         fontSize: 12,
-    },
-    priorityBadge: {
-        paddingHorizontal: 8,
-        paddingVertical: 2,
-        borderRadius: 10,
-    },
-    priorityText: {
-        fontSize: 12,
-        fontWeight: '500',
-    },
-    deleteButton: {
-        position: 'absolute',
-        right: 0,
-        top: 0,
-        bottom: 0,
-        width: 80,
-        borderRadius: 12,
-        justifyContent: 'center',
-        alignItems: 'center',
-        zIndex: -1,
     },
     prerequisiteIndicator: {
         position: 'absolute',
-        left: -8,
-        top: '50%',
-        marginTop: -16,
+        top: -5,
+        left: 25,
         flexDirection: 'row',
         alignItems: 'center',
         paddingHorizontal: 6,
-        paddingVertical: 3,
+        paddingVertical: 2,
         borderRadius: 10,
         zIndex: 1,
     },
     prerequisiteText: {
         fontSize: 10,
-        fontWeight: 'bold',
+        fontWeight: '600',
         marginLeft: 2,
-    }
+    },
 });
 
 export default TaskItem;
