@@ -18,6 +18,7 @@ import AllTasksScreen from './app/screens/AllTasksScreen'; // New import
 // Import types
 import { RootStackParamList } from './app/types';
 import ArchivedTasksScreen from "./app/screens/ArchivedTasksScreen";
+import {View} from "react-native";
 
 // Create stack navigator
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -89,7 +90,14 @@ export default function App() {
     return (
         <ThemeProvider>
             <SettingsProvider>
-                <AppContent />
+                <View
+               style={[{ flex:1, backgroundColor: "black" }]}
+
+                >
+
+                    <AppContent />
+
+                </View>
             </SettingsProvider>
         </ThemeProvider>
     );

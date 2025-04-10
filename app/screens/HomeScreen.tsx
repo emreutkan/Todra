@@ -8,7 +8,6 @@ import {
     Alert,
     TouchableOpacity,
     Animated,
-    StatusBar as RNStatusBar,
     Platform
 } from 'react-native';
 import { useNavigation, useFocusEffect, useRoute, RouteProp } from '@react-navigation/native';
@@ -34,8 +33,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { STORAGE_KEYS } from "../constants/StorageKeys";
 import { format, isToday, isTomorrow, isYesterday } from 'date-fns';
 import { Category } from '../components/AddTaskComponents/CategorySelector';
-
-const { width } = Dimensions.get('window');
 
 type HomeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Home'>;
 type HomeScreenRouteProp = RouteProp<RootStackParamList, 'Home'>;
@@ -86,7 +83,7 @@ const HomeScreen: React.FC = () => {
     );
 
     // Define the height of collapsible sections for animation calculations
-    const COLLAPSIBLE_TOTAL_HEIGHT = 190; // Adjust based on your design (progress + date slider)
+    const COLLAPSIBLE_TOTAL_HEIGHT = 234; // Adjust based on your design (progress + date slider)
 
     // Setup scroll animations
     useEffect(() => {
@@ -161,11 +158,6 @@ const HomeScreen: React.FC = () => {
         }
     }, []);
 
-    // Get category details by ID
-    const getCategoryDetails = useCallback((categoryId: string | null) => {
-        if (!categoryId) return null;
-        return categories.find(cat => cat.id === categoryId) || null;
-    }, [categories]);
 
     // Start entrance animations when component mounts
     useEffect(() => {
@@ -403,7 +395,7 @@ const HomeScreen: React.FC = () => {
 
     const toggleFilterView = useCallback(() => {
         Animated.timing(filterViewHeight, {
-            toValue: filterView ? 0 : 200,
+            toValue: filterView ? 0 : 100,
             duration: 300,
             useNativeDriver: false
         }).start();
@@ -415,32 +407,18 @@ const HomeScreen: React.FC = () => {
         setSelectedFilterType(prev => prev === 'createdAt' ? 'dueDate' : 'createdAt');
     }, []);
 
-    const handleCategoryFilter = useCallback((category: string | null) => {
-        setActiveCategory(category);
-    }, []);
 
     const handlePriorityFilter = useCallback((priority: TaskPriority | 'all') => {
         setSelectedPriority(priority);
     }, []);
 
-    const toggleViewType = useCallback(() => {
-        setViewType(prev => prev === 'calendar' ? 'list' : 'calendar');
-    }, []);
+
 
     // Handle navigation to Settings screen
     const handleSettingsPress = useCallback(() => {
         navigation.navigate('Settings');
     }, [navigation]);
 
-    // Handle navigation to All Tasks screen
-    const handleAllTasksPress = useCallback(() => {
-        navigation.navigate('AllTasks');
-    }, [navigation]);
-
-    // Handle navigation to Archived Tasks screen
-    const handleArchivedTasksPress = useCallback(() => {
-        navigation.navigate('ArchivedTasks');
-    }, [navigation]);
 
     const formatDate = (date: Date): string => {
         if (isToday(date)) {
@@ -486,16 +464,7 @@ const HomeScreen: React.FC = () => {
                             <Ionicons name="filter" size={20} color={filterView ? colors.primary : colors.text} />
                         </TouchableOpacity>
 
-                        <TouchableOpacity
-                            style={[styles.iconButton, { backgroundColor: colors.surface }]}
-                            onPress={toggleViewType}
-                        >
-                            <Ionicons
-                                name={viewType === 'calendar' ? "list" : "calendar"}
-                                size={20}
-                                color={colors.text}
-                            />
-                        </TouchableOpacity>
+
 
                         <TouchableOpacity
                             style={[styles.iconButton, { backgroundColor: colors.surface }]}
@@ -512,19 +481,11 @@ const HomeScreen: React.FC = () => {
                         <Text style={[styles.currentDateText, { color: colors.text }]}>
                             {formatDate(currentDate)}
                         </Text>
-                        <TouchableOpacity
-                            style={[styles.filterTypeButton, { backgroundColor: colors.primary + '20' }]}
-                            onPress={toggleDateFilterType}
-                        >
-                            <Text style={[styles.filterTypeText, { color: colors.primary }]}>
-                                {selectedFilterType === 'dueDate' ? 'Due Date' : 'Created Date'}
-                            </Text>
-                        </TouchableOpacity>
+
                     </View>
                 )}
             </Animated.View>
 
-            {/* Filter panel - Part of the fixed header when active */}
             <Animated.View
                 style={[
                     styles.filterPanel,
@@ -536,49 +497,7 @@ const HomeScreen: React.FC = () => {
                     }
                 ]}
             >
-                <View style={styles.filterSection}>
-                    <Text style={[styles.filterSectionTitle, { color: colors.text }]}>Categories</Text>
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScrollView}>
-                        <TouchableOpacity
-                            style={[
-                                styles.filterChip,
-                                {
-                                    backgroundColor: activeCategory === null ? colors.primary : colors.surface,
-                                    borderColor: colors.border
-                                }
-                            ]}
-                            onPress={() => handleCategoryFilter(null)}
-                        >
-                            <Text style={[
-                                styles.filterChipText,
-                                { color: activeCategory === null ? colors.onPrimary : colors.text }
-                            ]}>
-                                All
-                            </Text>
-                        </TouchableOpacity>
-
-                        {categories.map(category => (
-                            <TouchableOpacity
-                                key={category.id}
-                                style={[
-                                    styles.filterChip,
-                                    {
-                                        backgroundColor: activeCategory === category.id ? colors.primary : colors.surface,
-                                        borderColor: colors.border
-                                    }
-                                ]}
-                                onPress={() => handleCategoryFilter(category.id)}
-                            >
-                                <Text style={[
-                                    styles.filterChipText,
-                                    { color: activeCategory === category.id ? colors.onPrimary : colors.text }
-                                ]}>
-                                    {category.name}
-                                </Text>
-                            </TouchableOpacity>
-                        ))}
-                    </ScrollView>
-                </View>
+                {/*CATEGORIES HERE*/}
 
                 <View style={styles.filterSection}>
                     <Text style={[styles.filterSectionTitle, { color: colors.text }]}>Priority</Text>
@@ -666,25 +585,12 @@ const HomeScreen: React.FC = () => {
                     </ScrollView>
                 </View>
 
-                <View style={styles.filterActions}>
-                    <TouchableOpacity
-                        style={[styles.actionButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
-                        onPress={handleAllTasksPress}
-                    >
-                        <Text style={[styles.actionButtonText, { color: colors.text }]}>All Tasks</Text>
-                    </TouchableOpacity>
 
-                    <TouchableOpacity
-                        style={[styles.actionButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
-                        onPress={handleArchivedTasksPress}
-                    >
-                        <Text style={[styles.actionButtonText, { color: colors.text }]}>Archived</Text>
-                    </TouchableOpacity>
-                </View>
             </Animated.View>
 
             {/* Main content container - fixed structure with collapsible content */}
             <View style={styles.mainContentContainer}>
+                {/* Collapsible content wrapper */}
                 {/* Collapsible content wrapper */}
                 <Animated.View
                     style={[
@@ -695,6 +601,21 @@ const HomeScreen: React.FC = () => {
                         }
                     ]}
                 >
+                    {/* Date Slider - Only shown in calendar view */}
+                    {viewType === 'calendar' && (
+                        <View style={styles.dateSliderContainer}>
+                            <DateSlider
+                                fadeAnim={fadeAnim}
+                                dateRange={dateRange}
+                                currentDate={currentDate}
+                                today={today}
+                                selectedMonth={selectedMonth}
+                                onDateChange={handleDateChange}
+                                filterType={selectedFilterType}
+                            />
+                        </View>
+                    )}
+
                     {/* Task Progress Chart - Only shown when there are tasks */}
                     {completionStats.totalTasks > 0 && (
                         <View
@@ -729,21 +650,6 @@ const HomeScreen: React.FC = () => {
                             </View>
                         </View>
                     )}
-
-                    {/* Date Slider - Only shown in calendar view */}
-                    {viewType === 'calendar' && (
-                        <View style={styles.dateSliderContainer}>
-                            <DateSlider
-                                fadeAnim={fadeAnim}
-                                dateRange={dateRange}
-                                currentDate={currentDate}
-                                today={today}
-                                selectedMonth={selectedMonth}
-                                onDateChange={handleDateChange}
-                                filterType={selectedFilterType}
-                            />
-                        </View>
-                    )}
                 </Animated.View>
 
                 {/* Task List - Scrollable */}
@@ -774,7 +680,6 @@ const HomeScreen: React.FC = () => {
                 </Animated.ScrollView>
             </View>
 
-            {/* Add Button */}
             <AddButton onPress={handleAddTask} />
         </View>
     );
@@ -871,9 +776,7 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         marginBottom: 8,
     },
-    filterScrollView: {
-        marginBottom: 12,
-    },
+
     filterChip: {
         paddingHorizontal: 12,
         paddingVertical: 8,

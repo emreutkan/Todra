@@ -49,7 +49,7 @@ export const lightGrayTheme = {
     primary: '#383838',      // Gray for primary elements
     secondary: '#383838',    // Darker gray for secondary elements
     accent: '#383838',       // Lighter gray for accent
-    background: '#F5F5F5',   // Light background
+    background: '#ffffff',   // Light background
     card: '#FFFFFF',         // White for cards
     surface: '#FFFFFF',      // Surface color for elements
     text: '#212121',         // Dark text

@@ -335,7 +335,6 @@ const TaskList: React.FC<TaskListProps> = ({
                         onDelete={onDeleteTask}
                         onToggleComplete={onToggleTaskCompletion}
                         onPress={onTaskPress}
-                        isOverdue={isOverdue}
                         arePrereqsMet={prereqsMet}
                         priority={section.priority}
                     />
