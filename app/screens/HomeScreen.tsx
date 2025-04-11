@@ -83,7 +83,7 @@ const HomeScreen: React.FC = () => {
     );
 
     // Define the height of collapsible sections for animation calculations
-    const COLLAPSIBLE_TOTAL_HEIGHT = 234; // Adjust based on your design (progress + date slider)
+    const COLLAPSIBLE_TOTAL_HEIGHT = 130; // Adjust based on your design (progress + date slider)
 
     // Setup scroll animations
     useEffect(() => {
@@ -393,26 +393,9 @@ const HomeScreen: React.FC = () => {
         setSelectedMonth(date.toLocaleString('default', { month: 'long', year: 'numeric' }));
     }, []);
 
-    const toggleFilterView = useCallback(() => {
-        Animated.timing(filterViewHeight, {
-            toValue: filterView ? 0 : 100,
-            duration: 300,
-            useNativeDriver: false
-        }).start();
-
-        setFilterView(!filterView);
-    }, [filterView, filterViewHeight]);
-
-    const toggleDateFilterType = useCallback(() => {
-        setSelectedFilterType(prev => prev === 'createdAt' ? 'dueDate' : 'createdAt');
-    }, []);
-
-
     const handlePriorityFilter = useCallback((priority: TaskPriority | 'all') => {
         setSelectedPriority(priority);
     }, []);
-
-
 
     // Handle navigation to Settings screen
     const handleSettingsPress = useCallback(() => {
@@ -457,12 +440,6 @@ const HomeScreen: React.FC = () => {
                     <Text style={[styles.headerTitle, { color: colors.text }]}>Task Planner</Text>
 
                     <View style={styles.headerControls}>
-                        <TouchableOpacity
-                            style={[styles.iconButton, { backgroundColor: colors.surface }]}
-                            onPress={toggleFilterView}
-                        >
-                            <Ionicons name="filter" size={20} color={filterView ? colors.primary : colors.text} />
-                        </TouchableOpacity>
 
 
 
@@ -616,43 +593,9 @@ const HomeScreen: React.FC = () => {
                         </View>
                     )}
 
-                    {/* Task Progress Chart - Only shown when there are tasks */}
-                    {completionStats.totalTasks > 0 && (
-                        <View
-                            style={[
-                                styles.progressSection,
-                                {
-                                    backgroundColor: colors.card,
-                                    borderBottomColor: colors.border,
-                                }
-                            ]}
-                        >
-                            <ProgressChart
-                                completed={completionStats.completed}
-                                remaining={completionStats.remaining}
-                                colors={colors}
-                            />
-                            <View style={styles.statsContainer}>
-                                <View style={styles.statItem}>
-                                    <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Completed</Text>
-                                    <Text style={[styles.statValue, { color: colors.success }]}>{completionStats.completed}</Text>
-                                </View>
-                                <View style={styles.statDivider} />
-                                <View style={styles.statItem}>
-                                    <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Remaining</Text>
-                                    <Text style={[styles.statValue, { color: colors.primary }]}>{completionStats.remaining}</Text>
-                                </View>
-                                <View style={styles.statDivider} />
-                                <View style={styles.statItem}>
-                                    <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Total</Text>
-                                    <Text style={[styles.statValue, { color: colors.text }]}>{completionStats.totalTasks}</Text>
-                                </View>
-                            </View>
-                        </View>
-                    )}
+
                 </Animated.View>
 
-                {/* Task List - Scrollable */}
                 <Animated.ScrollView
                     style={styles.scrollContainer}
                     scrollEventThrottle={16}
@@ -712,9 +655,9 @@ const styles = StyleSheet.create({
         ...Platform.select({
             ios: {
                 shadowColor: '#000',
-                shadowOffset: { width: 0, height: 2 },
+                shadowOffset: { width: 0, height: 1 },
                 shadowOpacity: 0.1,
-                shadowRadius: 4,
+                shadowRadius: 1,
             },
             android: {
                 elevation: 3,
@@ -752,42 +695,7 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '500',
     },
-    filterTypeButton: {
-        paddingHorizontal: 10,
-        paddingVertical: 5,
-        borderRadius: 14,
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    filterTypeText: {
-        fontSize: 12,
-        fontWeight: '600',
-    },
-    filterPanel: {
-        borderBottomWidth: 1,
-        overflow: 'hidden',
-    },
-    filterSection: {
-        paddingHorizontal: 16,
-        paddingTop: 12,
-    },
-    filterSectionTitle: {
-        fontSize: 14,
-        fontWeight: '600',
-        marginBottom: 8,
-    },
 
-    filterChip: {
-        paddingHorizontal: 12,
-        paddingVertical: 8,
-        borderRadius: 16,
-        borderWidth: 1,
-        marginRight: 8,
-    },
-    filterChipText: {
-        fontSize: 13,
-        fontWeight: '500',
-    },
     priorityChipContent: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -798,24 +706,8 @@ const styles = StyleSheet.create({
         borderRadius: 4,
         marginRight: 6,
     },
-    filterActions: {
-        flexDirection: 'row',
-        justifyContent: 'space-around',
-        paddingHorizontal: 16,
-        paddingBottom: 12,
-    },
-    actionButton: {
-        paddingHorizontal: 16,
-        paddingVertical: 8,
-        borderRadius: 16,
-        borderWidth: 1,
-        minWidth: 100,
-        alignItems: 'center',
-    },
-    actionButtonText: {
-        fontSize: 13,
-        fontWeight: '500',
-    },
+
+
     contentContainer: {
         flex: 1,
         paddingBottom: 80, // Extra padding to ensure the add button doesn't overlay content

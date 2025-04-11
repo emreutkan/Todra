@@ -15,22 +15,17 @@ import TaskDetailsScreen from './app/screens/TaskDetailsScreen';
 import SettingsScreen from './app/screens/SettingsScreen'; // New import
 import AllTasksScreen from './app/screens/AllTasksScreen'; // New import
 
-// Import types
 import { RootStackParamList } from './app/types';
 import ArchivedTasksScreen from "./app/screens/ArchivedTasksScreen";
 import {View} from "react-native";
 
-// Create stack navigator
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 function AppContent() {
-    // Use the theme context
     const { colors, isDark } = useTheme();
 
-    // This will be set to true once the app has loaded
     const [isReady, setIsReady] = useState(false);
 
-    // Create custom theme for NavigationContainer based on the current mode
     const MyTheme = {
         ...(isDark ? DarkTheme : DefaultTheme),
         colors: {
@@ -43,7 +38,6 @@ function AppContent() {
         },
     };
 
-    // Simulate loading resources
     useEffect(() => {
         const prepareApp = async () => {
             try {

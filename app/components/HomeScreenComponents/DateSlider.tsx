@@ -247,7 +247,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         marginHorizontal: 20,
-        marginBottom: 8,
+        marginBottom: 6,
     },
     monthDisplay: {
         flexDirection: 'row',

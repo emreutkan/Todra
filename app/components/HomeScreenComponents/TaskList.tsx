@@ -15,6 +15,7 @@ import { Task, TaskPriority } from '../../types';
 import TaskItem from './TaskItem';
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../context/ThemeContext';
+import ProgressChart from '../HomeScreenComponents/ProgressChart';
 
 type TaskSection = {
     title: string;
@@ -46,33 +47,39 @@ const TaskList: React.FC<TaskListProps> = ({
                                            }) => {
     const { colors, isDark } = useTheme();
     const [refreshing, setRefreshing] = useState(false);
+
+    // New state for filter panel toggle
+    const [showFilters, setShowFilters] = useState(false);
+    // New state for category and priority filtering
     const [selectedCategory, setSelectedCategory] = useState<string>('all');
+    const [selectedPriority, setSelectedPriority] = useState<TaskPriority | 'all'>('all');
     const [expandedSections, setExpandedSections] = useState<{ [key: string]: boolean }>({});
 
-    const toggleSection = (sectionTitle: string) => {
-        setExpandedSections(prev => ({
-            ...prev,
-            [sectionTitle]: !prev[sectionTitle],
-        }));
+    // Toggle filter panel display
+    const toggleFilter = () => {
+        setShowFilters(prev => !prev);
     };
 
+    // Build list of unique categories from tasks (defaulting to "Uncategorized")
     const categories = useMemo(() => {
         const uniqueCategories = new Set(tasks.map(task => task.category || 'Uncategorized'));
         return ['all', ...Array.from(uniqueCategories)];
     }, [tasks]);
 
-    // Create priority-based sections
+    // Filter tasks for header and progress calculation based on both selectors
+    const filteredTasksForHeader = useMemo(() => {
+        return tasks.filter(task => {
+            const matchesCategory =
+                selectedCategory === 'all' || (task.category || 'Uncategorized') === selectedCategory;
+            const matchesPriority =
+                selectedPriority === 'all' || task.priority === selectedPriority;
+            return matchesCategory && matchesPriority;
+        });
+    }, [tasks, selectedCategory, selectedPriority]);
+
+    // Group filtered (active) tasks into sections for the SectionList
     const sections = useMemo(() => {
-        if (tasks.length === 0) return [];
-
-        const filteredTasks = selectedCategory === 'all'
-            ? tasks
-            : tasks.filter(task => (task.category || 'Uncategorized') === selectedCategory);
-
-        // Filter out completed tasks
-        const activeTasks = filteredTasks.filter(task => !task.completed);
-
-        // Group by priority
+        const activeTasks = filteredTasksForHeader.filter(task => !task.completed);
         const priorityGroups: { [key in TaskPriority]: Task[] } = {
             high: [],
             normal: [],
@@ -80,49 +87,29 @@ const TaskList: React.FC<TaskListProps> = ({
         };
 
         activeTasks.forEach(task => {
-            const priority = priorityGroups.hasOwnProperty(task.priority) ? task.priority : 'normal';
-            priorityGroups[priority].push(task);
+            const prio: TaskPriority = priorityGroups.hasOwnProperty(task.priority)
+                ? task.priority
+                : 'normal';
+            priorityGroups[prio].push(task);
         });
 
-        // For each priority group, sort tasks by:
-        // 1. Overdue tasks first
-        // 2. Tasks with prerequisites met next
-        // 3. Then by due date (soonest first)
         const now = currentDate.getTime();
-
         const sortedSections = Object.entries(priorityGroups)
             .filter(([_, tasks]) => tasks.length > 0)
             .map(([priority, priorityTasks]) => {
                 const sortedTasks = [...priorityTasks].sort((a, b) => {
-                    // Check for overdue
                     const aIsOverdue = a.dueDate && a.dueDate < now;
                     const bIsOverdue = b.dueDate && b.dueDate < now;
-
                     if (aIsOverdue && !bIsOverdue) return -1;
                     if (!aIsOverdue && bIsOverdue) return 1;
-
-                    // Check prerequisites
-                    const aPrereqsMet = !a.predecessorIds || a.predecessorIds.length === 0 ||
-                        a.predecessorIds.every(predId =>
-                            tasks.find(t => t.id === predId)?.completed);
-
-                    const bPrereqsMet = !b.predecessorIds || b.predecessorIds.length === 0 ||
-                        b.predecessorIds.every(predId =>
-                            tasks.find(t => t.id === predId)?.completed);
-
-                    if (aPrereqsMet && !bPrereqsMet) return -1;
-                    if (!aPrereqsMet && bPrereqsMet) return 1;
-
-                    // Sort by due date
                     if (a.dueDate && b.dueDate) return a.dueDate - b.dueDate;
                     if (a.dueDate && !b.dueDate) return -1;
                     if (!a.dueDate && b.dueDate) return 1;
-
                     return 0;
                 });
 
                 let title;
-                switch(priority) {
+                switch (priority) {
                     case 'high':
                         title = 'Do First';
                         break;
@@ -140,13 +127,14 @@ const TaskList: React.FC<TaskListProps> = ({
                     title,
                     data: sortedTasks,
                     count: sortedTasks.length,
-                    priority: priority as TaskPriority
+                    priority: priority as TaskPriority,
                 };
             });
 
         return sortedSections;
-    }, [tasks, selectedCategory, currentDate]);
+    }, [filteredTasksForHeader, currentDate]);
 
+    // Initially expand all sections
     useEffect(() => {
         if (sections.length > 0 && Object.keys(expandedSections).length === 0) {
             const newExpandedSections: { [key: string]: boolean } = {};
@@ -165,9 +153,9 @@ const TaskList: React.FC<TaskListProps> = ({
         }
     };
 
-    // Get color for priority section
+    // Helper: Return a color based on task priority
     const getPrioritySectionColor = (priority: TaskPriority) => {
-        switch(priority) {
+        switch (priority) {
             case 'high': return colors.error;
             case 'normal': return colors.warning;
             case 'low': return colors.success;
@@ -175,6 +163,7 @@ const TaskList: React.FC<TaskListProps> = ({
         }
     };
 
+    // Render header for each section in SectionList
     const renderSectionHeader = useCallback(
         ({ section }: { section: TaskSection }) => {
             const isExpanded = expandedSections[section.title] || false;
@@ -186,7 +175,12 @@ const TaskList: React.FC<TaskListProps> = ({
                         backgroundColor: colors.background + 'F8',
                         borderBottomColor: colors.border
                     }]}
-                    onPress={() => toggleSection(section.title)}
+                    onPress={() =>
+                        setExpandedSections(prev => ({
+                            ...prev,
+                            [section.title]: !prev[section.title]
+                        }))
+                    }
                     activeOpacity={0.7}
                 >
                     <View style={styles.sectionHeaderLeft}>
@@ -207,69 +201,127 @@ const TaskList: React.FC<TaskListProps> = ({
         [expandedSections, colors]
     );
 
-    const renderTasksHeader = () => (
-        <View style={styles.tasksHeader}>
-            <View style={styles.headerTopRow}>
-                <Text style={[styles.tasksHeaderTitle, { color: colors.text }]}>
-                    My Tasks
-                </Text>
-                <Text style={[styles.tasksCount, { color: colors.textSecondary }]}>
-                    {tasks.filter(t => !t.completed).length} remaining
-                </Text>
-            </View>
+    // Render the main header for TaskList
+    const renderTasksHeader = () => {
+        // Calculate progress stats from filtered tasks (including completed tasks)
+        const total = filteredTasksForHeader.length;
+        const completed = filteredTasksForHeader.filter(t => t.completed).length;
+        const remaining = total - completed;
 
-            <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                style={styles.categoryScrollView}
-                contentContainerStyle={styles.categoryScrollContent}
-            >
-                {categories.map((category) => (
-                    <TouchableOpacity
-                        key={category}
-                        style={[
-                            styles.categoryChip,
-                            {
-                                backgroundColor: selectedCategory === category ? colors.primary : 'transparent',
-                                borderColor: selectedCategory === category ? colors.primary : colors.border,
-                            },
-                        ]}
-                        onPress={() => setSelectedCategory(category)}
-                    >
-                        <Text
-                            style={[
-                                styles.categoryChipText,
-                                { color: selectedCategory === category ? colors.onPrimary : colors.text },
-                            ]}
-                        >
-                            {category === 'all' ? 'All Categories' : category}
+        return (
+            <View style={styles.tasksHeaderContainer}>
+                <View style={styles.tasksHeaderTopRow}>
+                    <Text style={[styles.tasksHeaderTitle, { color: colors.text }]}>
+                        My Tasks
+                    </Text>
+                    <TouchableOpacity onPress={toggleFilter} style={styles.filterButton}>
+                        <Text style={styles.filterChip}>
+                            Filter
                         </Text>
                     </TouchableOpacity>
-                ))}
-            </ScrollView>
+                </View>
 
-            <View style={styles.priorityLegend}>
-                <View style={styles.legendItem}>
-                    <View style={[styles.legendDot, { backgroundColor: colors.error }]} />
-                    <Text style={[styles.legendText, { color: colors.textSecondary }]}>
-                        High Priority
-                    </Text>
-                </View>
-                <View style={styles.legendItem}>
-                    <View style={[styles.legendDot, { backgroundColor: colors.warning }]} />
-                    <Text style={[styles.legendText, { color: colors.textSecondary }]}>
-                        Normal Priority
-                    </Text>
-                </View>
-                <View style={styles.legendItem}>
-                    <View style={[styles.legendDot, { backgroundColor: colors.success }]} />
-                    <Text style={[styles.legendText, { color: colors.textSecondary }]}>
-                        Low Priority
-                    </Text>
+                {showFilters && (
+                    <View style={styles.filterPanel}>
+                        {/* Category selector */}
+                        <Text style={[styles.filterLabel, { color: colors.text }]}>Category</Text>
+                        <ScrollView
+                            horizontal
+                            showsHorizontalScrollIndicator={false}
+                            contentContainerStyle={styles.filterScrollContent}
+                        >
+                            {categories.map((category) => (
+                                <TouchableOpacity
+                                    key={category}
+                                    style={[
+                                        styles.filterChip,
+                                        {
+                                            backgroundColor: selectedCategory === category ? colors.primary : 'transparent',
+                                            borderColor: selectedCategory === category ? colors.primary : colors.border,
+                                        },
+                                    ]}
+                                    onPress={() => setSelectedCategory(category)}
+                                >
+                                    <Text style={[
+                                        styles.filterChipText,
+                                        { color: selectedCategory === category ? colors.onPrimary : colors.text },
+                                    ]}>
+                                        {category === 'all' ? 'All Categories' : category}
+                                    </Text>
+                                </TouchableOpacity>
+                            ))}
+                        </ScrollView>
+
+                        {/* Priority selector */}
+                        <Text style={[styles.filterLabel, { color: colors.text, marginTop: 10 }]}>Priority</Text>
+                        <ScrollView
+                            horizontal
+                            showsHorizontalScrollIndicator={false}
+                            contentContainerStyle={styles.filterScrollContent}
+                        >
+                            {(['all', 'high', 'normal', 'low'] as const).map((prio) => (
+                                <TouchableOpacity
+                                    key={prio}
+                                    style={[
+                                        styles.filterChip,
+                                        {
+                                            backgroundColor: selectedPriority === prio ? colors.primary : 'transparent',
+                                            borderColor: selectedPriority === prio ? colors.primary : colors.border,
+                                            marginRight: 8,
+                                        },
+                                    ]}
+                                    onPress={() => setSelectedPriority(prio)}
+                                >
+                                    <Text style={[
+                                        styles.filterChipText,
+                                        { color: selectedPriority === prio ? colors.onPrimary : colors.text },
+                                    ]}>
+                                        {prio === 'all'
+                                            ? 'All'
+                                            : prio.charAt(0).toUpperCase() + prio.slice(1)}
+                                    </Text>
+                                </TouchableOpacity>
+                            ))}
+                        </ScrollView>
+                    </View>
+                )}
+
+                {/* Progress section - always visible below filters */}
+                <View style={[styles.progressSection, {
+                    backgroundColor: colors.card,
+                    borderBottomColor: colors.border,
+                }]}>
+                    <ProgressChart
+                        completed={completed}
+                        remaining={remaining}
+                        colors={colors}
+                    />
+                    <View style={styles.statsContainer}>
+                        <View style={styles.statItem}>
+                            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
+                                Completed
+                            </Text>
+                            <Text style={[styles.statValue, { color: colors.success }]}>{completed}</Text>
+                        </View>
+                        <View style={styles.statDivider} />
+                        <View style={styles.statItem}>
+                            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
+                                Remaining
+                            </Text>
+                            <Text style={[styles.statValue, { color: colors.primary }]}>{remaining}</Text>
+                        </View>
+                        <View style={styles.statDivider} />
+                        <View style={styles.statItem}>
+                            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
+                                Total
+                            </Text>
+                            <Text style={[styles.statValue, { color: colors.text }]}>{total}</Text>
+                        </View>
+                    </View>
                 </View>
             </View>
-        </View>
-    );
+        );
+    };
 
     if (loading) {
         return (
@@ -300,7 +352,9 @@ const TaskList: React.FC<TaskListProps> = ({
                         }]}
                         onPress={handleRefresh}
                     >
-                        <Text style={[styles.emptyRefreshButtonText, { color: colors.primary }]}>Refresh</Text>
+                        <Text style={[styles.emptyRefreshButtonText, { color: colors.primary }]}>
+                            Refresh
+                        </Text>
                     </TouchableOpacity>
                 </View>
             </View>
@@ -316,15 +370,10 @@ const TaskList: React.FC<TaskListProps> = ({
             ListHeaderComponent={renderTasksHeader}
             renderItem={({ item, index, section }) => {
                 if (!expandedSections[section.title]) return null;
-
-                // Calculate if overdue
                 const isOverdue = item.dueDate && item.dueDate < currentDate.getTime();
-
-                // Calculate if prerequisites are met
                 const prereqsMet = !item.predecessorIds || item.predecessorIds.length === 0 ||
                     item.predecessorIds.every(predId =>
                         tasks.find(t => t.id === predId)?.completed);
-
                 return (
                     <TaskItem
                         item={item}
@@ -335,6 +384,7 @@ const TaskList: React.FC<TaskListProps> = ({
                         onDelete={onDeleteTask}
                         onToggleComplete={onToggleTaskCompletion}
                         onPress={onTaskPress}
+                        isOverdue={isOverdue}
                         arePrereqsMet={prereqsMet}
                         priority={section.priority}
                     />
@@ -356,60 +406,72 @@ const TaskList: React.FC<TaskListProps> = ({
 };
 
 const styles = StyleSheet.create({
-    tasksHeader: {
-        marginTop: 20,
-        marginBottom: 15,
+    tasksHeaderContainer: {
         paddingHorizontal: 16,
     },
-    headerTopRow: {
+    tasksHeaderTopRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 12,
     },
     tasksHeaderTitle: {
         fontSize: SIZES.large,
         fontWeight: 'bold',
     },
-    tasksCount: {
+    filterButton: {
+        padding: 8,
+    },
+
+    filterLabel: {
         fontSize: SIZES.medium,
+        fontWeight: '600',
+        marginBottom: 6,
     },
-    categoryScrollView: {
-        marginBottom: 16,
-    },
-    categoryScrollContent: {
+    filterScrollContent: {
         paddingRight: 8,
     },
-    categoryChip: {
+    filterChip: {
         paddingHorizontal: 16,
         paddingVertical: 8,
         borderRadius: 20,
         marginRight: 8,
         borderWidth: 1,
     },
-    categoryChipText: {
+    filterChipText: {
         fontSize: SIZES.small,
         fontWeight: '500',
     },
-    priorityLegend: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        marginBottom: 8,
-    },
-    legendItem: {
+    progressSection: {
+        paddingVertical: 6,
+        borderBottomWidth: 1,
         flexDirection: 'row',
         alignItems: 'center',
-        marginRight: 16,
-        marginBottom: 8,
+        justifyContent: 'space-between',
+        paddingHorizontal: 20,
     },
-    legendDot: {
-        width: 8,
-        height: 8,
-        borderRadius: 4,
-        marginRight: 6,
+    statsContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-around',
+        flex: 1,
+        marginLeft: 10,
     },
-    legendText: {
+    statItem: {
+        alignItems: 'center',
+    },
+    statLabel: {
         fontSize: 12,
+        marginBottom: 2,
+    },
+    statValue: {
+        fontSize: 18,
+        fontWeight: '600',
+    },
+    statDivider: {
+        width: 1,
+        height: 30,
+        opacity: 0.2,
+        backgroundColor: '#000',
     },
     sectionHeader: {
         flexDirection: 'row',
@@ -443,6 +505,15 @@ const styles = StyleSheet.create({
         fontSize: SIZES.small,
         fontWeight: '600',
     },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    loadingText: {
+        marginTop: 10,
+        fontSize: SIZES.medium,
+    },
     emptyContainer: {
         flex: 1,
         justifyContent: 'center',
@@ -475,15 +546,6 @@ const styles = StyleSheet.create({
     emptyRefreshButtonText: {
         fontSize: SIZES.medium,
         fontWeight: '600',
-    },
-    loadingContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    loadingText: {
-        marginTop: 10,
-        fontSize: SIZES.medium,
     },
     taskList: {
         paddingBottom: 100,
