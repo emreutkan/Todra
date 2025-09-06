@@ -1,4 +1,3 @@
-import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   RouteProp,
@@ -19,7 +18,6 @@ import React, {
 import {
   Alert,
   Animated,
-  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -30,6 +28,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Category } from "../components/AddTaskComponents/CategorySelector";
 import AddButton from "../components/HomeScreenComponents/AddButton";
 import DateSlider from "../components/HomeScreenComponents/DateSlider";
+import SettingsButton from "../components/HomeScreenComponents/SettingsButton";
 import TaskList from "../components/HomeScreenComponents/TaskList";
 import { STORAGE_KEYS } from "../constants/StorageKeys";
 import { useSettings } from "../context/SettingsContext";
@@ -81,7 +80,6 @@ const HomeScreen: React.FC = () => {
   });
 
   // Animation values
-  const fadeAnim = useState(new Animated.Value(0))[0];
   const taskOpacity = useState(new Animated.Value(0))[0];
   const filterViewHeight = useState(new Animated.Value(0))[0];
 
@@ -177,18 +175,11 @@ const HomeScreen: React.FC = () => {
 
   // Start entrance animations when component mounts
   useEffect(() => {
-    Animated.sequence([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 500,
-        useNativeDriver: true,
-      }),
-      Animated.timing(taskOpacity, {
-        toValue: 1,
-        duration: 500,
-        useNativeDriver: true,
-      }),
-    ]).start();
+    Animated.timing(taskOpacity, {
+      toValue: 1,
+      duration: 500,
+      useNativeDriver: true,
+    }).start();
   }, []);
 
   // Load categories when component mounts and when screen is focused
@@ -463,28 +454,6 @@ const HomeScreen: React.FC = () => {
       ]}>
       <StatusBar style={isDark ? "light" : "dark"} />
 
-      {/* App Header - Fixed, does not collapse */}
-      <Animated.View
-        style={[
-          styles.header,
-          {
-            opacity: fadeAnim,
-            backgroundColor: colors.card,
-            borderBottomColor: colors.border,
-            zIndex: 10, // Ensure header stays on top
-          },
-        ]}>
-        <View style={styles.headerContent}>
-          <View style={styles.headerControls}>
-            <TouchableOpacity
-              style={[styles.iconButton, { backgroundColor: colors.surface }]}
-              onPress={handleSettingsPress}>
-              <Ionicons name="settings-outline" size={20} color={colors.text} />
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Animated.View>
-
       <Animated.View
         style={[
           styles.filterPanel,
@@ -652,7 +621,6 @@ const HomeScreen: React.FC = () => {
           {viewType === "calendar" && (
             <View style={styles.dateSliderContainer}>
               <DateSlider
-                fadeAnim={fadeAnim}
                 dateRange={dateRange}
                 currentDate={currentDate}
                 today={today}
@@ -690,6 +658,7 @@ const HomeScreen: React.FC = () => {
         </Animated.ScrollView>
       </View>
 
+      <SettingsButton onPress={handleSettingsPress} />
       <AddButton onPress={handleAddTask} />
     </View>
   );
@@ -714,38 +683,6 @@ const styles = StyleSheet.create({
   scrollContainer: {
     flex: 1,
     zIndex: 1,
-  },
-  header: {
-    borderBottomWidth: 1,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    ...Platform.select({
-      ios: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.1,
-        shadowRadius: 1,
-      },
-      android: {
-        elevation: 3,
-      },
-    }),
-  },
-  headerContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "flex-end",
-  },
-  headerControls: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  iconButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    justifyContent: "center",
-    alignItems: "center",
   },
 
   priorityChipContent: {

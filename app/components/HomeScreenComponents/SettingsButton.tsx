@@ -3,15 +3,15 @@ import React from "react";
 import { Platform, StyleSheet, TouchableOpacity } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
 
-interface AddButtonProps {
+interface SettingsButtonProps {
   onPress: () => void;
   label?: string;
   showShadow?: boolean;
 }
 
-const AddButton: React.FC<AddButtonProps> = ({
+const SettingsButton: React.FC<SettingsButtonProps> = ({
   onPress,
-  label = "Add New Task",
+  label = "Settings",
   showShadow = true,
 }) => {
   const { colors } = useTheme();
@@ -24,10 +24,10 @@ const AddButton: React.FC<AddButtonProps> = ({
       accessibilityRole="button"
       style={[
         styles.fab,
-        { backgroundColor: colors.primary },
+        { backgroundColor: colors.surface },
         showShadow && [styles.shadow, { shadowColor: colors.primary }],
       ]}>
-      <Ionicons name="add" size={24} color={colors.onPrimary} />
+      <Ionicons name="settings-outline" size={24} color={colors.text} />
     </TouchableOpacity>
   );
 };
@@ -36,8 +36,8 @@ const styles = StyleSheet.create({
   fab: {
     position: "absolute",
     bottom: Platform.OS === "ios" ? 34 : 20,
-    right: 20,
-    width: 70,
+    right: 100, // Position to the left of the wider AddButton
+    width: 56,
     height: 56,
     borderRadius: 28,
     justifyContent: "center",
@@ -58,4 +58,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default AddButton;
+export default SettingsButton;
