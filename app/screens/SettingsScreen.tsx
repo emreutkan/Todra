@@ -1,24 +1,23 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import * as DocumentPicker from "expo-document-picker";
-import * as FileSystem from "expo-file-system";
 import { StatusBar } from "expo-status-bar";
 import React from "react";
 import {
-  Alert,
-  Linking,
   Platform,
   ScrollView,
-  Share,
   StyleSheet,
-  Switch,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
+import InfoRow from "../components/SettingsComponents/InfoRow";
+import SettingsButton from "../components/SettingsComponents/SettingsButton";
+import SettingsSection from "../components/SettingsComponents/SettingsSection";
+import SettingsToggle from "../components/SettingsComponents/SettingsToggle";
 import { useSettings } from "../context/SettingsContext";
 import { useTheme } from "../context/ThemeContext";
+import { useSettingsActions } from "../hooks/useSettingsActions";
 import { RootStackParamList } from "../types";
 
 type SettingsScreenNavigationProp = NativeStackNavigationProp<
@@ -29,133 +28,20 @@ type SettingsScreenNavigationProp = NativeStackNavigationProp<
 const SettingsScreen: React.FC = () => {
   const navigation = useNavigation<SettingsScreenNavigationProp>();
   const { colors, isDark } = useTheme();
-  const { settings, updateSetting, exportData, importData, clearAllTasks } =
-    useSettings();
+  const { settings, updateSetting } = useSettings();
+  const {
+    handleViewAllTasks,
+    handleViewArchivedTasks,
+    handleExportData,
+    handleImportData,
+    handleClearAllTasks,
+    handlePrivacyPolicy,
+    handleTermsOfService,
+    handleSendFeedback,
+  } = useSettingsActions();
 
   const handleBackPress = () => {
     navigation.goBack();
-  };
-
-  const handleViewAllTasks = () => {
-    navigation.navigate("AllTasks");
-  };
-  // Replace the existing handleExportData function with this one:
-
-  // Inside the SettingsScreen component:
-
-  const handleExportData = async () => {
-    try {
-      // Get the exported data
-      const data = await exportData();
-
-      // Create a timestamp for the filename
-      const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-      const fileName = `TaskPlanner_Backup_${timestamp}.json`;
-
-      // On Android, write to a temporary file first
-      if (Platform.OS === "android") {
-        const filePath = `${FileSystem.cacheDirectory}${fileName}`;
-        await FileSystem.writeAsStringAsync(filePath, data);
-
-        // Share the file
-        const shareResult = await Share.share({
-          title: "Task Planner Data Export",
-          url: filePath,
-        });
-
-        if (shareResult.action === Share.sharedAction) {
-          Alert.alert("Success", "Your data has been successfully exported!");
-        }
-      }
-      // On iOS, share content directly
-      else {
-        const shareResult = await Share.share({
-          title: "Task Planner Data Export",
-          message: data,
-        });
-
-        if (shareResult.action === Share.sharedAction) {
-          Alert.alert("Success", "Your data has been successfully exported!");
-        }
-      }
-    } catch (error) {
-      console.error("Export error:", error);
-      Alert.alert(
-        "Export Failed",
-        "There was a problem exporting your data. Please try again."
-      );
-    }
-  };
-  const handleImportData = async () => {
-    try {
-      // Open document picker to select a JSON file
-      const result = await DocumentPicker.getDocumentAsync({
-        type: "application/json",
-        copyToCacheDirectory: true,
-      });
-
-      if (result.type === "success") {
-        // Read the file content
-        const fileContent = await FileSystem.readAsStringAsync(result.uri);
-        const success = await importData(fileContent);
-
-        if (success) {
-          Alert.alert(
-            "Import Successful",
-            "Your data has been successfully imported. The app will refresh to show the imported data."
-          );
-
-          // Here you could potentially trigger a refresh of your main screen data
-        } else {
-          Alert.alert(
-            "Import Failed",
-            "There was a problem with the file format. Please ensure you're using a valid TaskPlanner backup file."
-          );
-        }
-      }
-    } catch (error) {
-      Alert.alert(
-        "Import Failed",
-        "There was a problem importing your data. Please try again."
-      );
-    }
-  };
-
-  const handleClearAllTasks = () => {
-    Alert.alert(
-      "Clear All Tasks",
-      "Are you sure you want to delete all tasks? This action cannot be undone.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete All",
-          style: "destructive",
-          onPress: async () => {
-            const success = await clearAllTasks();
-            if (success) {
-              Alert.alert("Success", "All tasks have been deleted.");
-              // You could trigger a refresh of your main screen here
-            } else {
-              Alert.alert("Error", "Failed to delete tasks. Please try again.");
-            }
-          },
-        },
-      ]
-    );
-  };
-
-  const handlePrivacyPolicy = () => {
-    Linking.openURL("https://yourapp.com/privacy-policy");
-  };
-
-  const handleTermsOfService = () => {
-    Linking.openURL("https://yourapp.com/terms-of-service");
-  };
-
-  const handleSendFeedback = () => {
-    Linking.openURL(
-      "mailto:support@yourapp.com?subject=TaskPlanner%20Feedback"
-    );
   };
 
   return (
@@ -180,292 +66,105 @@ const SettingsScreen: React.FC = () => {
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}>
         {/* Notifications Section */}
-        <View
-          style={[
-            styles.section,
-            { backgroundColor: colors.card, borderColor: colors.border },
-          ]}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>
-            Notifications
-          </Text>
-          <View style={styles.toggleRow}>
-            <View style={styles.toggleInfo}>
-              <Ionicons
-                name="notifications-outline"
-                size={22}
-                color={colors.primary}
-                style={styles.settingIcon}
-              />
-              <Text style={[styles.settingLabel, { color: colors.text }]}>
-                Enable Notifications
-              </Text>
-            </View>
-            <Switch
-              value={settings.notificationsEnabled}
-              onValueChange={(value) =>
-                updateSetting("notificationsEnabled", value)
-              }
-              trackColor={{ false: colors.border, true: colors.primary }}
-              thumbColor={
-                Platform.OS === "ios"
-                  ? "#FFFFFF"
-                  : settings.notificationsEnabled
-                  ? colors.card
-                  : colors.textSecondary
-              }
-              ios_backgroundColor={colors.border}
-            />
-          </View>
-
-          <View style={styles.toggleRow}>
-            <View style={styles.toggleInfo}>
-              <Ionicons
-                name="volume-medium-outline"
-                size={22}
-                color={colors.primary}
-                style={styles.settingIcon}
-              />
-              <Text style={[styles.settingLabel, { color: colors.text }]}>
-                Sound Effects
-              </Text>
-            </View>
-            <Switch
-              value={settings.soundEnabled}
-              onValueChange={(value) => updateSetting("soundEnabled", value)}
-              trackColor={{ false: colors.border, true: colors.primary }}
-              thumbColor={
-                Platform.OS === "ios"
-                  ? "#FFFFFF"
-                  : settings.soundEnabled
-                  ? colors.card
-                  : colors.textSecondary
-              }
-              ios_backgroundColor={colors.border}
-            />
-          </View>
-        </View>
+        <SettingsSection title="Notifications">
+          <SettingsToggle
+            icon="notifications-outline"
+            label="Enable Notifications"
+            value={settings.notificationsEnabled}
+            onValueChange={(value) =>
+              updateSetting("notificationsEnabled", value)
+            }
+          />
+          <SettingsToggle
+            icon="volume-medium-outline"
+            label="Sound Effects"
+            value={settings.soundEnabled}
+            onValueChange={(value) => updateSetting("soundEnabled", value)}
+          />
+        </SettingsSection>
 
         {/* Preferences Section */}
-        <View
-          style={[
-            styles.section,
-            { backgroundColor: colors.card, borderColor: colors.border },
-          ]}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>
-            Preferences
-          </Text>
-          <View style={styles.toggleRow}>
-            <View style={styles.toggleInfo}>
-              <Ionicons
-                name="trash-outline"
-                size={22}
-                color={colors.primary}
-                style={styles.settingIcon}
-              />
-              <Text style={[styles.settingLabel, { color: colors.text }]}>
-                Confirm Before Delete
-              </Text>
-            </View>
-            <Switch
-              value={settings.confirmDeleteEnabled}
-              onValueChange={(value) =>
-                updateSetting("confirmDeleteEnabled", value)
-              }
-              trackColor={{ false: colors.border, true: colors.primary }}
-              thumbColor={
-                Platform.OS === "ios"
-                  ? "#FFFFFF"
-                  : settings.confirmDeleteEnabled
-                  ? colors.card
-                  : colors.textSecondary
-              }
-              ios_backgroundColor={colors.border}
-            />
-          </View>
-
-          <View style={styles.toggleRow}>
-            <View style={styles.toggleInfo}>
-              <Ionicons
-                name="archive-outline"
-                size={22}
-                color={colors.primary}
-                style={styles.settingIcon}
-              />
-              <Text style={[styles.settingLabel, { color: colors.text }]}>
-                Auto-Archive Completed Tasks
-              </Text>
-            </View>
-            <Switch
-              value={settings.autoArchiveEnabled}
-              onValueChange={(value) =>
-                updateSetting("autoArchiveEnabled", value)
-              }
-              trackColor={{ false: colors.border, true: colors.primary }}
-              thumbColor={
-                Platform.OS === "ios"
-                  ? "#FFFFFF"
-                  : settings.autoArchiveEnabled
-                  ? colors.card
-                  : colors.textSecondary
-              }
-              ios_backgroundColor={colors.border}
-            />
-          </View>
-        </View>
+        <SettingsSection title="Preferences">
+          <SettingsToggle
+            icon="trash-outline"
+            label="Confirm Before Delete"
+            value={settings.confirmDeleteEnabled}
+            onValueChange={(value) =>
+              updateSetting("confirmDeleteEnabled", value)
+            }
+          />
+          <SettingsToggle
+            icon="archive-outline"
+            label="Auto-Archive Completed Tasks"
+            value={settings.autoArchiveEnabled}
+            onValueChange={(value) =>
+              updateSetting("autoArchiveEnabled", value)
+            }
+          />
+          <SettingsToggle
+            icon="eye-outline"
+            label="Show Completed Tasks"
+            value={settings.showCompletedTasks}
+            onValueChange={(value) =>
+              updateSetting("showCompletedTasks", value)
+            }
+          />
+        </SettingsSection>
 
         {/* Data Management Section */}
-
-        <View
-          style={[
-            styles.section,
-            { backgroundColor: colors.card, borderColor: colors.border },
-          ]}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>
-            Data Management
-          </Text>
-          <TouchableOpacity
-            style={[styles.settingButton, { backgroundColor: colors.surface }]}
-            onPress={handleViewAllTasks}>
-            <Ionicons
-              name="list-outline"
-              size={22}
-              color={colors.primary}
-              style={styles.settingIcon}
-            />
-            <Text style={[styles.settingButtonText, { color: colors.text }]}>
-              View All Tasks
-            </Text>
-            <Ionicons name="chevron-forward" size={18} color={colors.text} />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[
-              styles.settingButton,
-              { backgroundColor: colors.surface, marginTop: 8 },
-            ]}
-            onPress={() => navigation.navigate("ArchivedTasks")}>
-            <Ionicons
-              name="archive-outline"
-              size={22}
-              color={colors.primary}
-              style={styles.settingIcon}
-            />
-            <Text style={[styles.settingButtonText, { color: colors.text }]}>
-              View Archived Tasks
-            </Text>
-            <Ionicons name="chevron-forward" size={18} color={colors.text} />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[
-              styles.settingButton,
-              { backgroundColor: colors.surface, marginTop: 8 },
-            ]}
-            onPress={handleExportData}>
-            <Ionicons
-              name="download-outline"
-              size={22}
-              color={colors.primary}
-              style={styles.settingIcon}
-            />
-            <Text style={[styles.settingButtonText, { color: colors.text }]}>
-              Export Data
-            </Text>
-            <Ionicons name="chevron-forward" size={18} color={colors.text} />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[
-              styles.settingButton,
-              { backgroundColor: colors.surface, marginTop: 8 },
-            ]}
-            onPress={handleImportData}>
-            <Ionicons
-              name="cloud-upload-outline"
-              size={22}
-              color={colors.primary}
-              style={styles.settingIcon}
-            />
-            <Text style={[styles.settingButtonText, { color: colors.text }]}>
-              Import Data
-            </Text>
-            <Ionicons name="chevron-forward" size={18} color={colors.text} />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[
-              styles.settingButton,
-              { backgroundColor: isDark ? "#421b1b" : "#ffebeb", marginTop: 8 },
-            ]}
-            onPress={handleClearAllTasks}>
-            <Ionicons
-              name="trash-bin-outline"
-              size={22}
-              color={isDark ? "#ff6b6b" : "#d63031"}
-              style={styles.settingIcon}
-            />
-            <Text
-              style={[
-                styles.settingButtonText,
-                { color: isDark ? "#ff6b6b" : "#d63031" },
-              ]}>
-              Clear All Tasks
-            </Text>
-            <Ionicons
-              name="chevron-forward"
-              size={18}
-              color={isDark ? "#ff6b6b" : "#d63031"}
-            />
-          </TouchableOpacity>
-        </View>
+        <SettingsSection title="Data Management">
+          <SettingsButton
+            icon="list-outline"
+            label="View All Tasks"
+            onPress={handleViewAllTasks}
+          />
+          <SettingsButton
+            icon="archive-outline"
+            label="View Archived Tasks"
+            onPress={handleViewArchivedTasks}
+            marginTop={8}
+          />
+          <SettingsButton
+            icon="download-outline"
+            label="Export Data"
+            onPress={handleExportData}
+            marginTop={8}
+          />
+          <SettingsButton
+            icon="cloud-upload-outline"
+            label="Import Data"
+            onPress={handleImportData}
+            marginTop={8}
+          />
+          <SettingsButton
+            icon="trash-bin-outline"
+            label="Clear All Tasks"
+            onPress={handleClearAllTasks}
+            isDestructive
+            marginTop={8}
+          />
+        </SettingsSection>
 
         {/* App Info Section */}
-        <View
-          style={[
-            styles.section,
-            { backgroundColor: colors.card, borderColor: colors.border },
-          ]}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>
-            About
-          </Text>
-          <View style={styles.infoRow}>
-            <Text style={[styles.infoLabel, { color: colors.text }]}>
-              Version
-            </Text>
-            <Text style={[styles.infoValue, { color: colors.textSecondary }]}>
-              1.0.0
-            </Text>
-          </View>
-          <View style={styles.infoRow}>
-            <Text style={[styles.infoLabel, { color: colors.text }]}>
-              Last Updated
-            </Text>
-            <Text style={[styles.infoValue, { color: colors.textSecondary }]}>
-              2025-04-03
-            </Text>
-          </View>
-          <TouchableOpacity
-            style={styles.infoButton}
-            onPress={handlePrivacyPolicy}>
-            <Text style={[styles.infoButtonText, { color: colors.primary }]}>
-              Privacy Policy
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.infoButton}
-            onPress={handleTermsOfService}>
-            <Text style={[styles.infoButtonText, { color: colors.primary }]}>
-              Terms of Service
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.infoButton}
-            onPress={handleSendFeedback}>
-            <Text style={[styles.infoButtonText, { color: colors.primary }]}>
-              Send Feedback
-            </Text>
-          </TouchableOpacity>
-        </View>
+        <SettingsSection title="About">
+          <InfoRow label="Version" value="1.0.0" />
+          <InfoRow label="Last Updated" value="2025-04-03" />
+          <InfoRow
+            label="Privacy Policy"
+            onPress={handlePrivacyPolicy}
+            isButton
+          />
+          <InfoRow
+            label="Terms of Service"
+            onPress={handleTermsOfService}
+            isButton
+          />
+          <InfoRow
+            label="Send Feedback"
+            onPress={handleSendFeedback}
+            isButton
+          />
+        </SettingsSection>
       </ScrollView>
     </View>
   );
@@ -504,69 +203,6 @@ const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
     paddingBottom: 20,
-  },
-  section: {
-    marginHorizontal: 16,
-    marginVertical: 8,
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 1,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    marginBottom: 16,
-  },
-  sectionContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 12,
-  },
-  settingLabel: {
-    fontSize: 16,
-  },
-  settingButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-  },
-  settingIcon: {
-    marginRight: 12,
-  },
-  settingButtonText: {
-    fontSize: 16,
-    flex: 1,
-  },
-  toggleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: 10,
-  },
-  toggleInfo: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  infoRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingVertical: 8,
-  },
-  infoLabel: {
-    fontSize: 16,
-  },
-  infoValue: {
-    fontSize: 16,
-  },
-  infoButton: {
-    paddingVertical: 10,
-  },
-  infoButtonText: {
-    fontSize: 16,
-    fontWeight: "500",
   },
 });
 
