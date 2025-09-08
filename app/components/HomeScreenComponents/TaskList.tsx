@@ -1,9 +1,6 @@
 import { MaterialIcons } from "@expo/vector-icons";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  ActivityIndicator,
-  Animated,
-  RefreshControl,
   SectionList,
   StyleSheet,
   Text,
@@ -26,27 +23,20 @@ type TaskSection = {
 
 interface TaskListProps {
   tasks: Task[];
-  taskOpacity: Animated.Value;
-  loading: boolean;
   currentDate: Date;
   onDeleteTask: (id: string) => void;
   onToggleTaskCompletion: (id: string) => void;
   onTaskPress: (id: string) => void;
-  onRefresh?: () => Promise<void>;
 }
 
 const TaskList: React.FC<TaskListProps> = ({
   tasks,
-  taskOpacity,
-  loading,
   currentDate,
   onDeleteTask,
   onToggleTaskCompletion,
   onTaskPress,
-  onRefresh,
 }) => {
   const { colors } = useTheme();
-  const [refreshing, setRefreshing] = useState(false);
 
   // New state for filter panel toggle
   const [showFilters, setShowFilters] = useState(false);
@@ -75,7 +65,7 @@ const TaskList: React.FC<TaskListProps> = ({
         selectedPriority === "all" || task.priority === selectedPriority;
       return matchesCategory && matchesPriority;
     });
-    
+
     const activeTasks = filteredTasks.filter((task) => !task.completed);
     const priorityGroups: { [key in TaskPriority]: Task[] } = {
       high: [],
@@ -142,14 +132,6 @@ const TaskList: React.FC<TaskListProps> = ({
     }
   }, [sections]);
 
-  const handleRefresh = async () => {
-    if (onRefresh) {
-      setRefreshing(true);
-      await onRefresh();
-      setRefreshing(false);
-    }
-  };
-
   // Helper: Return a color based on task priority
   const getPrioritySectionColor = (priority: TaskPriority) => {
     switch (priority) {
@@ -201,13 +183,13 @@ const TaskList: React.FC<TaskListProps> = ({
                 styles.sectionBadge,
                 { backgroundColor: priorityColor + "20" },
               ]}>
-              <Text style={[styles.sectionCount, { color: priorityColor }]}>
+              <Text style={[styles.sectionCount, { color: colors.primary }]}>
                 {section.count}
               </Text>
             </View>
           </View>
           <MaterialIcons
-            name={isExpanded ? "keyboard-arrow-up" : "keyboard-arrow-down"}
+            name={isExpanded ? "keyboard-arrow-down" : "keyboard-arrow-up"}
             size={24}
             color={colors.text}
           />
@@ -230,21 +212,6 @@ const TaskList: React.FC<TaskListProps> = ({
     />
   );
 
-  if (loading) {
-    return (
-      <View
-        style={[
-          styles.loadingContainer,
-          { backgroundColor: colors.background },
-        ]}>
-        <ActivityIndicator color={colors.primary} size="large" />
-        <Text style={[styles.loadingText, { color: colors.text }]}>
-          Loading tasks...
-        </Text>
-      </View>
-    );
-  }
-
   if (tasks.length === 0) {
     return (
       <EmptyTasksState
@@ -257,6 +224,7 @@ const TaskList: React.FC<TaskListProps> = ({
 
   return (
     <SectionList
+      contentContainerStyle={styles.taskList}
       sections={sections}
       keyExtractor={(item) => item.id}
       renderSectionHeader={renderSectionHeader}
@@ -291,17 +259,6 @@ const TaskList: React.FC<TaskListProps> = ({
           />
         );
       }}
-      contentContainerStyle={styles.taskList}
-      showsVerticalScrollIndicator={false}
-      refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={handleRefresh}
-          colors={[colors.primary]}
-          tintColor={colors.primary}
-          progressBackgroundColor={colors.card}
-        />
-      }
     />
   );
 };
@@ -311,9 +268,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderBottomWidth: 1,
+    paddingVertical: SIZES.small,
   },
   sectionHeaderLeft: {
     flexDirection: "row",
@@ -323,33 +278,24 @@ const styles = StyleSheet.create({
     width: 12,
     height: 12,
     borderRadius: 6,
-    marginRight: 8,
+    marginRight: SIZES.small,
   },
   sectionTitle: {
     fontSize: SIZES.medium,
     fontWeight: "600",
   },
   sectionBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 2,
+    paddingHorizontal: SIZES.small,
+    paddingVertical: SIZES.small,
     borderRadius: 10,
-    marginLeft: 8,
+    marginLeft: SIZES.small,
   },
   sectionCount: {
     fontSize: SIZES.small,
     fontWeight: "600",
   },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  loadingText: {
-    marginTop: 10,
-    fontSize: SIZES.medium,
-  },
   taskList: {
-    paddingBottom: 100,
+    paddingHorizontal: SIZES.medium,
   },
 });
 

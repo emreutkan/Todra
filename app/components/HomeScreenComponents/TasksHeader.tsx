@@ -1,4 +1,3 @@
-import { MaterialIcons } from "@expo/vector-icons";
 import React from "react";
 import {
   ScrollView,
@@ -11,7 +10,7 @@ import { DEFAULT_CATEGORIES } from "../../constants/CategoryConstants";
 import { useTheme } from "../../context/ThemeContext";
 import { SIZES } from "../../theme";
 import { Task, TaskPriority } from "../../types";
-import ProgressChart from "./ProgressChart";
+import ActionButton from "../common/ActionButton";
 
 interface TasksHeaderProps {
   tasks: Task[];
@@ -63,17 +62,11 @@ const TasksHeader: React.FC<TasksHeaderProps> = ({
   return (
     <View style={styles.container}>
       <View style={styles.topRow}>
-        <Text style={[styles.title, { color: colors.text }]}>
-          My Tasks
-        </Text>
-        <TouchableOpacity onPress={onToggleFilter} style={styles.filterButton}>
-          <Text style={styles.filterChip}>Filter</Text>
-        </TouchableOpacity>
+        <ActionButton onPress={onToggleFilter} text="Filter" icon={false} />
       </View>
 
       {showFilters && (
         <View style={styles.filterPanel}>
-          {/* Category selector */}
           <Text style={[styles.filterLabel, { color: colors.text }]}>
             Category
           </Text>
@@ -116,10 +109,7 @@ const TasksHeader: React.FC<TasksHeaderProps> = ({
 
           {/* Priority selector */}
           <Text
-            style={[
-              styles.filterLabel,
-              { color: colors.text, marginTop: 10 },
-            ]}>
+            style={[styles.filterLabel, { color: colors.text, marginTop: 10 }]}>
             Priority
           </Text>
           <ScrollView
@@ -173,11 +163,6 @@ const TasksHeader: React.FC<TasksHeaderProps> = ({
             borderBottomColor: colors.border,
           },
         ]}>
-        <ProgressChart
-          completed={completed}
-          remaining={remaining}
-          colors={colors}
-        />
         <View style={styles.statsContainer}>
           <View style={styles.statItem}>
             <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
@@ -212,79 +197,74 @@ const TasksHeader: React.FC<TasksHeaderProps> = ({
 };
 
 const styles = StyleSheet.create({
-  container: {
-    paddingHorizontal: 16,
-  },
+  container: {},
   topRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
+    paddingTop: SIZES.small,
   },
   title: {
     fontSize: SIZES.large,
     fontWeight: "bold",
   },
-  filterButton: {
-    padding: 8,
-  },
+
   filterPanel: {
-    marginTop: 16,
-    paddingTop: 16,
+    marginTop: SIZES.small,
+    paddingTop: SIZES.small,
     borderTopWidth: 1,
     borderTopColor: "rgba(0,0,0,0.1)",
+    alignItems: "flex-end",
   },
   filterLabel: {
     fontSize: SIZES.medium,
     fontWeight: "600",
-    marginBottom: 6,
+    marginBottom: SIZES.small,
   },
   filterScrollContent: {
-    paddingRight: 8,
+    paddingRight: SIZES.small,
   },
   filterChip: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingHorizontal: SIZES.small,
+    paddingVertical: SIZES.small,
     borderRadius: 20,
-    marginRight: 8,
+    marginRight: SIZES.small,
     borderWidth: 1,
+    minWidth: 62,
+    alignItems: "center",
   },
   filterChipText: {
     fontSize: SIZES.small,
     fontWeight: "500",
   },
   progressSection: {
-    paddingVertical: 6,
+    paddingVertical: SIZES.small,
     borderBottomWidth: 1,
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 20,
+    paddingHorizontal: SIZES.small,
   },
   statsContainer: {
     flexDirection: "row",
-    alignItems: "center",
     justifyContent: "space-around",
     flex: 1,
-    marginLeft: 10,
   },
   statItem: {
     alignItems: "center",
   },
   statLabel: {
-    fontSize: 12,
-    marginBottom: 2,
+    fontSize: SIZES.small,
+    marginBottom: SIZES.small,
   },
   statValue: {
-    fontSize: 18,
+    fontSize: SIZES.medium,
     fontWeight: "600",
   },
   statDivider: {
     width: 1,
-    height: 30,
+    height: 20,
     opacity: 0.2,
-    backgroundColor: "#000",
+    backgroundColor: "rgba(0,0,0,0.2)",
   },
 });
 
 export default TasksHeader;
-

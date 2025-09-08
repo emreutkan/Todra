@@ -1,4 +1,3 @@
-import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Dimensions,
@@ -11,6 +10,7 @@ import {
 } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
 import { SIZES } from "../../theme";
+import ActionButton from "../common/ActionButton";
 
 const { width } = Dimensions.get("window");
 const VISIBLE_ITEMS = 5;
@@ -212,12 +212,7 @@ const DateSlider: React.FC<DateSliderProps> = ({
             {selectedMonth}
           </Text>
         </View>
-
-        <TouchableOpacity
-          style={[
-            styles.todayButton,
-            { backgroundColor: colors.primary + "15" },
-          ]}
+        <ActionButton
           onPress={() => {
             if (todayIndex !== -1) {
               onDateChange(today);
@@ -230,14 +225,9 @@ const DateSlider: React.FC<DateSliderProps> = ({
               }, 10);
             }
           }}
-          accessibilityRole="button"
-          accessibilityLabel="Go to today"
-          accessibilityHint="Selects today's date in the calendar">
-          <Ionicons name="today-outline" size={14} color={colors.primary} />
-          <Text style={[styles.todayButtonText, { color: colors.primary }]}>
-            Today
-          </Text>
-        </TouchableOpacity>
+          text="Today"
+          icon={false}
+        />
       </View>
 
       <FlatList
@@ -271,7 +261,7 @@ const styles = StyleSheet.create({
         shadowColor: "#000",
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
-        shadowRadius: 4,
+        shadowRadius: 1,
       },
       android: {
         elevation: 3,
@@ -291,18 +281,6 @@ const styles = StyleSheet.create({
   monthText: {
     fontSize: SIZES.small + 1,
     fontWeight: "600",
-  },
-  todayButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 14,
-  },
-  todayButtonText: {
-    fontSize: SIZES.small - 1,
-    fontWeight: "600",
-    marginLeft: 4,
   },
 
   dateItem: {
