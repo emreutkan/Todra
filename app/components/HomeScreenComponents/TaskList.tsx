@@ -1,6 +1,7 @@
 import { MaterialIcons } from "@expo/vector-icons";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  Animated,
   SectionList,
   StyleSheet,
   Text,
@@ -26,6 +27,10 @@ interface TaskListProps {
   onDeleteTask: (id: string) => void;
   onToggleTaskCompletion: (id: string) => void;
   onTaskPress: (id: string) => void;
+  scrollY?: Animated.Value;
+  taskOpacity?: Animated.Value;
+  loading?: boolean;
+  onRefresh?: () => void;
 }
 
 const TaskList: React.FC<TaskListProps> = ({
@@ -34,6 +39,10 @@ const TaskList: React.FC<TaskListProps> = ({
   onDeleteTask,
   onToggleTaskCompletion,
   onTaskPress,
+  scrollY,
+  taskOpacity,
+  loading,
+  onRefresh,
 }) => {
   const { colors } = useTheme();
   const [expandedSections, setExpandedSections] = useState<{
@@ -236,6 +245,15 @@ const TaskList: React.FC<TaskListProps> = ({
       renderSectionHeader={renderSectionHeader}
       stickySectionHeadersEnabled
       ListHeaderComponent={renderTasksHeader}
+      scrollEventThrottle={16}
+      onScroll={
+        scrollY
+          ? Animated.event(
+              [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+              { useNativeDriver: false }
+            )
+          : undefined
+      }
       renderItem={({ item, index, section }) => {
         if (!expandedSections[section.title]) return null;
         const isOverdue = Boolean(
@@ -260,7 +278,7 @@ const TaskList: React.FC<TaskListProps> = ({
             arePrereqsMet={prereqsMet}
             priority={section.priority}
             mode="home"
-            showSwipeActions={true}
+            showSwipeActions={false}
             showAnimations={true}
           />
         );

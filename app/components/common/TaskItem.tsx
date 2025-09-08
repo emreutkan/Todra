@@ -18,9 +18,8 @@ import {
   Vibration,
   View,
 } from "react-native";
-import { Task } from "../../types";
 import { useTheme } from "../../context/ThemeContext";
-import { TaskPriority } from "../../types";
+import { Task, TaskPriority } from "../../types";
 import { formatDate, getPriorityColor } from "../../utils/taskUtils";
 
 const { width } = Dimensions.get("window");
@@ -55,7 +54,7 @@ const TaskItem: React.FC<TaskItemProps> = ({
   arePrereqsMet = true,
   priority,
   mode = "home",
-  showSwipeActions = true,
+  showSwipeActions = false,
   showAnimations = true,
 }) => {
   const { colors } = useTheme();

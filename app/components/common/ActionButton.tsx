@@ -8,6 +8,9 @@ interface ActionButtonProps {
   text?: string;
   icon?: boolean;
   iconName?: string;
+  pressAnimation?: boolean;
+  customPressInAnimation?: () => void;
+  customPressOutAnimation?: () => void;
 }
 
 const ActionButton: React.FC<ActionButtonProps> = ({
@@ -16,13 +19,43 @@ const ActionButton: React.FC<ActionButtonProps> = ({
   text,
   icon,
   iconName,
+  pressAnimation,
+
+  customPressInAnimation,
+  customPressOutAnimation,
 }) => {
   const { colors } = useTheme();
+
+  const handlePress = () => {
+    if (pressAnimation) {
+      customPressInAnimation?.();
+    } else {
+      onPress();
+    }
+  };
+
+  const handlePressIn = () => {
+    if (pressAnimation) {
+      customPressInAnimation?.();
+    } else {
+      onPress();
+    }
+  };
+
+  const handlePressOut = () => {
+    if (pressAnimation) {
+      customPressOutAnimation?.();
+    } else {
+      onPress();
+    }
+  };
 
   return (
     <TouchableOpacity
       style={[styles, actionButtonStyles.container]}
-      onPress={onPress}>
+      onPress={handlePress}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}>
       {icon && (
         <View style={actionButtonStyles.icon}>
           <Ionicons

@@ -162,25 +162,19 @@ const HomeScreen: React.FC = () => {
           />
         </Animated.View>
 
-        <Animated.ScrollView
-          scrollEventThrottle={16}
-          onScroll={Animated.event(
-            [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-            { useNativeDriver: false }
-          )}>
-          <View style={styles.contentContainer}>
-            <TaskList
-              tasks={filteredTasks}
-              taskOpacity={taskOpacity}
-              loading={loading}
-              currentDate={currentDate}
-              onDeleteTask={handleDeleteTask}
-              onToggleTaskCompletion={handleToggleTaskCompletion}
-              onTaskPress={handleTaskPress}
-              onRefresh={handleRefresh}
-            />
-          </View>
-        </Animated.ScrollView>
+        <View style={styles.contentContainer}>
+          <TaskList
+            tasks={filteredTasks}
+            taskOpacity={taskOpacity}
+            loading={loading}
+            currentDate={currentDate}
+            onDeleteTask={handleDeleteTask}
+            onToggleTaskCompletion={handleToggleTaskCompletion}
+            onTaskPress={handleTaskPress}
+            onRefresh={handleRefresh}
+            scrollY={scrollY}
+          />
+        </View>
       </View>
 
       <View style={{ position: "absolute", bottom: 0, left: 0, right: 0 }}>
