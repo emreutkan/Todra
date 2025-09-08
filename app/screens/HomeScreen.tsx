@@ -9,9 +9,9 @@ import { StatusBar } from "expo-status-bar";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Alert, Animated, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import AddButton from "../components/HomeScreenComponents/AddButton";
+import BottomNavigator from "../components/HomeScreenComponents/BottomNavigator";
 import DateSlider from "../components/HomeScreenComponents/DateSlider";
-import SettingsButton from "../components/HomeScreenComponents/SettingsButton";
+import FilterPopup from "../components/HomeScreenComponents/FilterPopup";
 import TaskList from "../components/HomeScreenComponents/TaskList";
 import { useTheme } from "../context/ThemeContext";
 import { useHomeCategories } from "../hooks/useHomeCategories";
@@ -48,11 +48,20 @@ const HomeScreen: React.FC = () => {
     handleAddTask,
   } = useHomeTasks(currentDate);
 
-  const { filteredTasks, selectedFilterType } = useHomeFilters(tasks);
+  const {
+    filteredTasks,
+    selectedFilterType,
+    activeCategory,
+    selectedPriority,
+    clearFilters,
+    setCategoryFilter,
+    setPriorityFilter,
+  } = useHomeFilters(tasks);
 
   const { completionStats, calculateTaskStats } = useHomeStats();
 
   const { categories, loadCategories } = useHomeCategories();
+  const [isFilterVisible, setIsFilterVisible] = useState(false);
 
   // Animation values
   const taskOpacity = useState(new Animated.Value(0))[0];
@@ -174,8 +183,31 @@ const HomeScreen: React.FC = () => {
         </Animated.ScrollView>
       </View>
 
-      <SettingsButton onPress={handleSettingsPress} />
-      <AddButton onPress={() => handleAddTask(currentDate)} />
+      <View style={{ position: "absolute", bottom: 0, left: 0, right: 0 }}>
+        <BottomNavigator
+          onFilterPress={() => setIsFilterVisible(true)}
+          onAddTaskPress={() => handleAddTask()}
+          onSettingsPress={handleSettingsPress}
+        />
+      </View>
+
+      <FilterPopup
+        visible={isFilterVisible}
+        categories={[
+          "Personal",
+          "Work",
+          "Shopping",
+          "Health",
+          "Education",
+          ...categories.map((c) => c.name).filter(Boolean),
+        ].filter((v, i, arr) => arr.indexOf(v) === i)}
+        activeCategory={activeCategory}
+        selectedPriority={selectedPriority}
+        onClose={() => setIsFilterVisible(false)}
+        onCategoryChange={setCategoryFilter}
+        onPriorityChange={setPriorityFilter}
+        onClear={clearFilters}
+      />
     </View>
   );
 };

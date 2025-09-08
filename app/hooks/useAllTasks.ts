@@ -3,8 +3,7 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useCallback, useEffect, useState } from "react";
 import { Alert } from "react-native";
 import { useSettings } from "../context/SettingsContext";
-import { Task } from "../types";
-import { RootStackParamList } from "../types";
+import { RootStackParamList, Task } from "../types";
 
 type AllTasksNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -18,14 +17,14 @@ export const useAllTasks = () => {
   const { getCurrentTasks, getArchivedTasks, archiveCompletedTasks } =
     useSettings();
 
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [currentTasks, setCurrentTasks] = useState<Task[]>([]);
   const [archivedTasks, setArchivedTasks] = useState<Task[]>([]);
   const [selectedCategory, setSelectedCategory] =
     useState<TaskCategory>("current");
 
   const fetchTasks = useCallback(async () => {
-    setIsLoading(true);
+    setIsLoading(false);
     try {
       const current = await getCurrentTasks();
       const archived = await getArchivedTasks();
@@ -76,7 +75,6 @@ export const useAllTasks = () => {
   }, [fetchTasks]);
 
   return {
-    isLoading,
     currentTasks,
     archivedTasks,
     selectedCategory,

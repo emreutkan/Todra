@@ -5,7 +5,7 @@ import {
 } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { StatusBar } from "expo-status-bar";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { SettingsProvider } from "./app/context/SettingsContext";
 import { ThemeProvider, useTheme } from "./app/context/ThemeContext";
 import { COLORS } from "./app/theme";
@@ -27,7 +27,7 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 function AppContent() {
   const { colors, isDark } = useTheme();
 
-  const [isReady, setIsReady] = useState(false);
+  const [isReady, setIsReady] = useState(true);
 
   const MyTheme = {
     ...(isDark ? DarkTheme : DefaultTheme),
@@ -41,22 +41,7 @@ function AppContent() {
     },
   };
 
-  useEffect(() => {
-    const prepareApp = async () => {
-      try {
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-        setIsReady(true);
-      } catch (e) {
-        console.warn(e);
-      }
-    };
-
-    prepareApp();
-  }, []);
-
-  if (!isReady) {
-    return null;
-  }
+  // No artificial delay or initial placeholder
 
   return (
     <NavigationContainer theme={MyTheme}>

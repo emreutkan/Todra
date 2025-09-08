@@ -12,7 +12,6 @@ import { SIZES } from "../../theme";
 import { Task, TaskPriority } from "../../types";
 import EmptyTasksState from "../common/EmptyTasksState";
 import TaskItem from "../common/TaskItem";
-import TasksHeader from "./TasksHeader";
 
 type TaskSection = {
   title: string;
@@ -37,36 +36,13 @@ const TaskList: React.FC<TaskListProps> = ({
   onTaskPress,
 }) => {
   const { colors } = useTheme();
-
-  // New state for filter panel toggle
-  const [showFilters, setShowFilters] = useState(false);
-  // New state for category and priority filtering
-  const [selectedCategory, setSelectedCategory] = useState<string>("all");
-  const [selectedPriority, setSelectedPriority] = useState<
-    TaskPriority | "all"
-  >("all");
   const [expandedSections, setExpandedSections] = useState<{
     [key: string]: boolean;
   }>({});
 
-  // Toggle filter panel display
-  const toggleFilter = () => {
-    setShowFilters((prev) => !prev);
-  };
-
   // Group filtered (active) tasks into sections for the SectionList
   const sections = useMemo(() => {
-    // Filter tasks based on selected category and priority
-    const filteredTasks = tasks.filter((task) => {
-      const matchesCategory =
-        selectedCategory === "all" ||
-        (task.category || "Uncategorized") === selectedCategory;
-      const matchesPriority =
-        selectedPriority === "all" || task.priority === selectedPriority;
-      return matchesCategory && matchesPriority;
-    });
-
-    const activeTasks = filteredTasks.filter((task) => !task.completed);
+    const activeTasks = tasks.filter((task) => !task.completed);
     const priorityGroups: { [key in TaskPriority]: Task[] } = {
       high: [],
       normal: [],
@@ -119,7 +95,7 @@ const TaskList: React.FC<TaskListProps> = ({
       });
 
     return sortedSections;
-  }, [tasks, selectedCategory, selectedPriority, currentDate]);
+  }, [tasks, currentDate]);
 
   // Initially expand all sections
   useEffect(() => {
@@ -199,18 +175,48 @@ const TaskList: React.FC<TaskListProps> = ({
     [expandedSections, colors]
   );
 
-  // Render the main header for TaskList
-  const renderTasksHeader = () => (
-    <TasksHeader
-      tasks={tasks}
-      showFilters={showFilters}
-      selectedCategory={selectedCategory}
-      selectedPriority={selectedPriority}
-      onToggleFilter={toggleFilter}
-      onCategoryChange={setSelectedCategory}
-      onPriorityChange={setSelectedPriority}
-    />
-  );
+  // Render a simple progress header
+  const renderTasksHeader = () => {
+    const total = tasks.length;
+    const completed = tasks.filter((t) => t.completed).length;
+    const remaining = total - completed;
+    return (
+      <View
+        style={[
+          styles.progressSection,
+          { backgroundColor: colors.card, borderBottomColor: colors.border },
+        ]}>
+        <View style={styles.statsContainer}>
+          <View style={styles.statItem}>
+            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
+              Completed
+            </Text>
+            <Text style={[styles.statValue, { color: colors.success }]}>
+              {completed}
+            </Text>
+          </View>
+          <View style={styles.statDivider} />
+          <View style={styles.statItem}>
+            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
+              Remaining
+            </Text>
+            <Text style={[styles.statValue, { color: colors.primary }]}>
+              {remaining}
+            </Text>
+          </View>
+          <View style={styles.statDivider} />
+          <View style={styles.statItem}>
+            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
+              Total
+            </Text>
+            <Text style={[styles.statValue, { color: colors.text }]}>
+              {total}
+            </Text>
+          </View>
+        </View>
+      </View>
+    );
+  };
 
   if (tasks.length === 0) {
     return (
@@ -296,6 +302,35 @@ const styles = StyleSheet.create({
   },
   taskList: {
     paddingHorizontal: SIZES.medium,
+  },
+  progressSection: {
+    paddingVertical: SIZES.small,
+    borderBottomWidth: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: SIZES.small,
+  },
+  statsContainer: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    flex: 1,
+  },
+  statItem: {
+    alignItems: "center",
+  },
+  statLabel: {
+    fontSize: SIZES.small,
+    marginBottom: SIZES.small,
+  },
+  statValue: {
+    fontSize: SIZES.medium,
+    fontWeight: "600",
+  },
+  statDivider: {
+    width: 1,
+    height: 20,
+    opacity: 0.2,
+    backgroundColor: "rgba(0,0,0,0.2)",
   },
 });
 

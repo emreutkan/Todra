@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
-import React from "react";
-import { Platform, StyleSheet, TouchableOpacity } from "react-native";
+import React, { useRef } from "react";
+import { Animated, Platform, StyleSheet, TouchableOpacity } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
 
 interface AddButtonProps {
@@ -15,34 +15,92 @@ const AddButton: React.FC<AddButtonProps> = ({
   showShadow = true,
 }) => {
   const { colors } = useTheme();
+  const pressAnim = useRef(new Animated.Value(1)).current;
+  const sizeAnim = useRef(new Animated.Value(70)).current; // Base width for AddButton
+  const heightAnim = useRef(new Animated.Value(56)).current; // Base height for AddButton
+
+  const handlePressIn = () => {
+    Animated.parallel([
+      Animated.timing(pressAnim, {
+        toValue: 1.2,
+        duration: 200,
+        useNativeDriver: false,
+      }),
+      Animated.timing(sizeAnim, {
+        toValue: 84, // 70 * 1.2 = 84
+        duration: 200,
+        useNativeDriver: false,
+      }),
+      Animated.timing(heightAnim, {
+        toValue: 67, // 56 * 1.2 = 67
+        duration: 200,
+        useNativeDriver: false,
+      }),
+    ]).start();
+  };
+
+  const handlePressOut = () => {
+    Animated.parallel([
+      Animated.timing(pressAnim, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: false,
+      }),
+      Animated.timing(sizeAnim, {
+        toValue: 70,
+        duration: 200,
+        useNativeDriver: false,
+      }),
+      Animated.timing(heightAnim, {
+        toValue: 56,
+        duration: 200,
+        useNativeDriver: false,
+      }),
+    ]).start();
+  };
 
   return (
-    <TouchableOpacity
-      activeOpacity={0.8}
-      onPress={onPress}
-      accessibilityLabel={label}
-      accessibilityRole="button"
+    <Animated.View
       style={[
         styles.fab,
-        { backgroundColor: colors.primary },
+        {
+          backgroundColor: colors.primary,
+          width: sizeAnim,
+          height: heightAnim,
+          borderRadius: Animated.divide(heightAnim, 2),
+        },
         showShadow && [styles.shadow, { shadowColor: colors.primary }],
+        { transform: [{ scale: pressAnim }] },
       ]}>
-      <Ionicons name="add" size={24} color={colors.onPrimary} />
-    </TouchableOpacity>
+      <TouchableOpacity
+        activeOpacity={1}
+        onPress={onPress}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        accessibilityLabel={label}
+        accessibilityRole="button"
+        style={styles.touchable}>
+        <Ionicons name="add" size={24} color={colors.onPrimary} />
+      </TouchableOpacity>
+    </Animated.View>
   );
 };
 
 const styles = StyleSheet.create({
   fab: {
-    position: "absolute",
-    bottom: Platform.OS === "ios" ? 34 : 20,
-    right: 20,
     width: 70,
     height: 56,
     borderRadius: 28,
     justifyContent: "center",
     alignItems: "center",
     zIndex: 1000,
+  },
+  touchable: {
+    width: "100%",
+    height: "100%",
+    justifyContent: "center",
+    alignItems: "center",
+    borderRadius: 28,
   },
   shadow: {
     ...Platform.select({

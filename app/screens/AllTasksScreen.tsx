@@ -4,11 +4,9 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { StatusBar } from "expo-status-bar";
 import React from "react";
 import {
-  ActivityIndicator,
   FlatList,
   Platform,
   StyleSheet,
-  Text,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -29,7 +27,6 @@ const AllTasksScreen: React.FC = () => {
   const navigation = useNavigation<AllTasksScreenNavigationProp>();
   const { colors, isDark } = useTheme();
   const {
-    isLoading,
     currentTasks,
     archivedTasks,
     selectedCategory,
@@ -103,23 +100,14 @@ const AllTasksScreen: React.FC = () => {
       />
 
       {/* Tasks List */}
-      {isLoading ? (
-        <View style={styles.loaderContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={[styles.loaderText, { color: colors.text }]}>
-            Loading tasks...
-          </Text>
-        </View>
-      ) : (
-        <FlatList
-          data={currentTasksData}
-          keyExtractor={(item) => item.id}
-          renderItem={renderTaskItem}
-          contentContainerStyle={styles.listContent}
-          showsVerticalScrollIndicator={false}
-          ListEmptyComponent={renderEmptyComponent}
-        />
-      )}
+      <FlatList
+        data={currentTasksData}
+        keyExtractor={(item) => item.id}
+        renderItem={renderTaskItem}
+        contentContainerStyle={styles.listContent}
+        showsVerticalScrollIndicator={false}
+        ListEmptyComponent={renderEmptyComponent}
+      />
     </View>
   );
 };
@@ -142,15 +130,6 @@ const styles = StyleSheet.create({
   listContent: {
     padding: 16,
     paddingBottom: 80,
-  },
-  loaderContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  loaderText: {
-    fontSize: 16,
-    marginTop: 12,
   },
 });
 

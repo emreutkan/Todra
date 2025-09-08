@@ -3,21 +3,20 @@ import React, { useRef } from "react";
 import { Animated, Platform, StyleSheet, TouchableOpacity } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
 
-interface SettingsButtonProps {
+interface FilterButtonProps {
   onPress: () => void;
   label?: string;
   showShadow?: boolean;
 }
 
-const SettingsButton: React.FC<SettingsButtonProps> = ({
+const FilterButton: React.FC<FilterButtonProps> = ({
   onPress,
-  label = "Settings",
+  label = "Filter Tasks",
   showShadow = true,
 }) => {
   const { colors } = useTheme();
   const pressAnim = useRef(new Animated.Value(1)).current;
-  const sizeAnim = useRef(new Animated.Value(56)).current; // Base size for SettingsButton
-
+  const sizeAnim = useRef(new Animated.Value(56)).current; // Add this for actual size
   const handlePressIn = () => {
     Animated.parallel([
       Animated.timing(pressAnim, {
@@ -28,7 +27,7 @@ const SettingsButton: React.FC<SettingsButtonProps> = ({
       Animated.timing(sizeAnim, {
         toValue: 67, // 56 * 1.2 = 67
         duration: 200,
-        useNativeDriver: false,
+        useNativeDriver: false, // Can't use native driver for layout properties
       }),
     ]).start();
   };
@@ -53,12 +52,13 @@ const SettingsButton: React.FC<SettingsButtonProps> = ({
       style={[
         styles.fab,
         {
-          backgroundColor: colors.surface,
-          width: sizeAnim,
-          height: sizeAnim,
-          borderRadius: Animated.divide(sizeAnim, 2),
+          backgroundColor: colors.card,
+          borderColor: colors.border,
+          width: sizeAnim, // Use animated width
+          height: sizeAnim, // Use animated height
+          borderRadius: Animated.divide(sizeAnim, 2), // Keep it circular
         },
-        showShadow && [styles.shadow, { shadowColor: colors.primary }],
+        showShadow && [styles.shadow],
         { transform: [{ scale: pressAnim }] },
       ]}>
       <TouchableOpacity
@@ -69,7 +69,7 @@ const SettingsButton: React.FC<SettingsButtonProps> = ({
         accessibilityLabel={label}
         accessibilityRole="button"
         style={styles.touchable}>
-        <Ionicons name="settings-outline" size={24} color={colors.text} />
+        <Ionicons name="funnel" size={22} color={colors.text} />
       </TouchableOpacity>
     </Animated.View>
   );
@@ -94,15 +94,16 @@ const styles = StyleSheet.create({
   shadow: {
     ...Platform.select({
       ios: {
+        shadowColor: "#000",
         shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
+        shadowOpacity: 0.1,
+        shadowRadius: 6,
       },
       android: {
-        elevation: 8,
+        elevation: 6,
       },
     }),
   },
 });
 
-export default SettingsButton;
+export default FilterButton;
