@@ -35,11 +35,6 @@ const FilterPopup: React.FC<FilterPopupProps> = ({
   onClear,
 }) => {
   const { colors } = useTheme();
-
-  if (!visible) return null;
-
-  const bottomOffset = (Platform.OS === "ios" ? 34 : 20) + 56 + 12;
-
   const scaleAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -57,6 +52,10 @@ const FilterPopup: React.FC<FilterPopupProps> = ({
       }).start();
     }
   }, [visible]);
+
+  if (!visible) return null;
+
+  const bottomOffset = (Platform.OS === "ios" ? 34 : 20) + 56 + 12;
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
       <Pressable style={styles.backdrop} onPress={onClose}>
@@ -181,7 +180,7 @@ const FilterPopup: React.FC<FilterPopupProps> = ({
             onPress={onClear}
             style={[styles.footerButton, { borderColor: colors.border }]}>
             <Text style={[styles.footerButtonText, { color: colors.text }]}>
-              Clear
+              Reset
             </Text>
           </Pressable>
           <Pressable
@@ -214,7 +213,7 @@ const styles = StyleSheet.create({
     padding: SIZES.medium,
     borderRadius: 12,
     borderWidth: 1,
-    width: 300,
+    width: "90%",
     transformOrigin: "bottom right",
   },
   title: {

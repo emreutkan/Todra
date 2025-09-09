@@ -139,17 +139,6 @@ const HomeScreen: React.FC = () => {
       ]}>
       <StatusBar style={isDark ? "light" : "dark"} />
 
-      <Animated.View
-        style={[
-          styles.filterPanel,
-          {
-            height: filterViewHeight,
-            backgroundColor: colors.card,
-            borderBottomColor: colors.border,
-            zIndex: 9, // Below header but above other content
-          },
-        ]}></Animated.View>
-
       <View style={styles.mainContentContainer}>
         <Animated.View>
           <DateSlider

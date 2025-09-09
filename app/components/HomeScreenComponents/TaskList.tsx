@@ -40,9 +40,6 @@ const TaskList: React.FC<TaskListProps> = ({
   onToggleTaskCompletion,
   onTaskPress,
   scrollY,
-  taskOpacity,
-  loading,
-  onRefresh,
 }) => {
   const { colors } = useTheme();
   const [expandedSections, setExpandedSections] = useState<{
@@ -163,21 +160,18 @@ const TaskList: React.FC<TaskListProps> = ({
             <Text style={[styles.sectionTitle, { color: colors.text }]}>
               {section.title}
             </Text>
-            <View
-              style={[
-                styles.sectionBadge,
-                { backgroundColor: priorityColor + "20" },
-              ]}>
-              <Text style={[styles.sectionCount, { color: colors.primary }]}>
-                {section.count}
-              </Text>
-            </View>
           </View>
-          <MaterialIcons
-            name={isExpanded ? "keyboard-arrow-down" : "keyboard-arrow-up"}
-            size={24}
-            color={colors.text}
-          />
+          {isExpanded ? (
+            <Text style={[styles.sectionCount, { color: colors.text }]}>
+              {section.count}
+            </Text>
+          ) : (
+            <MaterialIcons
+              name={"keyboard-arrow-up"}
+              size={24}
+              color={colors.text}
+            />
+          )}
         </TouchableOpacity>
       );
     },
@@ -288,6 +282,38 @@ const TaskList: React.FC<TaskListProps> = ({
 };
 
 const styles = StyleSheet.create({
+  taskList: {
+    marginHorizontal: SIZES.medium,
+  },
+  progressSection: {
+    paddingVertical: SIZES.small,
+    borderBottomWidth: 1,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  statsContainer: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    flex: 1,
+  },
+
+  statItem: {
+    alignItems: "center",
+  },
+  statLabel: {
+    fontSize: SIZES.small,
+    marginBottom: SIZES.small,
+  },
+  statValue: {
+    fontSize: SIZES.medium,
+    fontWeight: "600",
+  },
+  statDivider: {
+    width: 1,
+    opacity: 0.2,
+    backgroundColor: "rgba(0,0,0,0.2)",
+  },
+
   sectionHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -317,38 +343,6 @@ const styles = StyleSheet.create({
   sectionCount: {
     fontSize: SIZES.small,
     fontWeight: "600",
-  },
-  taskList: {
-    paddingHorizontal: SIZES.medium,
-  },
-  progressSection: {
-    paddingVertical: SIZES.small,
-    borderBottomWidth: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: SIZES.small,
-  },
-  statsContainer: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    flex: 1,
-  },
-  statItem: {
-    alignItems: "center",
-  },
-  statLabel: {
-    fontSize: SIZES.small,
-    marginBottom: SIZES.small,
-  },
-  statValue: {
-    fontSize: SIZES.medium,
-    fontWeight: "600",
-  },
-  statDivider: {
-    width: 1,
-    height: 20,
-    opacity: 0.2,
-    backgroundColor: "rgba(0,0,0,0.2)",
   },
 });
 

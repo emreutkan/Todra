@@ -61,6 +61,8 @@ const TaskItem: React.FC<TaskItemProps> = ({
   const translateX = useRef(new Animated.Value(0)).current;
   const opacity = useRef(new Animated.Value(0)).current;
   const scale = useRef(new Animated.Value(0.95)).current;
+  const pressAnim = useRef(new Animated.Value(1)).current;
+  const sizeAnim = useRef(new Animated.Value(28)).current;
 
   // Animation for entrance
   useEffect(() => {
@@ -182,6 +184,37 @@ const TaskItem: React.FC<TaskItemProps> = ({
     }
   };
 
+  // Handle press animations for completion button
+  const handlePressIn = () => {
+    Animated.parallel([
+      Animated.timing(pressAnim, {
+        toValue: 1.2,
+        duration: 200,
+        useNativeDriver: false,
+      }),
+      Animated.timing(sizeAnim, {
+        toValue: 34, // 28 * 1.2 = 34
+        duration: 200,
+        useNativeDriver: false,
+      }),
+    ]).start();
+  };
+
+  const handlePressOut = () => {
+    Animated.parallel([
+      Animated.timing(pressAnim, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: false,
+      }),
+      Animated.timing(sizeAnim, {
+        toValue: 28,
+        duration: 200,
+        useNativeDriver: false,
+      }),
+    ]).start();
+  };
+
   return (
     <Animated.View
       style={[
@@ -214,103 +247,106 @@ const TaskItem: React.FC<TaskItemProps> = ({
           onPress={handlePress}
           activeOpacity={0.7}>
           <View style={styles.taskContent}>
-            <View style={styles.taskHeader}>
-              <Text
-                style={[
-                  styles.taskTitle,
-                  {
-                    color: colors.text,
-                    textDecorationLine: item.completed
-                      ? "line-through"
-                      : "none",
-                  },
-                ]}
-                numberOfLines={2}>
-                {item.title}
-              </Text>
-              <View style={styles.taskMeta}>
-                <Text style={[styles.priorityText, { color: priorityColor }]}>
-                  {priority || item.priority}
-                </Text>
-                {mode === "home" && !arePrereqsMet && (
-                  <Ionicons
-                    name="lock-closed"
-                    size={16}
-                    color={colors.warning}
-                    style={styles.lockIcon}
-                  />
+            <View style={styles.mainRow}>
+              <View style={styles.leftContent}>
+                {mode === "home" && onToggleComplete && (
+                  <Animated.View
+                    style={[
+                      styles.completeButton,
+                      {
+                        backgroundColor: item.completed
+                          ? colors.success
+                          : colors.surface,
+                        borderColor: item.completed
+                          ? colors.success
+                          : colors.border,
+                        width: sizeAnim,
+                        height: sizeAnim,
+                        borderRadius: Animated.divide(sizeAnim, 2),
+                        transform: [{ scale: pressAnim }],
+                      },
+                    ]}>
+                    <TouchableOpacity
+                      activeOpacity={1}
+                      onPress={handleToggleComplete}
+                      onPressIn={handlePressIn}
+                      onPressOut={handlePressOut}
+                      style={styles.completeButtonTouchable}
+                    />
+                  </Animated.View>
                 )}
-              </View>
-            </View>
 
-            {item.description && (
-              <Text
-                style={[styles.description, { color: colors.textSecondary }]}
-                numberOfLines={2}>
-                {item.description}
-              </Text>
-            )}
+                <View style={styles.taskInfo}>
+                  <View style={styles.titleRow}>
+                    <Text
+                      style={[
+                        styles.taskTitle,
+                        {
+                          color: colors.text,
+                          textDecorationLine: item.completed
+                            ? "line-through"
+                            : "none",
+                        },
+                      ]}
+                      numberOfLines={2}>
+                      {item.title}
+                    </Text>
+                    {mode === "home" && !arePrereqsMet && (
+                      <Ionicons
+                        name="lock-closed"
+                        size={16}
+                        color={colors.warning}
+                        style={styles.lockIcon}
+                      />
+                    )}
+                  </View>
 
-            <View style={styles.taskFooter}>
-              <View style={styles.dateContainer}>
-                <Ionicons
-                  name="calendar-outline"
-                  size={14}
-                  color={colors.textSecondary}
-                />
-                <Text
-                  style={[
-                    styles.dueDate,
-                    {
-                      color: taskIsOverdue
-                        ? colors.error
-                        : colors.textSecondary,
-                    },
-                  ]}>
-                  {formatDueDate(item.dueDate)}
-                </Text>
-              </View>
+                  {item.description && (
+                    <Text
+                      style={[
+                        styles.description,
+                        { color: colors.textSecondary },
+                      ]}
+                      numberOfLines={2}>
+                      {item.description}
+                    </Text>
+                  )}
 
-              {mode === "home" && onToggleComplete && (
-                <TouchableOpacity
-                  style={[
-                    styles.completeButton,
-                    {
-                      backgroundColor: item.completed
-                        ? colors.success
-                        : colors.surface,
-                      borderColor: item.completed
-                        ? colors.success
-                        : colors.border,
-                    },
-                  ]}
-                  onPress={handleToggleComplete}
-                  activeOpacity={0.7}>
-                  <Ionicons
-                    name={item.completed ? "checkmark" : "add"}
-                    size={16}
-                    color={item.completed ? "white" : colors.textSecondary}
-                  />
-                </TouchableOpacity>
-              )}
-
-              {mode === "all-tasks" && (
-                <View style={styles.statusContainer}>
-                  <Ionicons
-                    name={item.completed ? "checkmark-circle" : "time-outline"}
-                    size={16}
-                    color={item.completed ? colors.success : colors.warning}
-                    style={styles.statusIcon}
-                  />
                   <Text
                     style={[
-                      styles.statusText,
-                      { color: colors.textSecondary },
+                      styles.dueDate,
+                      {
+                        color: taskIsOverdue
+                          ? colors.error
+                          : colors.textSecondary,
+                      },
                     ]}>
-                    {item.completed ? "Completed" : "Pending"}
+                    {formatDueDate(item.dueDate)}
                   </Text>
                 </View>
-              )}
+              </View>
+
+              <View style={styles.rightContent}>
+                {mode === "all-tasks" && (
+                  <View style={styles.statusContainer}>
+                    <Ionicons
+                      name={
+                        item.completed ? "checkmark-circle" : "time-outline"
+                      }
+                      size={16}
+                      color={item.completed ? colors.success : colors.warning}
+                      style={styles.statusIcon}
+                    />
+                    <Text
+                      style={[
+                        styles.statusText,
+                        { color: colors.textSecondary },
+                      ]}>
+                      {item.completed ? "Completed" : "Pending"}
+                    </Text>
+                  </View>
+                )}
+              </View>
             </View>
           </View>
         </TouchableOpacity>
@@ -331,9 +367,27 @@ const styles = StyleSheet.create({
   taskContent: {
     padding: 16,
   },
-  taskHeader: {
+  mainRow: {
     flexDirection: "row",
     justifyContent: "space-between",
+    alignItems: "flex-start",
+  },
+  leftContent: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    marginRight: 12,
+  },
+  rightContent: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  taskInfo: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  titleRow: {
+    flexDirection: "row",
     alignItems: "flex-start",
     marginBottom: 8,
   },
@@ -343,36 +397,16 @@ const styles = StyleSheet.create({
     flex: 1,
     marginRight: 8,
   },
-  taskMeta: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  priorityText: {
-    fontSize: 12,
-    fontWeight: "600",
-    textTransform: "uppercase",
-  },
   lockIcon: {
     marginLeft: 4,
   },
   description: {
     fontSize: 14,
     lineHeight: 20,
-    marginBottom: 12,
-  },
-  taskFooter: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  dateContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    flex: 1,
+    marginBottom: 8,
   },
   dueDate: {
     fontSize: 12,
-    marginLeft: 4,
     fontWeight: "500",
   },
   completeButton: {
@@ -382,6 +416,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     alignItems: "center",
     justifyContent: "center",
+  },
+  completeButtonTouchable: {
+    width: "100%",
+    height: "100%",
+    justifyContent: "center",
+    alignItems: "center",
+    borderRadius: 14,
   },
   statusContainer: {
     flexDirection: "row",
