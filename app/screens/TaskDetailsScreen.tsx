@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   Alert,
   Animated,
+  Modal,
   Platform,
   ScrollView,
   StatusBar,
@@ -17,6 +18,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import RepetitionSelector from "../components/AddTaskComponents/RepetitionSelector";
 import ScreenHeader from "../components/common/ScreenHeader";
 import { useTheme } from "../context/ThemeContext";
 import {
@@ -26,7 +28,12 @@ import {
   updateTask,
 } from "../services/taskStorageService";
 import { SIZES } from "../theme";
-import { RootStackParamList, Task, TaskPriority } from "../types";
+import {
+  RepetitionRule,
+  RootStackParamList,
+  Task,
+  TaskPriority,
+} from "../types";
 
 type TaskDetailsScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -48,6 +55,12 @@ const TaskDetailsScreen = () => {
   const [editingField, setEditingField] = useState<string | null>(null);
   const [tempTitle, setTempTitle] = useState("");
   const [tempDescription, setTempDescription] = useState("");
+
+  // Repetition management
+  const [showRepetitionModal, setShowRepetitionModal] = useState(false);
+  const [tempRepetition, setTempRepetition] = useState<
+    RepetitionRule | undefined
+  >(undefined);
   const [tempDate, setTempDate] = useState<Date>(new Date());
   const [tempPriority, setTempPriority] = useState<TaskPriority>("normal");
 
@@ -209,26 +222,33 @@ const TaskDetailsScreen = () => {
 
   // Editing functions
   const startEditing = (field: string) => {
+    console.log("Starting to edit field:", field, "Task:", !!task);
+
     if (!task) {
       console.log("Cannot start editing: no task loaded");
+      Alert.alert("Error", "Task not loaded yet");
       return;
     }
 
     try {
       switch (field) {
         case "title":
+          console.log("Setting title edit mode");
           setTempTitle(task.title || "");
           setEditingField("title");
           break;
         case "description":
+          console.log("Setting description edit mode");
           setTempDescription(task.description || "");
           setEditingField("description");
           break;
         case "date":
+          console.log("Setting date edit mode");
           setTempDate(new Date(task.dueDate));
           setEditingField("date");
           break;
         case "priority":
+          console.log("Setting priority edit mode");
           setTempPriority(task.priority || "normal");
           setEditingField("priority");
           break;
@@ -236,9 +256,13 @@ const TaskDetailsScreen = () => {
           console.log("Unknown field to edit:", field);
           return;
       }
+      console.log("Edit mode set successfully for:", field);
     } catch (error) {
       console.error("Error starting edit for field:", field, error);
-      Alert.alert("Error", "Failed to start editing");
+      Alert.alert(
+        "Error",
+        "Failed to start editing: " + (error as Error).message
+      );
     }
   };
 
@@ -305,6 +329,84 @@ const TaskDetailsScreen = () => {
             } catch (error) {
               console.error("Error deleting task:", error);
               Alert.alert("Error", "Failed to delete task");
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  // Repetition management functions
+  const handleRepetitionPress = () => {
+    if (task?.repetition) {
+      setTempRepetition({ ...task.repetition });
+    } else {
+      setTempRepetition({
+        enabled: false,
+        type: "weekly",
+        interval: 1,
+        daysOfWeek: [],
+      });
+    }
+    setShowRepetitionModal(true);
+  };
+
+  const handleRepetitionSave = async () => {
+    if (!task) return;
+
+    try {
+      const updatedTask = {
+        ...task,
+        repetition: tempRepetition?.enabled ? tempRepetition : undefined,
+        isRecurring: tempRepetition?.enabled || false,
+      };
+
+      const success = await updateTask(updatedTask);
+      if (success) {
+        setTask(updatedTask);
+        setShowRepetitionModal(false);
+      } else {
+        Alert.alert("Error", "Failed to update repetition settings");
+      }
+    } catch (error) {
+      console.error("Error updating repetition:", error);
+      Alert.alert("Error", "Failed to update repetition settings");
+    }
+  };
+
+  const handleRepetitionCancel = () => {
+    setShowRepetitionModal(false);
+    setTempRepetition(undefined);
+  };
+
+  const handleRemoveRepetition = async () => {
+    if (!task) return;
+
+    Alert.alert(
+      "Remove Repetition",
+      "Are you sure you want to remove the repetition rule for this task?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Remove",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              const updatedTask = {
+                ...task,
+                repetition: undefined,
+                isRecurring: false,
+              };
+
+              const success = await updateTask(updatedTask);
+              if (success) {
+                setTask(updatedTask);
+              } else {
+                Alert.alert("Error", "Failed to remove repetition");
+              }
+            } catch (error) {
+              console.error("Error removing repetition:", error);
+              Alert.alert("Error", "Failed to remove repetition");
             }
           },
         },
@@ -430,6 +532,13 @@ const TaskDetailsScreen = () => {
     );
   }
 
+  console.log(
+    "Rendering TaskDetailsScreen - Task:",
+    !!task,
+    "Editing field:",
+    editingField
+  );
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
@@ -524,10 +633,11 @@ const TaskDetailsScreen = () => {
                   ]}
                   value={tempTitle}
                   onChangeText={setTempTitle}
-                  autoFocus
-                  multiline
-                  onSubmitEditing={saveEdit}
-                  blurOnSubmit={false}
+                  autoFocus={true}
+                  multiline={true}
+                  placeholder="Enter task title..."
+                  placeholderTextColor={colors.textSecondary}
+                  onBlur={saveEdit}
                 />
               ) : (
                 <TouchableOpacity
@@ -678,11 +788,10 @@ const TaskDetailsScreen = () => {
                   onChangeText={setTempDescription}
                   placeholder="Add a description..."
                   placeholderTextColor={colors.textSecondary}
-                  multiline
+                  multiline={true}
                   numberOfLines={4}
-                  autoFocus
-                  onSubmitEditing={saveEdit}
-                  blurOnSubmit={false}
+                  autoFocus={true}
+                  onBlur={saveEdit}
                 />
               ) : (
                 <TouchableOpacity
@@ -735,6 +844,25 @@ const TaskDetailsScreen = () => {
 
         <TouchableOpacity
           style={[
+            styles.repetitionButton,
+            {
+              borderColor: task?.isRecurring ? colors.primary : colors.border,
+              backgroundColor: task?.isRecurring
+                ? colors.primary + "10"
+                : colors.card,
+            },
+          ]}
+          onPress={handleRepetitionPress}
+          activeOpacity={0.7}>
+          <Ionicons
+            name="repeat"
+            size={22}
+            color={task?.isRecurring ? colors.primary : colors.textSecondary}
+          />
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[
             styles.toggleButton,
             {
               backgroundColor: task.completed ? colors.success : colors.primary,
@@ -752,6 +880,88 @@ const TaskDetailsScreen = () => {
           />
         </TouchableOpacity>
       </View>
+
+      {/* Repetition Management Modal */}
+      <Modal
+        visible={showRepetitionModal}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={handleRepetitionCancel}>
+        <View style={styles.modalOverlay}>
+          <View
+            style={[
+              styles.modalContainer,
+              { backgroundColor: colors.background },
+            ]}>
+            {/* Modal Header */}
+            <View
+              style={[
+                styles.modalHeader,
+                { borderBottomColor: colors.border },
+              ]}>
+              <Text style={[styles.modalTitle, { color: colors.text }]}>
+                {task?.isRecurring ? "Edit Repetition" : "Set Repetition"}
+              </Text>
+              <TouchableOpacity
+                style={styles.closeButton}
+                onPress={handleRepetitionCancel}
+                activeOpacity={0.7}>
+                <Ionicons name="close" size={24} color={colors.text} />
+              </TouchableOpacity>
+            </View>
+
+            {/* Modal Content */}
+            <View style={styles.modalContent}>
+              {tempRepetition && (
+                <RepetitionSelector
+                  repetition={tempRepetition}
+                  onRepetitionChange={setTempRepetition}
+                />
+              )}
+            </View>
+
+            {/* Modal Footer */}
+            <View
+              style={[styles.modalFooter, { borderTopColor: colors.border }]}>
+              {task?.isRecurring && (
+                <TouchableOpacity
+                  style={[styles.removeButton, { borderColor: colors.error }]}
+                  onPress={handleRemoveRepetition}
+                  activeOpacity={0.7}>
+                  <Text
+                    style={[styles.removeButtonText, { color: colors.error }]}>
+                    Remove
+                  </Text>
+                </TouchableOpacity>
+              )}
+              <TouchableOpacity
+                style={[
+                  styles.cancelModalButton,
+                  { borderColor: colors.border },
+                ]}
+                onPress={handleRepetitionCancel}
+                activeOpacity={0.7}>
+                <Text
+                  style={[
+                    styles.cancelModalButtonText,
+                    { color: colors.text },
+                  ]}>
+                  Cancel
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.saveButton, { backgroundColor: colors.primary }]}
+                onPress={handleRepetitionSave}
+                activeOpacity={0.7}>
+                <Text
+                  style={[styles.saveButtonText, { color: colors.onPrimary }]}>
+                  Save
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -975,7 +1185,16 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    marginRight: SIZES.medium,
+    marginRight: SIZES.small,
+  },
+  repetitionButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    marginRight: SIZES.small,
   },
   toggleButton: {
     flex: 1,
@@ -990,6 +1209,90 @@ const styles = StyleSheet.create({
     color: "white",
     fontWeight: "600",
     marginRight: SIZES.small,
+  },
+
+  // Modal styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "flex-end",
+  },
+  modalContainer: {
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: "80%",
+    ...Platform.select({
+      ios: {
+        shadowColor: "rgba(0,0,0,0.3)",
+        shadowOffset: { width: 0, height: -2 },
+        shadowOpacity: 1,
+        shadowRadius: 10,
+      },
+      android: {
+        elevation: 10,
+      },
+    }),
+  },
+  modalHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+  },
+  closeButton: {
+    padding: 4,
+  },
+  modalContent: {
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+  },
+  modalFooter: {
+    flexDirection: "row",
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderTopWidth: 1,
+    gap: 12,
+  },
+  removeButton: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    borderWidth: 1,
+    alignItems: "center",
+  },
+  removeButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  cancelModalButton: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    borderWidth: 1,
+    alignItems: "center",
+  },
+  cancelModalButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  saveButton: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  saveButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
   },
 });
 

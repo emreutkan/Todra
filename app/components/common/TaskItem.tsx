@@ -318,14 +318,24 @@ const TaskItem: React.FC<TaskItemProps> = ({
                       numberOfLines={2}>
                       {item.title}
                     </Text>
-                    {mode === "home" && !arePrereqsMet && (
-                      <Ionicons
-                        name="lock-closed"
-                        size={16}
-                        color={colors.warning}
-                        style={styles.lockIcon}
-                      />
-                    )}
+                    <View style={styles.titleIcons}>
+                      {item.isRecurring && (
+                        <Ionicons
+                          name="repeat"
+                          size={16}
+                          color={colors.primary}
+                          style={styles.repeatIcon}
+                        />
+                      )}
+                      {mode === "home" && !arePrereqsMet && (
+                        <Ionicons
+                          name="lock-closed"
+                          size={16}
+                          color={colors.warning}
+                          style={styles.lockIcon}
+                        />
+                      )}
+                    </View>
                   </View>
 
                   {item.description && (
@@ -416,6 +426,7 @@ const styles = StyleSheet.create({
   titleRow: {
     flexDirection: "row",
     alignItems: "flex-start",
+    justifyContent: "space-between",
     marginBottom: 8,
   },
   taskTitle: {
@@ -423,6 +434,13 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     flex: 1,
     marginRight: 8,
+  },
+  titleIcons: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  repeatIcon: {
+    marginLeft: 4,
   },
   lockIcon: {
     marginLeft: 4,
