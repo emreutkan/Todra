@@ -21,6 +21,7 @@ import CategorySelector from "../components/AddTaskComponents/CategorySelector";
 import DateTimePicker from "../components/AddTaskComponents/DateTimePicker";
 import PredecessorTaskSelector from "../components/AddTaskComponents/PredecessorTaskSelector";
 import PrioritySelector from "../components/AddTaskComponents/PrioritySelector";
+import RepetitionSelector from "../components/AddTaskComponents/RepetitionSelector";
 import TaskDescription from "../components/AddTaskComponents/TaskDescription";
 import TaskTitleInput from "../components/AddTaskComponents/TaskTitleInput";
 import ScreenHeader from "../components/common/ScreenHeader";
@@ -67,6 +68,10 @@ const AddTaskScreen: React.FC = () => {
     // Predecessor state
     predecessorIds,
     availableTasks,
+
+    // Repetition state
+    repetition,
+    setRepetition,
 
     // Actions
     handleSave,
@@ -163,11 +168,18 @@ const AddTaskScreen: React.FC = () => {
           initialDate={dueDate}
         />
 
-        <PredecessorTaskSelector
-          availableTasks={availableTasks}
-          selectedPredecessors={predecessorIds}
-          onSelectPredecessor={handlePredecessorSelect}
+        <RepetitionSelector
+          repetition={repetition}
+          onRepetitionChange={(newRepetition) => setRepetition(newRepetition)}
         />
+
+        {!repetition.enabled && (
+          <PredecessorTaskSelector
+            availableTasks={availableTasks}
+            selectedPredecessors={predecessorIds}
+            onSelectPredecessor={handlePredecessorSelect}
+          />
+        )}
 
         <TaskDescription value={description} onChangeText={setDescription} />
       </Animated.ScrollView>

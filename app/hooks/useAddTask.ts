@@ -9,7 +9,12 @@ import {
   getArchivedTasks,
   updateTask,
 } from "../services/taskStorageService";
-import { RootStackParamList, Task, TaskPriority } from "../types";
+import {
+  RepetitionRule,
+  RootStackParamList,
+  Task,
+  TaskPriority,
+} from "../types";
 
 type AddTaskScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -46,6 +51,14 @@ export const useAddTask = () => {
   const [predecessorIds, setPredecessorIds] = useState<string[]>([]);
   const [availableTasks, setAvailableTasks] = useState<Task[]>([]);
   const [originalTask, setOriginalTask] = useState<Task | null>(null);
+
+  // Repetition functionality
+  const [repetition, setRepetition] = useState<RepetitionRule>({
+    enabled: false,
+    type: "weekly",
+    interval: 1,
+    daysOfWeek: [],
+  });
 
   // Load available tasks for predecessor selection and existing task data if editing
   useEffect(() => {
@@ -167,8 +180,10 @@ export const useAddTask = () => {
           createdAt: selectedDate.getTime(),
           dueDate: dueDate.getTime(),
           category,
-          predecessorIds,
+          predecessorIds: repetition.enabled ? [] : predecessorIds, // No predecessors for recurring tasks
           archived: false,
+          repetition: repetition.enabled ? repetition : undefined,
+          isRecurring: repetition.enabled,
         };
 
         // Save task
@@ -200,6 +215,7 @@ export const useAddTask = () => {
     dueDate,
     category,
     predecessorIds,
+    repetition,
     isFormValid,
     navigation,
     selectedDate,
@@ -253,6 +269,10 @@ export const useAddTask = () => {
     // Predecessor state
     predecessorIds,
     availableTasks,
+
+    // Repetition state
+    repetition,
+    setRepetition,
 
     // Actions
     handleSave,

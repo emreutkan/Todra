@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
 import { SIZES } from "../../theme";
-import ActionButton from "../common/ActionButton";
+import AnimatedTodayButton from "../common/AnimatedTodayButton";
 
 const { width } = Dimensions.get("window");
 const VISIBLE_ITEMS = 5;
@@ -212,7 +212,7 @@ const DateSlider: React.FC<DateSliderProps> = ({
             {selectedMonth}
           </Text>
         </View>
-        <ActionButton
+        <AnimatedTodayButton
           onPress={() => {
             if (todayIndex !== -1) {
               onDateChange(today);
@@ -226,7 +226,6 @@ const DateSlider: React.FC<DateSliderProps> = ({
             }
           }}
           text="Today"
-          icon={false}
         />
       </View>
 

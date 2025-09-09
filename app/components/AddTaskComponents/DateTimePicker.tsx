@@ -66,7 +66,7 @@ const DateTimePickerComponent: React.FC<DateTimePickerProps> = ({
     const minutes = date.getMinutes();
 
     if (hours === 23 && minutes === 59) {
-      return "End of today";
+      return "By end of day";
     }
 
     return format(date, "h:mm a");
