@@ -29,11 +29,15 @@ export const useAddTask = () => {
   const taskId = (route.params as any)?.taskId;
   const selectedDate = (route.params as any)?.selectedDate || new Date();
 
+  // Set default time to 23:59
+  const defaultDate = new Date(selectedDate);
+  defaultDate.setHours(23, 59, 0, 0);
+
   // Form state
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState<TaskPriority>("normal");
-  const [dueDate, setDueDate] = useState<Date>(selectedDate);
+  const [dueDate, setDueDate] = useState<Date>(defaultDate);
   const [category, setCategory] = useState<string>(DEFAULT_CATEGORIES[0].id);
   const [isFormValid, setIsFormValid] = useState(false);
   const [loading, setLoading] = useState(false);

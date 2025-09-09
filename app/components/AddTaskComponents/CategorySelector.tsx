@@ -188,12 +188,6 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
               numberOfLines={1}>
               {item.name}
             </Text>
-
-            {selectedCategory === item.id && (
-              <View style={[styles.checkmark, { backgroundColor: item.color }]}>
-                <Ionicons name="checkmark" size={12} color="#FFFFFF" />
-              </View>
-            )}
           </TouchableOpacity>
         )}
         ListFooterComponent={
@@ -479,16 +473,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "500",
     textAlign: "center",
-  },
-  checkmark: {
-    position: "absolute",
-    top: -8,
-    right: -8,
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    justifyContent: "center",
-    alignItems: "center",
   },
   addCategoryButton: {
     width: 100,

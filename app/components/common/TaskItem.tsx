@@ -1,10 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
 import {
   differenceInDays,
+  differenceInHours,
+  differenceInMinutes,
   format,
-  isToday,
-  isTomorrow,
-  isYesterday,
 } from "date-fns";
 import React, { useEffect, useMemo, useRef } from "react";
 import {
@@ -134,20 +133,48 @@ const TaskItem: React.FC<TaskItemProps> = ({
     }
 
     const date = new Date(dueDate);
-    const today = new Date();
-    const diffDays = differenceInDays(date, today);
+    const now = new Date();
+    const timeString = format(date, "h:mm a");
 
-    if (isToday(date)) {
-      return "Today";
-    } else if (isTomorrow(date)) {
-      return "Tomorrow";
-    } else if (isYesterday(date)) {
-      return "Yesterday";
-    } else if (diffDays > 0 && diffDays <= 7) {
-      return format(date, "EEEE"); // Day of week
+    const diffMinutes = differenceInMinutes(date, now);
+    const diffHours = differenceInHours(date, now);
+    const diffDays = differenceInDays(date, now);
+
+    let relativeTime = "";
+
+    if (diffMinutes < 0) {
+      // Past due
+      const pastMinutes = Math.abs(diffMinutes);
+      const pastHours = Math.abs(diffHours);
+      const pastDays = Math.abs(diffDays);
+
+      if (pastDays > 0) {
+        relativeTime = `(overdue by ${pastDays} day${pastDays > 1 ? "s" : ""})`;
+      } else if (pastHours > 0) {
+        relativeTime = `(overdue by ${pastHours} hour${
+          pastHours > 1 ? "s" : ""
+        })`;
+      } else {
+        relativeTime = `(overdue by ${pastMinutes} min${
+          pastMinutes > 1 ? "s" : ""
+        })`;
+      }
     } else {
-      return format(date, "MMM d");
+      // Future
+      if (diffDays > 0) {
+        relativeTime = `(due in ${diffDays} day${diffDays > 1 ? "s" : ""})`;
+      } else if (diffHours > 0) {
+        relativeTime = `(due in ${diffHours} hour${diffHours > 1 ? "s" : ""})`;
+      } else if (diffMinutes > 0) {
+        relativeTime = `(due in ${diffMinutes} min${
+          diffMinutes > 1 ? "s" : ""
+        })`;
+      } else {
+        relativeTime = "(due now)";
+      }
     }
+
+    return `${timeString} ${relativeTime}`;
   };
 
   // Get priority color

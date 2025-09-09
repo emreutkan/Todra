@@ -1,12 +1,12 @@
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { StatusBar } from "expo-status-bar";
-import React from "react";
+import React, { useRef } from "react";
 import {
   ActivityIndicator,
+  Animated,
   KeyboardAvoidingView,
   Platform,
-  ScrollView,
   StyleSheet,
   View,
 } from "react-native";
@@ -34,6 +34,20 @@ type AddTaskScreenNavigationProp = NativeStackNavigationProp<
 const AddTaskScreen: React.FC = () => {
   const navigation = useNavigation<AddTaskScreenNavigationProp>();
   const { colors } = useTheme();
+
+  // Animation values for sliding header
+  const scrollY = useRef(new Animated.Value(0)).current;
+  const headerHeight = 80; // Approximate header height
+  const headerTranslateY = scrollY.interpolate({
+    inputRange: [0, headerHeight],
+    outputRange: [0, -headerHeight],
+    extrapolate: "clamp",
+  });
+  const headerOpacity = scrollY.interpolate({
+    inputRange: [0, headerHeight * 0.5],
+    outputRange: [1, 0],
+    extrapolate: "clamp",
+  });
 
   const {
     // Form state
@@ -68,11 +82,19 @@ const AddTaskScreen: React.FC = () => {
       flex: 1,
       backgroundColor: colors.background,
     },
+    headerContainer: {
+      position: "absolute",
+      top: 0,
+      left: 0,
+      right: 0,
+      zIndex: 1000,
+    },
     content: {
       flex: 1,
     },
     scrollContent: {
       padding: SIZES.medium,
+      paddingTop: 120, // Add more top padding for better spacing after header slides up
       paddingBottom: SIZES.extraLarge * 2,
     },
     loadingContainer: {
@@ -96,17 +118,33 @@ const AddTaskScreen: React.FC = () => {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       style={styles.container}>
       <StatusBar style="dark" />
-      <ScreenHeader
-        title={isEditing ? "Edit Task" : "Create New Task"}
-        showBackButton
-        onBackPress={handleCancel}
-      />
 
-      <ScrollView
+      {/* Animated Header */}
+      <Animated.View
+        style={[
+          styles.headerContainer,
+          {
+            transform: [{ translateY: headerTranslateY }],
+            opacity: headerOpacity,
+          },
+        ]}>
+        <ScreenHeader
+          title={isEditing ? "Edit Task" : "Create New Task"}
+          showBackButton
+          onBackPress={handleCancel}
+        />
+      </Animated.View>
+
+      <Animated.ScrollView
         style={styles.content}
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}>
+        showsVerticalScrollIndicator={false}
+        scrollEventThrottle={16}
+        onScroll={Animated.event(
+          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+          { useNativeDriver: true }
+        )}>
         <TaskTitleInput value={title} onChangeText={setTitle} />
 
         <CategorySelector
@@ -132,7 +170,7 @@ const AddTaskScreen: React.FC = () => {
         />
 
         <TaskDescription value={description} onChangeText={setDescription} />
-      </ScrollView>
+      </Animated.ScrollView>
 
       <ActionFooter
         onCancel={handleCancel}
