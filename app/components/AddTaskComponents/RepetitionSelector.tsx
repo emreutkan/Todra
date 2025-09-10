@@ -135,17 +135,6 @@ const RepetitionSelector: React.FC<RepetitionSelectorProps> = ({
       borderRadius: 12,
       borderWidth: 1,
       borderColor: colors.border,
-      ...Platform.select({
-        ios: {
-          shadowColor: "rgba(0,0,0,0.08)",
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 1,
-          shadowRadius: 8,
-        },
-        android: {
-          elevation: 3,
-        },
-      }),
     },
     repetitionInfo: {
       flex: 1,

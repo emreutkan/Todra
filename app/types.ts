@@ -21,8 +21,18 @@ export interface Task {
   repetition?: RepetitionRule; // Optional repetition rule
   isRecurring?: boolean; // Flag to indicate if this is a recurring task
   parentTaskId?: string; // ID of the original task if this is a generated recurring task
+  remindMe?: ReminderSettings; // Optional reminder preferences
 }
 export type TaskPriority = "low" | "normal" | "high";
+
+export type ReminderPreset = "none" | "1h" | "2h" | "6h" | "24h" | "custom";
+
+export interface ReminderSettings {
+  enabled: boolean;
+  preset: ReminderPreset; // quick preset, or custom
+  customOffsetMs?: number; // if preset = custom, milliseconds before dueDate
+  spamMode?: boolean; // aggressive reminders pattern
+}
 
 export type RootStackParamList = {
   Splash: undefined;

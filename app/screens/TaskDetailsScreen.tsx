@@ -134,18 +134,7 @@ const TaskDetailsScreen = () => {
     }
   };
 
-  const getPriorityColor = (priority: TaskPriority) => {
-    switch (priority.toLowerCase()) {
-      case "high":
-        return colors.error;
-      case "normal":
-        return colors.warning;
-      case "low":
-        return colors.success;
-      default:
-        return colors.info;
-    }
-  };
+
 
   const isOverdue = (dueDate: number) => {
     return !task?.completed && dueDate < Date.now();

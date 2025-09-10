@@ -1,5 +1,3 @@
-import { useNavigation } from "@react-navigation/native";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { StatusBar } from "expo-status-bar";
 import React, { useRef } from "react";
 import {
@@ -13,7 +11,6 @@ import {
 
 import { useTheme } from "../context/ThemeContext";
 import { SIZES } from "../theme";
-import { RootStackParamList } from "../types";
 
 // Component imports
 import ActionFooter from "../components/AddTaskComponents/ActionFooter";
@@ -24,16 +21,11 @@ import PrioritySelector from "../components/AddTaskComponents/PrioritySelector";
 import RepetitionSelector from "../components/AddTaskComponents/RepetitionSelector";
 import TaskDescription from "../components/AddTaskComponents/TaskDescription";
 import TaskTitleInput from "../components/AddTaskComponents/TaskTitleInput";
+import RemindMeButton from "../components/common/RemindMeButton";
 import ScreenHeader from "../components/common/ScreenHeader";
 import { useAddTask } from "../hooks/useAddTask";
 
-type AddTaskScreenNavigationProp = NativeStackNavigationProp<
-  RootStackParamList,
-  "AddTask" | "EditTask"
->;
-
 const AddTaskScreen: React.FC = () => {
-  const navigation = useNavigation<AddTaskScreenNavigationProp>();
   const { colors } = useTheme();
 
   // Animation values for sliding header
@@ -72,6 +64,10 @@ const AddTaskScreen: React.FC = () => {
     // Repetition state
     repetition,
     setRepetition,
+
+    // Reminder state
+    remindMe,
+    setRemindMe,
 
     // Actions
     handleSave,
@@ -124,7 +120,6 @@ const AddTaskScreen: React.FC = () => {
       style={styles.container}>
       <StatusBar style="dark" />
 
-      {/* Animated Header */}
       <Animated.View
         style={[
           styles.headerContainer,
@@ -167,6 +162,14 @@ const AddTaskScreen: React.FC = () => {
           onDateChange={setDueDate}
           initialDate={dueDate}
         />
+        {/* Remind me under due date/time */}
+        <View style={{ marginTop: 12 }}>
+          <RemindMeButton
+            value={remindMe}
+            onChange={setRemindMe}
+            maxOffsetMs={Math.max(dueDate.getTime() - Date.now(), 0)}
+          />
+        </View>
 
         <RepetitionSelector
           repetition={repetition}

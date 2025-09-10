@@ -83,9 +83,6 @@ const PrioritySelector: React.FC<PrioritySelectorProps> = ({
           shadowOpacity: 1,
           shadowRadius: 8,
         },
-        android: {
-          elevation: 3,
-        },
       }),
     },
     selectedButton: {
@@ -97,9 +94,6 @@ const PrioritySelector: React.FC<PrioritySelectorProps> = ({
           shadowOffset: { width: 0, height: 4 },
           shadowOpacity: 1,
           shadowRadius: 12,
-        },
-        android: {
-          elevation: 6,
         },
       }),
     },
@@ -117,9 +111,6 @@ const PrioritySelector: React.FC<PrioritySelectorProps> = ({
           shadowOffset: { width: 0, height: 1 },
           shadowOpacity: 0.8,
           shadowRadius: 2,
-        },
-        android: {
-          elevation: 2,
         },
       }),
     },

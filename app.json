@@ -3,6 +3,9 @@
     "name": "reacttaskplanner",
     "slug": "reacttaskplanner",
     "version": "1.0.0",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -14,18 +17,32 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.emreutkan.reacttaskplanner"
+      "bundleIdentifier": "com.emreutkan.reacttaskplanner",
+      "buildNumber": "1"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.emreutkan.reacttaskplanner"
+      "package": "com.emreutkan.reacttaskplanner",
+      "versionCode": 1
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
+    "scheme": "reacttaskplanner",
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "updates": {
+      "url": "https://u.expo.dev/d6f53cab-7842-4c6c-b65c-b944069db23f",
+      "enabled": true,
+      "checkAutomatically": "ON_LOAD"
+    },
+    "plugins": [
+      "expo-notifications"
+    ],
     "extra": {
       "eas": {
         "projectId": "d6f53cab-7842-4c6c-b65c-b944069db23f"

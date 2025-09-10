@@ -11,6 +11,7 @@ import {
 import { useTheme } from "../../context/ThemeContext";
 import { SIZES } from "../../theme";
 import { Task } from "../../types";
+import FormSection from "./FormSection";
 
 interface PredecessorTaskSelectorProps {
   availableTasks: Task[];
@@ -57,9 +58,7 @@ const PredecessorTaskSelector: React.FC<PredecessorTaskSelectorProps> = ({
   };
 
   const styles = StyleSheet.create({
-    container: {
-      marginTop: SIZES.medium,
-    },
+    container: {},
     button: {
       borderWidth: 1,
       borderColor: colors.border,
@@ -202,16 +201,18 @@ const PredecessorTaskSelector: React.FC<PredecessorTaskSelectorProps> = ({
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity
-        style={styles.button}
-        onPress={handleOpenModal}
-        activeOpacity={0.7}>
-        <View style={styles.buttonText}>
-          <Text style={styles.title}>Predecessor Tasks</Text>
-          <Text style={styles.subtitle}>{getSelectedTasksText()}</Text>
-        </View>
-        <Text style={styles.arrow}>›</Text>
-      </TouchableOpacity>
+      <FormSection title="Predecessors">
+        <TouchableOpacity
+          style={styles.button}
+          onPress={handleOpenModal}
+          activeOpacity={0.7}>
+          <View style={styles.buttonText}>
+            <Text style={styles.title}>Select Tasks</Text>
+            <Text style={styles.subtitle}>{getSelectedTasksText()}</Text>
+          </View>
+          <Text style={styles.arrow}>›</Text>
+        </TouchableOpacity>
+      </FormSection>
 
       <Modal
         visible={showModal}

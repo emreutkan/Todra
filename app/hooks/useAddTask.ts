@@ -10,6 +10,7 @@ import {
   updateTask,
 } from "../services/taskStorageService";
 import {
+  ReminderSettings,
   RepetitionRule,
   RootStackParamList,
   Task,
@@ -60,6 +61,14 @@ export const useAddTask = () => {
     daysOfWeek: [],
   });
 
+  // Reminder state
+  const [remindMe, setRemindMe] = useState<ReminderSettings | undefined>({
+    enabled: false,
+    preset: "none",
+    customOffsetMs: undefined,
+    spamMode: false,
+  });
+
   // Load available tasks for predecessor selection and existing task data if editing
   useEffect(() => {
     const loadData = async () => {
@@ -87,6 +96,7 @@ export const useAddTask = () => {
             setDueDate(new Date(existingTask.dueDate));
             setCategory(existingTask.category);
             setPredecessorIds(existingTask.predecessorIds || []);
+            setRemindMe(existingTask.remindMe);
           } else {
             Alert.alert("Error", "Task not found");
             navigation.goBack();
@@ -155,6 +165,7 @@ export const useAddTask = () => {
           category,
           predecessorIds,
           archived: originalTask.archived, // Keep existing archived status
+          remindMe,
         };
 
         // Update task
@@ -184,6 +195,7 @@ export const useAddTask = () => {
           archived: false,
           repetition: repetition.enabled ? repetition : undefined,
           isRecurring: repetition.enabled,
+          remindMe,
         };
 
         // Save task
@@ -273,6 +285,10 @@ export const useAddTask = () => {
     // Repetition state
     repetition,
     setRepetition,
+
+    // Reminder state
+    remindMe,
+    setRemindMe,
 
     // Actions
     handleSave,

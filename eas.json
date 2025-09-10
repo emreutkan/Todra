@@ -12,7 +12,8 @@
       "distribution": "internal"
     },
     "production": {
-      "autoIncrement": true
+      "autoIncrement": true,
+      "channel": "production"
     },
     "local": {
       "android": {
@@ -23,6 +24,13 @@
     }
   },
   "submit": {
-    "production": {}
+    "production": {
+      "ios": {
+        "ascAppId": null
+      },
+      "android": {
+        "serviceAccountKeyPath": null
+      }
+    }
   }
 }

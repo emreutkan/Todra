@@ -7,7 +7,7 @@ import {
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { useFonts } from "expo-font";
 import { StatusBar } from "expo-status-bar";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { SettingsProvider } from "./app/context/SettingsContext";
 import { ThemeProvider, useTheme } from "./app/context/ThemeContext";
 import { COLORS } from "./app/theme";
@@ -21,7 +21,9 @@ import SplashScreen from "./app/screens/SplashScreen";
 import TaskDetailsScreen from "./app/screens/TaskDetailsScreen";
 import WelcomeSliderScreen from "./app/screens/WelcomeSliderScreen";
 
+import * as Notifications from "expo-notifications";
 import ArchivedTasksScreen from "./app/screens/ArchivedTasksScreen";
+import { notificationService } from "./app/services/notificationService";
 import { RootStackParamList } from "./app/types";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -44,6 +46,25 @@ function AppContent() {
   };
 
   // No artificial delay or initial placeholder
+  useEffect(() => {
+    (async () => {
+      try {
+        await notificationService.init();
+        await notificationService.requestPermissions();
+      } catch {}
+    })();
+  }, []);
+
+  // Foreground behavior
+  useEffect(() => {
+    Notifications.setNotificationHandler({
+      handleNotification: async () => ({
+        shouldShowAlert: true,
+        shouldPlaySound: true,
+        shouldSetBadge: false,
+      }),
+    });
+  }, []);
 
   return (
     <NavigationContainer theme={MyTheme}>
