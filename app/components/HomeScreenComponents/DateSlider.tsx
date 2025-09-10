@@ -11,6 +11,7 @@ import {
 import { useTheme } from "../../context/ThemeContext";
 import { SIZES } from "../../theme";
 import AnimatedTodayButton from "../common/AnimatedTodayButton";
+import DateTimeModal from "../common/DateTimeModal";
 
 const { width } = Dimensions.get("window");
 const VISIBLE_ITEMS = 5;
@@ -38,6 +39,7 @@ const DateSlider: React.FC<DateSliderProps> = ({
   const { colors } = useTheme();
   const flatListRef = useRef<FlatList>(null);
   const [initialized, setInitialized] = useState(false);
+  const [isDatePickerVisible, setIsDatePickerVisible] = useState(false);
 
   // Find current date index in the date range
   const currentDateIndex = useMemo(() => {
@@ -131,6 +133,20 @@ const DateSlider: React.FC<DateSliderProps> = ({
     }, 100);
   };
 
+  // Handle date picker modal
+  const handleDatePickerConfirm = (selectedDate: Date) => {
+    onDateChange(selectedDate);
+    setIsDatePickerVisible(false);
+  };
+
+  const handleDatePickerCancel = () => {
+    setIsDatePickerVisible(false);
+  };
+
+  const handleMonthPress = () => {
+    setIsDatePickerVisible(true);
+  };
+
   // Render each date item
   const renderDateItem = ({ item: date }: { item: Date; index: number }) => {
     const _isToday = isToday(date);
@@ -210,11 +226,18 @@ const DateSlider: React.FC<DateSliderProps> = ({
         },
       ]}>
       <View style={styles.header}>
-        <View style={styles.monthDisplay}>
+        <TouchableOpacity
+          style={styles.monthDisplay}
+          onPress={handleMonthPress}
+          activeOpacity={0.7}
+          accessible={true}
+          accessibilityRole="button"
+          accessibilityLabel={`Select date for ${selectedMonth}`}
+          accessibilityHint="Opens date picker to select a different month and year">
           <Text style={[styles.monthText, { color: colors.text }]}>
             {selectedMonth}
           </Text>
-        </View>
+        </TouchableOpacity>
         {!isCurrentDateToday && (
           <AnimatedTodayButton
             onPress={() => {
@@ -251,6 +274,15 @@ const DateSlider: React.FC<DateSliderProps> = ({
           index,
         })}
         initialNumToRender={VISIBLE_ITEMS * 2}
+      />
+
+      <DateTimeModal
+        visible={isDatePickerVisible}
+        mode="date"
+        value={currentDate}
+        onConfirm={handleDatePickerConfirm}
+        onCancel={handleDatePickerCancel}
+        title="Select Date"
       />
     </View>
   );

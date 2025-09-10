@@ -9,29 +9,29 @@ export const useHomeDateRange = () => {
 
   // Memoize the date range calculation to improve performance
   const dateRange = useMemo(() => {
-    // Get the current date
-    const now = new Date();
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
+    // Use the current selected date instead of today
+    const selectedMonth = currentDate.getMonth();
+    const selectedYear = currentDate.getFullYear();
 
     // Create array of dates for the full month plus next 15 days
     const dates: Date[] = [];
 
-    // Add dates from the current month
-    const lastDay = new Date(currentYear, currentMonth + 1, 0);
+    // Add dates from the selected month
+    const lastDay = new Date(selectedYear, selectedMonth + 1, 0);
     for (let i = 1; i <= lastDay.getDate(); i++) {
-      dates.push(new Date(currentYear, currentMonth, i));
+      dates.push(new Date(selectedYear, selectedMonth, i));
     }
 
     // Add first 15 days of next month
-    const nextMonth = currentMonth === 11 ? 0 : currentMonth + 1;
-    const nextMonthYear = currentMonth === 11 ? currentYear + 1 : currentYear;
+    const nextMonth = selectedMonth === 11 ? 0 : selectedMonth + 1;
+    const nextMonthYear =
+      selectedMonth === 11 ? selectedYear + 1 : selectedYear;
     for (let i = 1; i <= 15; i++) {
       dates.push(new Date(nextMonthYear, nextMonth, i));
     }
 
     return dates;
-  }, []);
+  }, [currentDate]);
 
   const handleDateChange = useCallback((date: Date) => {
     setCurrentDate(date);
@@ -48,4 +48,3 @@ export const useHomeDateRange = () => {
     handleDateChange,
   };
 };
-
