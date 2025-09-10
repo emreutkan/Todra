@@ -36,7 +36,6 @@ export interface ReminderSettings {
 
 export type RootStackParamList = {
   Splash: undefined;
-  WelcomeSlider: undefined;
   Home:
     | { showSuccessMessage?: boolean; message?: string; timestamp?: number }
     | undefined;

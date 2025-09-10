@@ -19,7 +19,6 @@ import HomeScreen from "./app/screens/HomeScreen";
 import SettingsScreen from "./app/screens/SettingsScreen"; // New import
 import SplashScreen from "./app/screens/SplashScreen";
 import TaskDetailsScreen from "./app/screens/TaskDetailsScreen";
-import WelcomeSliderScreen from "./app/screens/WelcomeSliderScreen";
 
 import * as Notifications from "expo-notifications";
 import ArchivedTasksScreen from "./app/screens/ArchivedTasksScreen";
@@ -81,7 +80,6 @@ function AppContent() {
           animation: "fade",
         }}>
         <Stack.Screen name="Splash" component={SplashScreen} />
-        <Stack.Screen name="WelcomeSlider" component={WelcomeSliderScreen} />
         <Stack.Screen name="Home" component={HomeScreen} />
         <Stack.Screen name="AddTask" component={AddTaskScreen} />
         <Stack.Screen

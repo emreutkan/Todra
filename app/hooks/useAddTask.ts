@@ -7,7 +7,7 @@ import {
   addTask,
   getActiveTasks,
   getArchivedTasks,
-  updateTask,
+  updateTask as updateTaskService,
 } from "../services/taskStorageService";
 import {
   ReminderSettings,
@@ -169,7 +169,7 @@ export const useAddTask = () => {
         };
 
         // Update task
-        const success = await updateTask(updatedTask);
+        const success = await updateTaskService(updatedTask);
         if (success) {
           // Navigate back with success message
           navigation.navigate("Home", {
@@ -263,6 +263,74 @@ export const useAddTask = () => {
     );
   }, []);
 
+  const updateTask = useCallback(
+    async (taskData: Partial<Task>) => {
+      if (!originalTask) {
+        throw new Error("Cannot update task: missing original task data");
+      }
+
+      try {
+        setLoading(true);
+
+        // Load existing tasks
+        const existingTasks = await getActiveTasks();
+
+        // Check for circular dependencies
+        if (hasCircularDependency(predecessorIds, existingTasks)) {
+          Alert.alert(
+            "Error",
+            "Cannot add these predecessors as they would create a circular dependency"
+          );
+          return false;
+        }
+
+        const updatedTask: Task = {
+          ...originalTask,
+          ...taskData,
+          id: taskId,
+          title: taskData.title || title,
+          description: taskData.description || description,
+          priority: taskData.priority || priority,
+          dueDate: taskData.dueDate || dueDate.getTime(),
+          category: taskData.category || category,
+          predecessorIds: taskData.predecessorIds || predecessorIds,
+          remindMe: taskData.remindMe || remindMe,
+        };
+
+        const success = await updateTaskService(updatedTask);
+        if (success) {
+          // Update local state
+          setTitle(updatedTask.title);
+          setDescription(updatedTask.description);
+          setPriority(updatedTask.priority);
+          setDueDate(new Date(updatedTask.dueDate));
+          setCategory(updatedTask.category);
+          setPredecessorIds(updatedTask.predecessorIds || []);
+          setRemindMe(updatedTask.remindMe);
+          setOriginalTask(updatedTask);
+        }
+
+        return success;
+      } catch (error) {
+        console.error("Error updating task:", error);
+        Alert.alert("Error", "Failed to update task");
+        return false;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [
+      originalTask,
+      title,
+      description,
+      priority,
+      dueDate,
+      category,
+      predecessorIds,
+      remindMe,
+    ]
+  );
+
   return {
     // Form state
     title,
@@ -280,6 +348,7 @@ export const useAddTask = () => {
 
     // Predecessor state
     predecessorIds,
+    setPredecessorIds,
     availableTasks,
 
     // Repetition state
@@ -294,6 +363,7 @@ export const useAddTask = () => {
     handleSave,
     handleCancel,
     handlePredecessorSelect,
+    updateTask,
 
     // Meta
     isEditing,

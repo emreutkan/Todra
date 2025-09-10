@@ -157,11 +157,7 @@ const AddTaskScreen: React.FC = () => {
           onSelectPriority={setPriority}
         />
 
-        <DateTimePicker
-          dueDate={dueDate}
-          onDateChange={setDueDate}
-          initialDate={dueDate}
-        />
+        <DateTimePicker dueDate={dueDate} onDateChange={setDueDate} />
         {/* Remind me under due date/time */}
         <View style={{ marginTop: 12 }}>
           <RemindMeButton

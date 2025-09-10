@@ -11,7 +11,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import InfoRow from "../components/SettingsComponents/InfoRow";
 import SettingsButton from "../components/SettingsComponents/SettingsButton";
 import SettingsSection from "../components/SettingsComponents/SettingsSection";
 import SettingsToggle from "../components/SettingsComponents/SettingsToggle";
@@ -35,9 +34,6 @@ const SettingsScreen: React.FC = () => {
     handleExportData,
     handleImportData,
     handleClearAllTasks,
-    handlePrivacyPolicy,
-    handleTermsOfService,
-    handleSendFeedback,
   } = useSettingsActions();
 
   const handleBackPress = () => {
@@ -148,27 +144,6 @@ const SettingsScreen: React.FC = () => {
             onPress={handleClearAllTasks}
             isDestructive
             marginTop={8}
-          />
-        </SettingsSection>
-
-        {/* App Info Section */}
-        <SettingsSection title="About">
-          <InfoRow label="Version" value="1.0.0" />
-          <InfoRow label="Last Updated" value="2025-04-03" />
-          <InfoRow
-            label="Privacy Policy"
-            onPress={handlePrivacyPolicy}
-            isButton
-          />
-          <InfoRow
-            label="Terms of Service"
-            onPress={handleTermsOfService}
-            isButton
-          />
-          <InfoRow
-            label="Send Feedback"
-            onPress={handleSendFeedback}
-            isButton
           />
         </SettingsSection>
       </ScrollView>

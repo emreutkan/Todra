@@ -3,7 +3,7 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import * as DocumentPicker from "expo-document-picker";
 import * as FileSystem from "expo-file-system";
 import { useCallback } from "react";
-import { Alert, Linking, Platform, Share } from "react-native";
+import { Alert, Platform, Share } from "react-native";
 import { useSettings } from "../context/SettingsContext";
 import { RootStackParamList } from "../types";
 
@@ -125,28 +125,11 @@ export const useSettingsActions = () => {
     );
   }, [clearAllTasks]);
 
-  const handlePrivacyPolicy = useCallback(() => {
-    Linking.openURL("https://yourapp.com/privacy-policy");
-  }, []);
-
-  const handleTermsOfService = useCallback(() => {
-    Linking.openURL("https://yourapp.com/terms-of-service");
-  }, []);
-
-  const handleSendFeedback = useCallback(() => {
-    Linking.openURL(
-      "mailto:support@yourapp.com?subject=TaskPlanner%20Feedback"
-    );
-  }, []);
-
   return {
     handleViewAllTasks,
     handleViewArchivedTasks,
     handleExportData,
     handleImportData,
     handleClearAllTasks,
-    handlePrivacyPolicy,
-    handleTermsOfService,
-    handleSendFeedback,
   };
 };

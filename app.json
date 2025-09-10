@@ -29,7 +29,7 @@
       "versionCode": 1
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/icon.png"
     },
     "scheme": "todra",
     "assetBundlePatterns": [
