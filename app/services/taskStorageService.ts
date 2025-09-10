@@ -1,11 +1,91 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { STORAGE_KEYS } from "../constants/StorageKeys";
 import { Task } from "../types";
+import { notificationService } from "./notificationService";
 
 /**
  * Unified Task Storage Service
  * Combines functionality from both previous implementations
  */
+
+// Helper function to schedule notifications for a task
+const scheduleTaskNotifications = async (task: Task) => {
+  try {
+    if (!task.remindMe || !task.remindMe.enabled) {
+      return;
+    }
+
+    // Check if notifications are enabled in settings
+    const settingsJson = await AsyncStorage.getItem(STORAGE_KEYS.SETTINGS);
+    if (settingsJson) {
+      const settings = JSON.parse(settingsJson);
+      if (!settings.notificationsEnabled) {
+        console.log(
+          "Notifications disabled in settings, skipping notification scheduling"
+        );
+        return;
+      }
+    }
+
+    const { remindMe } = task;
+    const dueDateMs = task.dueDate;
+    const title = `Task Reminder: ${task.title}`;
+    const body = task.description || "Don't forget to complete this task!";
+
+    console.log(
+      `Scheduling notification for task: ${task.title} at ${new Date(
+        dueDateMs
+      ).toLocaleString()}`
+    );
+
+    if (remindMe.spamMode) {
+      // Use spam mode - multiple notifications
+      await notificationService.scheduleSpamPlan({
+        dueDateMs,
+        title,
+        body,
+      });
+    } else if (remindMe.preset === "custom" && remindMe.customOffsetMs) {
+      // Custom offset
+      await notificationService.scheduleOffset({
+        dueDateMs,
+        offsetMs: remindMe.customOffsetMs,
+        title,
+        body,
+      });
+    } else if (remindMe.preset !== "none") {
+      // Preset offset
+      const offsetMs = getPresetOffsetMs(remindMe.preset);
+      if (offsetMs) {
+        await notificationService.scheduleOffset({
+          dueDateMs,
+          offsetMs,
+          title,
+          body,
+        });
+      }
+    }
+  } catch (error) {
+    console.error("Failed to schedule notifications for task:", error);
+  }
+};
+
+// Helper function to get offset in milliseconds for preset values
+const getPresetOffsetMs = (preset: string): number | null => {
+  switch (preset) {
+    case "1h":
+      return 60 * 60 * 1000; // 1 hour
+    case "2h":
+      return 2 * 60 * 60 * 1000; // 2 hours
+    case "6h":
+      return 6 * 60 * 60 * 1000; // 6 hours
+    case "24h":
+      return 24 * 60 * 60 * 1000; // 24 hours
+    default:
+      return null;
+  }
+};
+
 export const taskStorageService = {
   // Get active tasks
   getActiveTasks: async (): Promise<Task[]> => {
@@ -98,7 +178,14 @@ export const taskStorageService = {
 
       const tasks = await taskStorageService.getActiveTasks();
       tasks.push(validatedTask);
-      return await taskStorageService.saveActiveTasks(tasks);
+      const success = await taskStorageService.saveActiveTasks(tasks);
+
+      // Schedule notifications if task was saved successfully
+      if (success) {
+        await scheduleTaskNotifications(validatedTask);
+      }
+
+      return success;
     } catch (error) {
       console.error("Failed to add task:", error);
       return false;
@@ -108,6 +195,9 @@ export const taskStorageService = {
   // Update a task in either active or archived list
   updateTask: async (updatedTask: Task): Promise<boolean> => {
     try {
+      // Get the original task to compare reminder settings
+      let originalTask: Task | null = null;
+
       // Check active tasks first
       let activeTasks = await taskStorageService.getActiveTasks();
       const activeIndex = activeTasks.findIndex(
@@ -115,9 +205,17 @@ export const taskStorageService = {
       );
 
       if (activeIndex !== -1) {
+        originalTask = activeTasks[activeIndex];
         // Update in active tasks
         activeTasks[activeIndex] = updatedTask;
-        return await taskStorageService.saveActiveTasks(activeTasks);
+        const success = await taskStorageService.saveActiveTasks(activeTasks);
+
+        // Schedule notifications if task was updated successfully and is not completed
+        if (success && !updatedTask.completed) {
+          await scheduleTaskNotifications(updatedTask);
+        }
+
+        return success;
       }
 
       // If not in active, check archived
@@ -127,6 +225,7 @@ export const taskStorageService = {
       );
 
       if (archivedIndex !== -1) {
+        originalTask = archivedTasks[archivedIndex];
         // Update in archived tasks
         archivedTasks[archivedIndex] = updatedTask;
         return await taskStorageService.saveArchivedTasks(archivedTasks);

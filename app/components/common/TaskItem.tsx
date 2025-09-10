@@ -292,6 +292,14 @@ const TaskItem: React.FC<TaskItemProps> = ({
                         opacity: !arePrereqsMet && !item.completed ? 0.5 : 1,
                       },
                     ]}>
+                    {item.completed && (
+                      <Ionicons
+                        name="checkmark"
+                        size={16}
+                        color="white"
+                        style={styles.checkmarkIcon}
+                      />
+                    )}
                     <TouchableOpacity
                       activeOpacity={1}
                       onPress={handleToggleComplete}
@@ -467,6 +475,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     borderRadius: 14,
+  },
+  checkmarkIcon: {
+    position: "absolute",
+    zIndex: 1,
   },
   statusContainer: {
     flexDirection: "row",

@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useSettings } from "../../context/SettingsContext";
 import { useTheme } from "../../context/ThemeContext";
 import { SIZES } from "../../theme";
 import { Task, TaskPriority } from "../../types";
@@ -42,20 +43,25 @@ const TaskList: React.FC<TaskListProps> = ({
   scrollY,
 }) => {
   const { colors } = useTheme();
+  const { settings } = useSettings();
   const [expandedSections, setExpandedSections] = useState<{
     [key: string]: boolean;
   }>({});
 
-  // Group filtered (active) tasks into sections for the SectionList
+  // Group filtered tasks into sections for the SectionList
   const sections = useMemo(() => {
-    const activeTasks = tasks.filter((task) => !task.completed);
+    // Filter tasks based on showCompletedTasks setting
+    const filteredTasks = settings.showCompletedTasks
+      ? tasks
+      : tasks.filter((task) => !task.completed);
+
     const priorityGroups: { [key in TaskPriority]: Task[] } = {
       high: [],
       normal: [],
       low: [],
     };
 
-    activeTasks.forEach((task) => {
+    filteredTasks.forEach((task) => {
       const prio: TaskPriority = priorityGroups.hasOwnProperty(task.priority)
         ? task.priority
         : "normal";
@@ -101,7 +107,7 @@ const TaskList: React.FC<TaskListProps> = ({
       });
 
     return sortedSections;
-  }, [tasks, currentDate]);
+  }, [tasks, currentDate, settings.showCompletedTasks]);
 
   // Initially expand all sections
   useEffect(() => {

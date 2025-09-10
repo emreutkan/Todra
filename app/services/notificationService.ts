@@ -59,10 +59,11 @@ export const notificationService = {
     const when = dueDateMs - offsetMs;
     if (when <= Date.now()) return null;
     const seconds = Math.ceil((when - Date.now()) / 1000);
-    return Notifications.scheduleNotificationAsync({
+    const id = await Notifications.scheduleNotificationAsync({
       content: { title, body: body ?? "Task reminder" },
       trigger: { seconds, type: "timeInterval" },
     });
+    return id;
   },
 
   async schedulePresets({
@@ -114,5 +115,23 @@ export const notificationService = {
 
   async cancelMany(ids: string[]) {
     await Promise.all(ids.map((id) => notificationService.cancel(id)));
+  },
+
+  // Test function to send an immediate notification
+  async sendTestNotification() {
+    try {
+      const id = await Notifications.scheduleNotificationAsync({
+        content: {
+          title: "Test Notification",
+          body: "This is a test notification to verify the system is working",
+        },
+        trigger: { seconds: 1 },
+      });
+      console.log("Test notification scheduled with ID:", id);
+      return id;
+    } catch (error) {
+      console.error("Failed to send test notification:", error);
+      return null;
+    }
   },
 };

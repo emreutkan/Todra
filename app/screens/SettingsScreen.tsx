@@ -4,6 +4,7 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { StatusBar } from "expo-status-bar";
 import React from "react";
 import {
+  Alert,
   Platform,
   ScrollView,
   StyleSheet,
@@ -17,6 +18,7 @@ import SettingsToggle from "../components/SettingsComponents/SettingsToggle";
 import { useSettings } from "../context/SettingsContext";
 import { useTheme } from "../context/ThemeContext";
 import { useSettingsActions } from "../hooks/useSettingsActions";
+import { notificationService } from "../services/notificationService";
 import { RootStackParamList } from "../types";
 
 type SettingsScreenNavigationProp = NativeStackNavigationProp<
@@ -38,6 +40,32 @@ const SettingsScreen: React.FC = () => {
 
   const handleBackPress = () => {
     navigation.goBack();
+  };
+
+  const handleTestNotification = async () => {
+    try {
+      const id = await notificationService.sendTestNotification();
+      if (id) {
+        Alert.alert(
+          "Test Notification Sent",
+          "A test notification should appear in 1 second. If you don't see it, check your notification permissions.",
+          [{ text: "OK" }]
+        );
+      } else {
+        Alert.alert(
+          "Test Failed",
+          "Failed to send test notification. Please check your notification permissions.",
+          [{ text: "OK" }]
+        );
+      }
+    } catch (error) {
+      console.error("Error sending test notification:", error);
+      Alert.alert(
+        "Error",
+        "Failed to send test notification. Please check your notification permissions.",
+        [{ text: "OK" }]
+      );
+    }
   };
 
   return (
@@ -76,6 +104,12 @@ const SettingsScreen: React.FC = () => {
             label="Sound Effects"
             value={settings.soundEnabled}
             onValueChange={(value) => updateSetting("soundEnabled", value)}
+          />
+          <SettingsButton
+            icon="bell-outline"
+            label="Test Notification"
+            onPress={handleTestNotification}
+            marginTop={8}
           />
         </SettingsSection>
 

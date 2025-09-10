@@ -604,7 +604,6 @@ const TaskDetailsScreen = () => {
   const renderStaticTaskDetails = () => {
     if (!task) return null;
 
-    const createdDateTime = formatDateTime(task.createdAt);
     const dueDateTime = formatDateTime(task.dueDate);
     const archivedDateTime = task.archivedAt
       ? formatDateTime(new Date(task.archivedAt).getTime())
@@ -740,16 +739,6 @@ const TaskDetailsScreen = () => {
           </Text>
         </View>
 
-        {/* Created Date */}
-        <View style={styles.staticField}>
-          <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>
-            Created
-          </Text>
-          <Text style={[styles.fieldValue, { color: colors.text }]}>
-            {createdDateTime.full}
-          </Text>
-        </View>
-
         {/* Archived Date */}
         {task.archived && archivedDateTime && (
           <View style={styles.staticField}>
@@ -802,20 +791,6 @@ const TaskDetailsScreen = () => {
             </View>
           </View>
         )}
-
-        {/* Task ID (for debugging/admin purposes) */}
-        <View style={styles.staticField}>
-          <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>
-            Task ID
-          </Text>
-          <Text
-            style={[
-              styles.fieldValue,
-              { color: colors.textSecondary, fontSize: 12 },
-            ]}>
-            {task.id}
-          </Text>
-        </View>
       </Animated.View>
     );
   };
@@ -931,14 +906,14 @@ const TaskDetailsScreen = () => {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
           ref={scrollViewRef}>
-          {renderStaticTaskDetails()}
-
-          {/* Prerequisites */}
+          {/* Prerequisites at the top */}
           {task?.predecessorIds && task.predecessorIds.length > 0 && (
             <Animated.View style={{ opacity: fadeAnim }}>
               {renderPrerequisites()}
             </Animated.View>
           )}
+
+          {renderStaticTaskDetails()}
         </ScrollView>
       )}
 
@@ -997,7 +972,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    padding: SIZES.medium,
+    padding: SIZES.small,
     paddingBottom: 120, // Add extra padding to prevent content from being hidden behind floating buttons
   },
   loadingContainer: {
@@ -1012,11 +987,11 @@ const styles = StyleSheet.create({
 
   // Main Card
   mainCard: {
-    padding: SIZES.medium,
-    paddingTop: 120, // Add more top padding for better spacing after header slides up
-    paddingBottom: SIZES.extraLarge * 2,
-    borderRadius: 16,
-    marginBottom: SIZES.medium,
+    padding: SIZES.small,
+    paddingTop: SIZES.medium,
+    paddingBottom: SIZES.medium,
+    borderRadius: 12,
+    marginBottom: SIZES.small,
     borderWidth: 1,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
@@ -1029,10 +1004,10 @@ const styles = StyleSheet.create({
   statusRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: SIZES.large,
-    paddingVertical: SIZES.medium,
-    paddingHorizontal: SIZES.medium,
-    borderRadius: 12,
+    marginBottom: SIZES.medium,
+    paddingVertical: SIZES.small,
+    paddingHorizontal: SIZES.small,
+    borderRadius: 8,
     backgroundColor: "rgba(0,0,0,0.03)",
     borderWidth: 1,
     borderColor: "rgba(0,0,0,0.05)",
@@ -1053,30 +1028,30 @@ const styles = StyleSheet.create({
 
   // Static Fields
   staticField: {
-    marginBottom: SIZES.medium,
-    paddingVertical: SIZES.small,
+    marginBottom: SIZES.small,
+    paddingVertical: SIZES.small / 2,
     borderBottomWidth: 1,
     borderBottomColor: "rgba(0,0,0,0.05)",
   },
   fieldLabel: {
-    fontSize: SIZES.font - 1,
+    fontSize: SIZES.font - 2,
     fontWeight: "600",
-    marginBottom: SIZES.small,
+    marginBottom: SIZES.small / 2,
     letterSpacing: 0.3,
     textTransform: "uppercase",
   },
   fieldValue: {
-    fontSize: SIZES.font + 1,
-    lineHeight: 24,
+    fontSize: SIZES.font,
+    lineHeight: 20,
     letterSpacing: 0.2,
     fontWeight: "500",
   },
 
   // Priority Badge
   priorityBadge: {
-    paddingHorizontal: SIZES.medium,
-    paddingVertical: SIZES.small,
-    borderRadius: 20,
+    paddingHorizontal: SIZES.small,
+    paddingVertical: SIZES.small / 2,
+    borderRadius: 16,
     alignSelf: "flex-start",
     elevation: 2,
     shadowOffset: { width: 0, height: 2 },
@@ -1120,12 +1095,12 @@ const styles = StyleSheet.create({
 
   // Section Title
   sectionTitle: {
-    fontSize: SIZES.medium,
+    fontSize: SIZES.font + 1,
     fontWeight: "600",
     marginBottom: SIZES.small,
   },
   prerequisitesSection: {
-    marginTop: SIZES.medium,
+    marginBottom: SIZES.small,
   },
   prerequisitesContainer: {
     gap: SIZES.small,
@@ -1135,7 +1110,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     backgroundColor: "rgba(255, 255, 255, 0.05)",
-    borderRadius: 12,
+    borderRadius: 8,
     borderWidth: 1,
     padding: SIZES.small,
   },
@@ -1145,15 +1120,15 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   prerequisiteStatus: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
     marginRight: SIZES.small,
   },
   prerequisiteTitle: {
-    fontSize: SIZES.font,
+    fontSize: SIZES.font - 1,
     fontWeight: "500",
   },
 

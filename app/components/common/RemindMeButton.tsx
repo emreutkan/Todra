@@ -49,36 +49,96 @@ const RemindMeButton: React.FC<RemindMeButtonProps> = ({
     }
   );
 
+  // Calculate time remaining and determine picker mode
+  const timeInfo = useMemo(() => {
+    if (!maxOffsetMs || maxOffsetMs <= 0) {
+      return {
+        totalMinutes: 0,
+        totalHours: 0,
+        showHours: false,
+        showMinutes: false,
+        maxHours: 0,
+        maxMinutes: 0,
+        pickerMode: "time" as const,
+        minDate: new Date(),
+        maxDate: new Date(),
+      };
+    }
+
+    const totalMinutes = Math.floor(maxOffsetMs / (1000 * 60));
+    const totalHours = Math.floor(totalMinutes / 60);
+    const remainingMinutes = totalMinutes % 60;
+
+    // Determine what to show based on time remaining
+    const showHours = totalHours > 0;
+    const showMinutes = totalMinutes > 0;
+
+    // Calculate min and max dates for the picker
+    const now = new Date();
+    const maxDate = new Date(now.getTime() + maxOffsetMs);
+    const minDate = new Date(now.getTime() + 60000); // At least 1 minute
+
+    return {
+      totalMinutes,
+      totalHours,
+      remainingMinutes,
+      showHours,
+      showMinutes,
+      maxHours: totalHours,
+      maxMinutes: totalMinutes,
+      pickerMode: "time" as const,
+      minDate,
+      maxDate,
+    };
+  }, [maxOffsetMs]);
+
   const summary = useMemo(() => {
     if (!settings.enabled || settings.preset === "none") return "Off";
     if (settings.preset === "custom" && settings.customOffsetMs) {
       const mins = Math.round(settings.customOffsetMs / 60000);
       const h = Math.floor(mins / 60);
       const m = mins % 60;
-      return `${h}h ${m}m before`;
+      if (h > 0) {
+        return `${h}h ${m}m before`;
+      } else {
+        return `${m}m before`;
+      }
     }
     return `${settings.preset} before`;
   }, [settings]);
 
-  // Backed by a Date just to reuse the spinner UI; treat H:M as offset
-  const initialMs =
-    settings.customOffsetMs ?? presetToMs(settings.preset) ?? 60 * 60 * 1000;
-  const init = new Date();
-  init.setHours(
-    Math.floor((initialMs / 3600000) % 24),
-    Math.floor((initialMs % 3600000) / 60000),
-    0,
-    0
-  );
-  const [tempTime, setTempTime] = useState<Date>(init);
+  // Initialize temp time based on current settings or default, but ensure it's within valid range
+  const getInitialTime = () => {
+    const currentOffset =
+      settings.customOffsetMs ?? presetToMs(settings.preset) ?? 60 * 60 * 1000;
+    const now = new Date();
+    const reminderTime = new Date(now.getTime() + currentOffset);
 
-  const currentOffsetMs = (() => {
-    const h = tempTime.getHours();
-    const m = tempTime.getMinutes();
-    return h * 3600000 + m * 60000;
-  })();
-  const maxAllowed = maxOffsetMs ?? Number.POSITIVE_INFINITY;
-  const isInvalid = currentOffsetMs > maxAllowed;
+    // Ensure the initial time doesn't exceed the maximum allowed
+    if (maxOffsetMs && currentOffset > maxOffsetMs) {
+      // If current offset exceeds max, set to max allowed time
+      return new Date(now.getTime() + maxOffsetMs);
+    }
+
+    return reminderTime;
+  };
+
+  const [tempTime, setTempTime] = useState<Date>(getInitialTime());
+
+  // Calculate current offset from temp time
+  const currentOffsetMs = useMemo(() => {
+    const now = new Date();
+    const selectedTime = new Date(tempTime);
+
+    // If selected time is in the past, return 0
+    if (selectedTime <= now) return 0;
+
+    return selectedTime.getTime() - now.getTime();
+  }, [tempTime]);
+
+  const isInvalid =
+    currentOffsetMs > (maxOffsetMs ?? Number.POSITIVE_INFINITY) ||
+    currentOffsetMs <= 0;
 
   const styles = StyleSheet.create({
     container: {
@@ -108,19 +168,20 @@ const RemindMeButton: React.FC<RemindMeButtonProps> = ({
       paddingVertical: 16,
       ...Platform.select({ android: { elevation: 10 } }),
     },
-    row: { flexDirection: "row", gap: 8, marginTop: 8 },
-    chip: {
-      flex: 1,
-      borderWidth: 1,
-      borderColor: colors.border,
+    timeInfo: {
       backgroundColor: colors.card,
-      paddingVertical: 10,
-      borderRadius: 10,
-      alignItems: "center",
+      borderRadius: 8,
+      padding: 12,
+      marginBottom: 16,
     },
-    chipSelected: {
-      borderColor: colors.primary,
-      backgroundColor: colors.primary + "10",
+    timeInfoText: {
+      color: colors.textSecondary,
+      fontSize: 14,
+      textAlign: "center",
+    },
+    pickerContainer: {
+      alignItems: "center",
+      marginVertical: 16,
     },
     toggle: {
       flexDirection: "row",
@@ -143,7 +204,76 @@ const RemindMeButton: React.FC<RemindMeButtonProps> = ({
       borderColor: colors.primary,
     },
     btnTextPrimary: { color: colors.onPrimary, fontWeight: "700" },
+    errorText: {
+      color: colors.error,
+      fontSize: 12,
+      textAlign: "center",
+      marginTop: 8,
+    },
   });
+
+  const formatTimeRemaining = () => {
+    if (timeInfo.totalHours > 0) {
+      return `${timeInfo.totalHours}h ${timeInfo.remainingMinutes}m remaining until deadline`;
+    } else {
+      return `${timeInfo.totalMinutes}m remaining until deadline`;
+    }
+  };
+
+  const formatSelectedTime = () => {
+    const now = new Date();
+    const selectedTime = new Date(tempTime);
+    const offsetMs = selectedTime.getTime() - now.getTime();
+    const offsetMinutes = Math.floor(offsetMs / (1000 * 60));
+    const offsetHours = Math.floor(offsetMinutes / 60);
+    const remainingMins = offsetMinutes % 60;
+
+    if (offsetHours > 0) {
+      return `Reminder in ${offsetHours}h ${remainingMins}m`;
+    } else {
+      return `Reminder in ${offsetMinutes}m`;
+    }
+  };
+
+  const handleTimeChange = (_event: any, selectedDate?: Date) => {
+    if (selectedDate) {
+      const now = new Date();
+      const selectedTime = new Date(selectedDate);
+
+      // Ensure the selected time doesn't exceed the maximum allowed
+      if (maxOffsetMs) {
+        const maxTime = new Date(now.getTime() + maxOffsetMs);
+        if (selectedTime > maxTime) {
+          // If selected time exceeds max, clamp it to the maximum allowed time
+          setTempTime(maxTime);
+          return;
+        }
+      }
+
+      // Ensure the selected time is in the future
+      if (selectedTime <= now) {
+        const minTime = new Date(now.getTime() + 60000); // At least 1 minute in the future
+        setTempTime(minTime);
+        return;
+      }
+
+      setTempTime(selectedTime);
+    }
+  };
+
+  const handleConfirm = () => {
+    if (isInvalid) return;
+
+    const next: ReminderSettings = {
+      enabled: true,
+      preset: "custom",
+      customOffsetMs: currentOffsetMs,
+      spamMode: settings.spamMode,
+    };
+    setSettings(next);
+    onChange(next);
+    setShow(false);
+  };
 
   return (
     <>
@@ -182,24 +312,40 @@ const RemindMeButton: React.FC<RemindMeButtonProps> = ({
             <Text style={[styles.title, { marginBottom: 8 }]}>
               Remind me before
             </Text>
-            <DateTimePicker
-              value={tempTime}
-              mode="time"
-              display={Platform.OS === "ios" ? "spinner" : "default"}
-              onChange={(_, d) => d && setTempTime(d)}
-            />
-            {maxOffsetMs !== undefined && (
+
+            {/* Time remaining info */}
+            <View style={styles.timeInfo}>
+              <Text style={styles.timeInfoText}>{formatTimeRemaining()}</Text>
               <Text
-                style={{
-                  color: isInvalid ? "red" : colors.textSecondary,
-                  marginTop: 8,
-                }}>
-                {isInvalid
-                  ? "Selected offset exceeds time remaining"
-                  : "Pick hours and minutes to notify before deadline"}
+                style={[
+                  styles.timeInfoText,
+                  { marginTop: 4, fontWeight: "600" },
+                ]}>
+                {formatSelectedTime()}
+              </Text>
+            </View>
+
+            {/* Time picker */}
+            <View style={styles.pickerContainer}>
+              <DateTimePicker
+                value={tempTime}
+                mode="time"
+                display={Platform.OS === "ios" ? "spinner" : "default"}
+                onChange={handleTimeChange}
+                minuteInterval={timeInfo.totalHours === 0 ? 1 : 15} // 1 minute intervals if less than 1 hour
+              />
+            </View>
+
+            {/* Error message */}
+            {isInvalid && (
+              <Text style={styles.errorText}>
+                {currentOffsetMs <= 0
+                  ? "Please select a time in the future"
+                  : "Selected time exceeds task deadline"}
               </Text>
             )}
 
+            {/* Spam mode toggle */}
             <TouchableOpacity
               style={styles.toggle}
               onPress={() =>
@@ -220,6 +366,7 @@ const RemindMeButton: React.FC<RemindMeButtonProps> = ({
               <Text style={{ color: colors.text }}>Spam me mode</Text>
             </TouchableOpacity>
 
+            {/* Action buttons */}
             <View style={styles.actions}>
               <TouchableOpacity
                 style={styles.btn}
@@ -235,21 +382,7 @@ const RemindMeButton: React.FC<RemindMeButtonProps> = ({
                   styles.btnPrimary,
                   isInvalid && { opacity: 0.5 },
                 ]}
-                onPress={() => {
-                  if (isInvalid) return;
-                  const hours = tempTime.getHours();
-                  const minutes = tempTime.getMinutes();
-                  const customOffsetMs = hours * 3600000 + minutes * 60000;
-                  const next: ReminderSettings = {
-                    enabled: true,
-                    preset: "custom",
-                    customOffsetMs,
-                    spamMode: settings.spamMode,
-                  };
-                  setSettings(next);
-                  onChange(next);
-                  setShow(false);
-                }}
+                onPress={handleConfirm}
                 activeOpacity={0.7}>
                 <Text style={styles.btnTextPrimary}>Confirm</Text>
               </TouchableOpacity>
