@@ -9,6 +9,7 @@ import {
   View,
 } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
+import CustomDatePicker from "./CustomDatePicker";
 
 interface DateTimeModalProps {
   visible: boolean;
@@ -81,20 +82,25 @@ const DateTimeModal: React.FC<DateTimeModalProps> = ({
           </View>
 
           <View style={styles.pickerContainer}>
-            <DateTimePicker
-              value={tempDate}
-              mode={mode}
-              display={Platform.OS === "ios" ? "spinner" : "default"}
-              onChange={mode === "date" ? handleDateChange : handleTimeChange}
-              minimumDate={minimumDate}
-              textColor={colors.text}
-              themeVariant="light"
-              style={
-                Platform.OS === "ios"
-                  ? { backgroundColor: colors.background }
-                  : undefined
-              }
-            />
+            {Platform.OS === "ios" ? (
+              <DateTimePicker
+                value={tempDate}
+                mode={mode}
+                display="spinner"
+                onChange={mode === "date" ? handleDateChange : handleTimeChange}
+                minimumDate={minimumDate}
+                textColor={colors.text}
+                themeVariant="light"
+                style={{ backgroundColor: colors.background }}
+              />
+            ) : (
+              <CustomDatePicker
+                value={tempDate}
+                mode={mode}
+                onDateChange={(date) => setTempDate(date)}
+                minimumDate={minimumDate}
+              />
+            )}
           </View>
 
           <View style={[styles.modalFooter, { borderTopColor: colors.border }]}>

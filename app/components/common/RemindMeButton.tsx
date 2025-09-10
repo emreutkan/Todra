@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
 import { ReminderPreset, ReminderSettings } from "../../types";
+import CustomDatePicker from "./CustomDatePicker";
 
 interface RemindMeButtonProps {
   value?: ReminderSettings;
@@ -327,13 +328,21 @@ const RemindMeButton: React.FC<RemindMeButtonProps> = ({
 
             {/* Time picker */}
             <View style={styles.pickerContainer}>
-              <DateTimePicker
-                value={tempTime}
-                mode="time"
-                display={Platform.OS === "ios" ? "spinner" : "default"}
-                onChange={handleTimeChange}
-                minuteInterval={timeInfo.totalHours === 0 ? 1 : 15} // 1 minute intervals if less than 1 hour
-              />
+              {Platform.OS === "ios" ? (
+                <DateTimePicker
+                  value={tempTime}
+                  mode="time"
+                  display="spinner"
+                  onChange={handleTimeChange}
+                  minuteInterval={timeInfo.totalHours === 0 ? 1 : 15} // 1 minute intervals if less than 1 hour
+                />
+              ) : (
+                <CustomDatePicker
+                  value={tempTime}
+                  mode="time"
+                  onDateChange={(date) => setTempTime(date)}
+                />
+              )}
             </View>
 
             {/* Error message */}
