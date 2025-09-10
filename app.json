@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "reacttaskplanner",
-    "slug": "reacttaskplanner",
-    "version": "1.0.0",
+    "name": "Todra",
+    "slug": "Todra",
+    "version": "1.0.2",
     "runtimeVersion": {
       "policy": "appVersion"
     },
@@ -17,7 +17,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.emreutkan.reacttaskplanner",
+      "bundleIdentifier": "com.emreutkan.todra",
       "buildNumber": "1"
     },
     "android": {
@@ -25,13 +25,13 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.emreutkan.reacttaskplanner",
+      "package": "com.emreutkan.todra",
       "versionCode": 1
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "scheme": "reacttaskplanner",
+    "scheme": "todra",
     "assetBundlePatterns": [
       "**/*"
     ],

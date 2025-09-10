@@ -263,8 +263,6 @@ const TaskList: React.FC<TaskListProps> = ({
           <TaskItem
             item={item}
             index={index}
-            totalTasks={section.data.length}
-            allTasks={tasks}
             onDelete={onDeleteTask}
             onToggleComplete={onToggleTaskCompletion}
             onPress={onTaskPress}

@@ -123,13 +123,7 @@ const DateSlider: React.FC<DateSliderProps> = ({
   };
 
   // Render each date item
-  const renderDateItem = ({
-    item: date,
-    index,
-  }: {
-    item: Date;
-    index: number;
-  }) => {
+  const renderDateItem = ({ item: date }: { item: Date; index: number }) => {
     const _isToday = isToday(date);
     const _isSelected = isSelected(date);
     const isFirstDayOfMonth = date.getDate() === 1;

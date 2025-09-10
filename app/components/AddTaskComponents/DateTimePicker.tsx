@@ -5,13 +5,11 @@ import FormSection from "./FormSection";
 interface DateTimePickerProps {
   dueDate: Date;
   onDateChange: (date: Date) => void;
-  initialDate?: Date;
 }
 
 const DateTimePickerComponent: React.FC<DateTimePickerProps> = ({
   dueDate,
   onDateChange,
-  initialDate = new Date(),
 }) => {
   return (
     <FormSection title="Due Date & Time">

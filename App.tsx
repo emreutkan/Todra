@@ -7,7 +7,7 @@ import {
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { useFonts } from "expo-font";
 import { StatusBar } from "expo-status-bar";
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { SettingsProvider } from "./app/context/SettingsContext";
 import { ThemeProvider, useTheme } from "./app/context/ThemeContext";
 import { COLORS } from "./app/theme";
@@ -31,7 +31,7 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 function AppContent() {
   const { colors, isDark } = useTheme();
 
-  const [isReady, setIsReady] = useState(true);
+  // removed unused isReady state
 
   const MyTheme = {
     ...(isDark ? DarkTheme : DefaultTheme),
@@ -62,6 +62,8 @@ function AppContent() {
         shouldShowAlert: true,
         shouldPlaySound: true,
         shouldSetBadge: false,
+        shouldShowBanner: true,
+        shouldShowList: true,
       }),
     });
   }, []);

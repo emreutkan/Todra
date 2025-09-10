@@ -32,13 +32,13 @@ const DateTimeModal: React.FC<DateTimeModalProps> = ({
   const { colors } = useTheme();
   const [tempDate, setTempDate] = useState<Date>(value);
 
-  const handleDateChange = (event: any, selectedDate?: Date) => {
+  const handleDateChange = (_: unknown, selectedDate?: Date) => {
     if (selectedDate) {
       setTempDate(selectedDate);
     }
   };
 
-  const handleTimeChange = (event: any, selectedTime?: Date) => {
+  const handleTimeChange = (_: unknown, selectedTime?: Date) => {
     if (selectedTime) {
       setTempDate(selectedTime);
     }

@@ -27,8 +27,6 @@ const SWIPE_THRESHOLD = -100;
 interface TaskItemProps {
   item: Task;
   index?: number;
-  totalTasks?: number;
-  allTasks?: Task[];
   onDelete?: (id: string) => void;
   onToggleComplete?: (id: string) => void;
   onPress: (id: string) => void;
@@ -44,8 +42,6 @@ interface TaskItemProps {
 const TaskItem: React.FC<TaskItemProps> = ({
   item,
   index = 0,
-  totalTasks = 1,
-  allTasks = [],
   onDelete,
   onToggleComplete,
   onPress,

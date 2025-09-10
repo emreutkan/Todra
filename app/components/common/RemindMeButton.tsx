@@ -186,7 +186,7 @@ const RemindMeButton: React.FC<RemindMeButtonProps> = ({
               value={tempTime}
               mode="time"
               display={Platform.OS === "ios" ? "spinner" : "default"}
-              onChange={(e, d) => d && setTempTime(d)}
+              onChange={(_, d) => d && setTempTime(d)}
             />
             {maxOffsetMs !== undefined && (
               <Text

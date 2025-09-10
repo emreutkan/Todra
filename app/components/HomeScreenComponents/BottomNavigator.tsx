@@ -1,4 +1,5 @@
 import { BlurView } from "expo-blur";
+import React from "react";
 import { StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "../../context/ThemeContext";
@@ -15,7 +16,7 @@ const BottomNavigator = ({
   onAddTaskPress: () => void;
   onSettingsPress: () => void;
 }) => {
-  const { colors } = useTheme();
+  useTheme();
   const bottomInsets = useSafeAreaInsets();
   return (
     <View style={[styles.wrapper, { marginBottom: bottomInsets.bottom }]}>

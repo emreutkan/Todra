@@ -23,7 +23,7 @@ const AnimatedTodayButton: React.FC<AnimatedTodayButtonProps> = ({
     // Animate width expansion
     Animated.parallel([
       Animated.timing(widthAnim, {
-        toValue: 100, // Expanded width
+        toValue: 120, // Expanded width
         duration: 200,
         useNativeDriver: false,
       }),

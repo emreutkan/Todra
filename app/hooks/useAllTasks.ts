@@ -17,7 +17,7 @@ export const useAllTasks = () => {
   const { getCurrentTasks, getArchivedTasks, archiveCompletedTasks } =
     useSettings();
 
-  const [isLoading, setIsLoading] = useState(false);
+  const [, setIsLoading] = useState(false);
   const [currentTasks, setCurrentTasks] = useState<Task[]>([]);
   const [archivedTasks, setArchivedTasks] = useState<Task[]>([]);
   const [selectedCategory, setSelectedCategory] =

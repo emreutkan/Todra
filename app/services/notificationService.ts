@@ -21,7 +21,7 @@ export const notificationService = {
       await Notifications.setNotificationChannelAsync("default", {
         name: "Default",
         importance: Notifications.AndroidImportance.HIGH,
-        sound: true,
+        sound: null,
         vibrationPattern: [250, 250],
         lockscreenVisibility:
           Notifications.AndroidNotificationVisibility.PUBLIC,
@@ -44,7 +44,7 @@ export const notificationService = {
     const seconds = Math.ceil(triggerMs / 1000);
     const id = await Notifications.scheduleNotificationAsync({
       content: { title, body: body ?? "Task reminder" },
-      trigger: { seconds },
+      trigger: { seconds, type: "timeInterval" },
     });
     return id;
   },
@@ -61,7 +61,7 @@ export const notificationService = {
     const seconds = Math.ceil((when - Date.now()) / 1000);
     return Notifications.scheduleNotificationAsync({
       content: { title, body: body ?? "Task reminder" },
-      trigger: { seconds },
+      trigger: { seconds, type: "timeInterval" },
     });
   },
 

@@ -1,6 +1,6 @@
 {
-  "name": "reacttaskplanner",
-  "version": "1.0.0",
+  "name": "todra",
+  "version": "1.0.2",
   "main": "index.ts",
   "scripts": {
     "start": "expo start",

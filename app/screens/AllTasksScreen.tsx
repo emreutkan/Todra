@@ -1,5 +1,4 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { StatusBar } from "expo-status-bar";
 import React from "react";
@@ -24,7 +23,6 @@ type AllTasksScreenNavigationProp = NativeStackNavigationProp<
 >;
 
 const AllTasksScreen: React.FC = () => {
-  const navigation = useNavigation<AllTasksScreenNavigationProp>();
   const { colors, isDark } = useTheme();
   const {
     currentTasks,
