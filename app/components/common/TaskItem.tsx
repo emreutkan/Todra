@@ -184,24 +184,22 @@ const TaskItem: React.FC<TaskItemProps> = ({
 
   // Handle task press
   const handlePress = () => {
-    if (mode === "all-tasks") {
-      onPress(item.id);
-    } else {
-      // In home mode, check prerequisites first
-      if (!arePrereqsMet) {
-        Alert.alert(
-          "Prerequisites Required",
-          "Complete the prerequisite tasks first.",
-          [{ text: "OK" }]
-        );
-        return;
-      }
-      onPress(item.id);
-    }
+    // Always allow navigation to task details - users should be able to see what prerequisites are needed
+    onPress(item.id);
   };
 
   // Handle toggle completion
   const handleToggleComplete = () => {
+    // In home mode, check prerequisites before allowing completion
+    if (mode === "home" && !arePrereqsMet && !item.completed) {
+      Alert.alert(
+        "Prerequisites Required",
+        "Complete the prerequisite tasks first.",
+        [{ text: "OK" }]
+      );
+      return;
+    }
+
     if (onToggleComplete) {
       onToggleComplete(item.id);
     }
@@ -279,14 +277,19 @@ const TaskItem: React.FC<TaskItemProps> = ({
                       {
                         backgroundColor: item.completed
                           ? colors.success
+                          : !arePrereqsMet && !item.completed
+                          ? colors.disabled
                           : colors.surface,
                         borderColor: item.completed
                           ? colors.success
+                          : !arePrereqsMet && !item.completed
+                          ? colors.disabled
                           : colors.border,
                         width: sizeAnim,
                         height: sizeAnim,
                         borderRadius: Animated.divide(sizeAnim, 2),
                         transform: [{ scale: pressAnim }],
+                        opacity: !arePrereqsMet && !item.completed ? 0.5 : 1,
                       },
                     ]}>
                     <TouchableOpacity

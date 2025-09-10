@@ -550,8 +550,65 @@ const TaskDetailsScreen = () => {
     );
   };
 
+  const formatDateTime = (timestamp: number) => {
+    const date = new Date(timestamp);
+    return {
+      date: date.toLocaleDateString(),
+      time: date.toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+      full: `${date.toLocaleDateString()} at ${date.toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      })}`,
+    };
+  };
+
+  const formatReminderText = (remindMe: any) => {
+    if (!remindMe || !remindMe.enabled) return "No reminder";
+
+    if (remindMe.preset === "custom" && remindMe.customOffsetMs) {
+      const hours = Math.floor(remindMe.customOffsetMs / (1000 * 60 * 60));
+      const minutes = Math.floor(
+        (remindMe.customOffsetMs % (1000 * 60 * 60)) / (1000 * 60)
+      );
+
+      if (hours > 0) {
+        return `${hours}h ${minutes}m before due`;
+      } else {
+        return `${minutes}m before due`;
+      }
+    }
+
+    return remindMe.preset === "none" ? "Custom reminder" : remindMe.preset;
+  };
+
+  const formatRepetitionText = (repetition: any) => {
+    if (!repetition || !repetition.enabled) return "No repetition";
+
+    const intervalText =
+      repetition.interval === 1 ? "" : `every ${repetition.interval} `;
+    const typeText =
+      repetition.type === "weekly"
+        ? "week(s)"
+        : repetition.type === "monthly"
+        ? "month(s)"
+        : "day(s)";
+
+    return `${intervalText}${repetition.type}${
+      repetition.interval > 1 ? ` (${typeText})` : ""
+    }`;
+  };
+
   const renderStaticTaskDetails = () => {
     if (!task) return null;
+
+    const createdDateTime = formatDateTime(task.createdAt);
+    const dueDateTime = formatDateTime(task.dueDate);
+    const archivedDateTime = task.archivedAt
+      ? formatDateTime(new Date(task.archivedAt).getTime())
+      : null;
 
     return (
       <Animated.View
@@ -604,6 +661,16 @@ const TaskDetailsScreen = () => {
               ? "Overdue"
               : "In Progress"}
           </Text>
+          {task.archived && (
+            <View
+              style={[
+                styles.archivedBadge,
+                { backgroundColor: colors.textSecondary },
+              ]}>
+              <Ionicons name="archive" size={12} color="white" />
+              <Text style={styles.archivedText}>Archived</Text>
+            </View>
+          )}
         </View>
 
         {/* Task Title */}
@@ -616,14 +683,28 @@ const TaskDetailsScreen = () => {
           </Text>
         </View>
 
+        {/* Description */}
+        {task.description && (
+          <View style={styles.staticField}>
+            <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>
+              Description
+            </Text>
+            <Text style={[styles.fieldValue, { color: colors.text }]}>
+              {task.description}
+            </Text>
+          </View>
+        )}
+
         {/* Category */}
         <View style={styles.staticField}>
           <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>
             Category
           </Text>
-          <Text style={[styles.fieldValue, { color: colors.text }]}>
-            {task.category}
-          </Text>
+          <View style={styles.categoryRow}>
+            <Text style={[styles.fieldValue, { color: colors.text }]}>
+              {task.category}
+            </Text>
+          </View>
         </View>
 
         {/* Priority */}
@@ -655,52 +736,86 @@ const TaskDetailsScreen = () => {
             Due Date
           </Text>
           <Text style={[styles.fieldValue, { color: colors.text }]}>
-            {new Date(task.dueDate).toLocaleDateString()} at{" "}
-            {new Date(task.dueDate).toLocaleTimeString([], {
-              hour: "2-digit",
-              minute: "2-digit",
-            })}
+            {dueDateTime.full}
           </Text>
         </View>
 
-        {/* Reminder */}
-        {task.remindMe && task.remindMe.enabled && (
+        {/* Created Date */}
+        <View style={styles.staticField}>
+          <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>
+            Created
+          </Text>
+          <Text style={[styles.fieldValue, { color: colors.text }]}>
+            {createdDateTime.full}
+          </Text>
+        </View>
+
+        {/* Archived Date */}
+        {task.archived && archivedDateTime && (
           <View style={styles.staticField}>
             <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>
-              Reminder
+              Archived
             </Text>
             <Text style={[styles.fieldValue, { color: colors.text }]}>
-              {task.remindMe.preset === "none"
-                ? "Custom reminder"
-                : task.remindMe.preset}
+              {archivedDateTime.full}
             </Text>
           </View>
         )}
+
+        {/* Reminder */}
+        <View style={styles.staticField}>
+          <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>
+            Reminder
+          </Text>
+          <Text style={[styles.fieldValue, { color: colors.text }]}>
+            {formatReminderText(task.remindMe)}
+          </Text>
+        </View>
 
         {/* Repetition */}
-        {task.repetition && task.repetition.enabled && (
+        <View style={styles.staticField}>
+          <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>
+            Repetition
+          </Text>
+          <Text style={[styles.fieldValue, { color: colors.text }]}>
+            {formatRepetitionText(task.repetition)}
+          </Text>
+        </View>
+
+        {/* Recurring Task Info */}
+        {task.isRecurring && (
           <View style={styles.staticField}>
             <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>
-              Repeats
+              Recurring Task
             </Text>
-            <Text style={[styles.fieldValue, { color: colors.text }]}>
-              {task.repetition.type} (every {task.repetition.interval}{" "}
-              {task.repetition.type === "weekly" ? "week(s)" : "day(s)"})
-            </Text>
+            <View style={styles.recurringInfo}>
+              <Ionicons name="repeat" size={16} color={colors.primary} />
+              <Text
+                style={[
+                  styles.fieldValue,
+                  { color: colors.text, marginLeft: 8 },
+                ]}>
+                {task.parentTaskId
+                  ? "Generated from recurring task"
+                  : "Original recurring task"}
+              </Text>
+            </View>
           </View>
         )}
 
-        {/* Description */}
-        {task.description && (
-          <View style={styles.staticField}>
-            <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>
-              Description
-            </Text>
-            <Text style={[styles.fieldValue, { color: colors.text }]}>
-              {task.description}
-            </Text>
-          </View>
-        )}
+        {/* Task ID (for debugging/admin purposes) */}
+        <View style={styles.staticField}>
+          <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>
+            Task ID
+          </Text>
+          <Text
+            style={[
+              styles.fieldValue,
+              { color: colors.textSecondary, fontSize: 12 },
+            ]}>
+            {task.id}
+          </Text>
+        </View>
       </Animated.View>
     );
   };
@@ -902,6 +1017,12 @@ const styles = StyleSheet.create({
     paddingBottom: SIZES.extraLarge * 2,
     borderRadius: 16,
     marginBottom: SIZES.medium,
+    borderWidth: 1,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
   },
 
   // Status
@@ -909,10 +1030,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     marginBottom: SIZES.large,
-    paddingVertical: SIZES.small,
+    paddingVertical: SIZES.medium,
     paddingHorizontal: SIZES.medium,
     borderRadius: 12,
-    backgroundColor: "rgba(0,0,0,0.02)",
+    backgroundColor: "rgba(0,0,0,0.03)",
+    borderWidth: 1,
+    borderColor: "rgba(0,0,0,0.05)",
   },
   statusIndicator: {
     width: 28,
@@ -931,17 +1054,22 @@ const styles = StyleSheet.create({
   // Static Fields
   staticField: {
     marginBottom: SIZES.medium,
+    paddingVertical: SIZES.small,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(0,0,0,0.05)",
   },
   fieldLabel: {
     fontSize: SIZES.font - 1,
     fontWeight: "600",
-    marginBottom: SIZES.small / 2,
+    marginBottom: SIZES.small,
     letterSpacing: 0.3,
+    textTransform: "uppercase",
   },
   fieldValue: {
     fontSize: SIZES.font + 1,
     lineHeight: 24,
     letterSpacing: 0.2,
+    fontWeight: "500",
   },
 
   // Priority Badge
@@ -960,6 +1088,34 @@ const styles = StyleSheet.create({
     fontSize: SIZES.font,
     fontWeight: "700",
     letterSpacing: 0.5,
+  },
+
+  // Archived Badge
+  archivedBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: SIZES.small,
+    paddingVertical: 4,
+    borderRadius: 12,
+    marginLeft: SIZES.small,
+  },
+  archivedText: {
+    color: "white",
+    fontSize: 12,
+    fontWeight: "600",
+    marginLeft: 4,
+  },
+
+  // Category Row
+  categoryRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+
+  // Recurring Info
+  recurringInfo: {
+    flexDirection: "row",
+    alignItems: "center",
   },
 
   // Section Title
