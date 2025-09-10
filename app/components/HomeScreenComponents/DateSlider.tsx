@@ -58,6 +58,15 @@ const DateSlider: React.FC<DateSliderProps> = ({
     );
   }, [dateRange, today]);
 
+  // Check if current selected date is today
+  const isCurrentDateToday = useMemo(() => {
+    return (
+      currentDate.getDate() === today.getDate() &&
+      currentDate.getMonth() === today.getMonth() &&
+      currentDate.getFullYear() === today.getFullYear()
+    );
+  }, [currentDate, today]);
+
   // Scroll to the current date when component mounts or when currentDate changes
   useEffect(() => {
     if (flatListRef.current && currentDateIndex !== -1) {
@@ -206,21 +215,23 @@ const DateSlider: React.FC<DateSliderProps> = ({
             {selectedMonth}
           </Text>
         </View>
-        <AnimatedTodayButton
-          onPress={() => {
-            if (todayIndex !== -1) {
-              onDateChange(today);
-              setTimeout(() => {
-                flatListRef.current?.scrollToIndex({
-                  index: todayIndex,
-                  animated: true,
-                  viewPosition: 0.5,
-                });
-              }, 10);
-            }
-          }}
-          text="Today"
-        />
+        {!isCurrentDateToday && (
+          <AnimatedTodayButton
+            onPress={() => {
+              if (todayIndex !== -1) {
+                onDateChange(today);
+                setTimeout(() => {
+                  flatListRef.current?.scrollToIndex({
+                    index: todayIndex,
+                    animated: true,
+                    viewPosition: 0.5,
+                  });
+                }, 10);
+              }
+            }}
+            text="Today"
+          />
+        )}
       </View>
 
       <FlatList

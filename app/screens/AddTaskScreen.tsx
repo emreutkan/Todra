@@ -1,3 +1,5 @@
+import { Ionicons } from "@expo/vector-icons";
+import { BlurView } from "expo-blur";
 import { StatusBar } from "expo-status-bar";
 import React, { useRef } from "react";
 import {
@@ -6,14 +8,15 @@ import {
   KeyboardAvoidingView,
   Platform,
   StyleSheet,
+  TouchableOpacity,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useTheme } from "../context/ThemeContext";
 import { SIZES } from "../theme";
 
 // Component imports
-import ActionFooter from "../components/AddTaskComponents/ActionFooter";
 import CategorySelector from "../components/AddTaskComponents/CategorySelector";
 import DateTimePicker from "../components/AddTaskComponents/DateTimePicker";
 import PredecessorTaskSelector from "../components/AddTaskComponents/PredecessorTaskSelector";
@@ -25,8 +28,252 @@ import RemindMeButton from "../components/common/RemindMeButton";
 import ScreenHeader from "../components/common/ScreenHeader";
 import { useAddTask } from "../hooks/useAddTask";
 
+// Styles for the floating buttons
+const createButtonStyles = () =>
+  StyleSheet.create({
+    wrapper: {
+      borderRadius: 100,
+      overflow: "hidden",
+      alignSelf: "flex-end",
+      marginRight: 10,
+    },
+    buttonContainer: {
+      flexDirection: "row",
+      gap: 16,
+      alignItems: "flex-end",
+      justifyContent: "flex-end",
+      paddingHorizontal: 10,
+      paddingVertical: 12,
+      zIndex: 1000,
+      backgroundColor: "transparent",
+      flexShrink: 0,
+    },
+    fab: {
+      width: 56,
+      height: 56,
+      borderRadius: 28,
+      justifyContent: "center",
+      alignItems: "center",
+      zIndex: 1000,
+    },
+    largeFab: {
+      width: 126,
+      height: 56,
+      borderRadius: 28,
+      justifyContent: "center",
+      alignItems: "center",
+      zIndex: 1000,
+    },
+    touchable: {
+      width: "100%",
+      height: "100%",
+      justifyContent: "center",
+      alignItems: "center",
+      borderRadius: 28,
+    },
+    shadow: {
+      ...Platform.select({
+        ios: {
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.1,
+          shadowRadius: 6,
+        },
+        android: {
+          elevation: 6,
+        },
+      }),
+    },
+    largeShadow: {
+      ...Platform.select({
+        ios: {
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.3,
+          shadowRadius: 8,
+        },
+        android: {
+          elevation: 8,
+        },
+      }),
+    },
+  });
+
+// Animated Button Component (matching HomeScreen style)
+const AnimatedActionButton = ({
+  onPress,
+  iconName,
+  iconColor,
+  backgroundColor,
+  borderColor,
+  label,
+}: {
+  onPress: () => void;
+  iconName: keyof typeof Ionicons.glyphMap;
+  iconColor: string;
+  backgroundColor: string;
+  borderColor?: string;
+  label: string;
+}) => {
+  const pressAnim = useRef(new Animated.Value(1)).current;
+  const sizeAnim = useRef(new Animated.Value(56)).current;
+  const styles = createButtonStyles();
+
+  const handlePressIn = () => {
+    Animated.parallel([
+      Animated.timing(pressAnim, {
+        toValue: 1.2,
+        duration: 200,
+        useNativeDriver: false,
+      }),
+      Animated.timing(sizeAnim, {
+        toValue: 67, // 56 * 1.2 = 67
+        duration: 200,
+        useNativeDriver: false,
+      }),
+    ]).start();
+  };
+
+  const handlePressOut = () => {
+    Animated.parallel([
+      Animated.timing(pressAnim, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: false,
+      }),
+      Animated.timing(sizeAnim, {
+        toValue: 56,
+        duration: 200,
+        useNativeDriver: false,
+      }),
+    ]).start();
+  };
+
+  return (
+    <Animated.View
+      style={[
+        styles.fab,
+        {
+          backgroundColor,
+          borderColor,
+          borderWidth: borderColor ? 1 : 0,
+          width: sizeAnim,
+          height: sizeAnim,
+          borderRadius: Animated.divide(sizeAnim, 2),
+        },
+        styles.shadow,
+        { transform: [{ scale: pressAnim }] },
+      ]}>
+      <TouchableOpacity
+        activeOpacity={1}
+        onPress={onPress}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        accessibilityLabel={label}
+        accessibilityRole="button"
+        style={styles.touchable}>
+        <Ionicons name={iconName} size={22} color={iconColor} />
+      </TouchableOpacity>
+    </Animated.View>
+  );
+};
+
+// Special large button for save (size of + and filter combined)
+const AnimatedLargeSaveButton = ({
+  onPress,
+  iconName,
+  iconColor,
+  backgroundColor,
+  label,
+  enabled,
+}: {
+  onPress: () => void;
+  iconName: keyof typeof Ionicons.glyphMap;
+  iconColor: string;
+  backgroundColor: string;
+  label: string;
+  enabled: boolean;
+}) => {
+  const pressAnim = useRef(new Animated.Value(1)).current;
+  const sizeAnim = useRef(new Animated.Value(126)).current; // 70 + 56 = 126 (AddButton + FilterButton width)
+  const heightAnim = useRef(new Animated.Value(56)).current;
+  const styles = createButtonStyles();
+
+  const handlePressIn = () => {
+    if (!enabled) return;
+    Animated.parallel([
+      Animated.timing(pressAnim, {
+        toValue: 1.2,
+        duration: 200,
+        useNativeDriver: false,
+      }),
+      Animated.timing(sizeAnim, {
+        toValue: 151, // 126 * 1.2 = 151
+        duration: 200,
+        useNativeDriver: false,
+      }),
+      Animated.timing(heightAnim, {
+        toValue: 67, // 56 * 1.2 = 67
+        duration: 200,
+        useNativeDriver: false,
+      }),
+    ]).start();
+  };
+
+  const handlePressOut = () => {
+    if (!enabled) return;
+    Animated.parallel([
+      Animated.timing(pressAnim, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: false,
+      }),
+      Animated.timing(sizeAnim, {
+        toValue: 126,
+        duration: 200,
+        useNativeDriver: false,
+      }),
+      Animated.timing(heightAnim, {
+        toValue: 56,
+        duration: 200,
+        useNativeDriver: false,
+      }),
+    ]).start();
+  };
+
+  return (
+    <Animated.View
+      style={[
+        styles.largeFab,
+        {
+          backgroundColor: enabled ? backgroundColor : backgroundColor + "40",
+          width: sizeAnim,
+          height: heightAnim,
+          borderRadius: Animated.divide(heightAnim, 2),
+        },
+        styles.largeShadow,
+        { transform: [{ scale: pressAnim }] },
+      ]}>
+      <TouchableOpacity
+        activeOpacity={enabled ? 1 : 0.5}
+        onPress={enabled ? onPress : undefined}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        accessibilityLabel={label}
+        accessibilityRole="button"
+        style={styles.touchable}>
+        <Ionicons
+          name={iconName}
+          size={24}
+          color={enabled ? iconColor : iconColor + "80"}
+        />
+      </TouchableOpacity>
+    </Animated.View>
+  );
+};
+
 const AddTaskScreen: React.FC = () => {
   const { colors } = useTheme();
+  const bottomInsets = useSafeAreaInsets();
 
   // Animation values for sliding header
   const scrollY = useRef(new Animated.Value(0)).current;
@@ -96,7 +343,7 @@ const AddTaskScreen: React.FC = () => {
     scrollContent: {
       padding: SIZES.medium,
       paddingTop: 120, // Add more top padding for better spacing after header slides up
-      paddingBottom: SIZES.extraLarge * 2,
+      paddingBottom: 120, // Add extra padding to prevent content from being hidden behind floating buttons
     },
     loadingContainer: {
       flex: 1,
@@ -183,11 +430,35 @@ const AddTaskScreen: React.FC = () => {
         <TaskDescription value={description} onChangeText={setDescription} />
       </Animated.ScrollView>
 
-      <ActionFooter
-        onCancel={handleCancel}
-        onSave={handleSave}
-        saveEnabled={isFormValid}
-      />
+      <View style={{ position: "absolute", bottom: 0, left: 0, right: 0 }}>
+        <View
+          style={[
+            createButtonStyles().wrapper,
+            { marginBottom: bottomInsets.bottom },
+          ]}>
+          <BlurView
+            style={createButtonStyles().buttonContainer}
+            intensity={100}
+            tint="systemUltraThinMaterialLight">
+            <AnimatedActionButton
+              onPress={handleCancel}
+              iconName="close"
+              iconColor={colors.error}
+              backgroundColor={colors.card}
+              borderColor={colors.border}
+              label="Cancel"
+            />
+            <AnimatedLargeSaveButton
+              onPress={handleSave}
+              iconName="checkmark"
+              iconColor="white"
+              backgroundColor={colors.primary}
+              label="Save Task"
+              enabled={isFormValid}
+            />
+          </BlurView>
+        </View>
+      </View>
     </KeyboardAvoidingView>
   );
 };
