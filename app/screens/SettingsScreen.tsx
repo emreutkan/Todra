@@ -86,6 +86,12 @@ const SettingsScreen: React.FC = () => {
         {/* Preferences Section */}
         <SettingsSection title="Preferences">
           <SettingsToggle
+            icon="moon"
+            label="Dark Mode"
+            value={settings.darkModeEnabled}
+            onValueChange={(value) => updateSetting("darkModeEnabled", value)}
+          />
+          <SettingsToggle
             icon="trash-outline"
             label="Confirm Before Delete"
             value={settings.confirmDeleteEnabled}

@@ -20,6 +20,28 @@ export const lightGrayTheme = {
   onPrimary: "#FFFFFF", // Text on primary color
 };
 
+// --- Dark Theme ---
+export const darkTheme = {
+  primary: "#E6E6E6",
+  secondary: "#C0C0C0",
+  accent: "#E6E6E6",
+  background: "#000000",
+  card: "#0A0A0A",
+  surface: "#141414",
+  text: "#FFFFFF",
+  textSecondary: "#BDBDBD",
+  border: "#1F1F1F",
+  notification: "#BDBDBD",
+  success: "#E0E0E0",
+  error: "#8A8A8A",
+  warning: "#B0B0B0",
+  info: "#CCCCCC",
+  inputBackground: "#0D0D0D",
+  divider: "#1A1A1A",
+  disabled: "#555555",
+  onPrimary: "#000000",
+};
+
 // For backward compatibility with existing code
 export const COLORS = lightGrayTheme;
 

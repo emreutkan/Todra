@@ -1,5 +1,6 @@
 import React, { ReactNode, createContext, useContext } from "react";
-import { lightGrayTheme } from "../theme";
+import { darkTheme, lightGrayTheme } from "../theme";
+import { useSettings } from "./SettingsContext";
 
 // Context type definition
 type ThemeContextType = {
@@ -14,9 +15,9 @@ const ThemeContext = createContext<ThemeContextType>({
 });
 
 export const ThemeProvider = ({ children }: { children: ReactNode }) => {
-  // Always use light gray theme
-  const colors = lightGrayTheme;
-  const isDark = false; // Light theme is never dark
+  const { settings } = useSettings();
+  const isDark = !!settings.darkModeEnabled;
+  const colors = isDark ? darkTheme : lightGrayTheme;
 
   return (
     <ThemeContext.Provider value={{ colors, isDark }}>

@@ -96,25 +96,25 @@ const RepetitionSelector: React.FC<RepetitionSelectorProps> = ({
   const getRepetitionDescription = () => {
     if (!repetition.enabled) return "No repetition";
 
-    const { type, interval, daysOfWeek } = repetition;
+    const { type, interval, daysOfWeek: selectedDays } = repetition;
 
     if (type === "daily") {
       return interval === 1 ? "Every day" : `Every ${interval} days`;
     }
 
     if (type === "weekly") {
-      if (!daysOfWeek || daysOfWeek.length === 0) {
+      if (!selectedDays || selectedDays.length === 0) {
         return interval === 1 ? "Every week" : `Every ${interval} weeks`;
       }
 
-      const selectedDays = daysOfWeek
+      const selectedDaysText = selectedDays
         .map((day) => daysOfWeek.find((d) => d.key === day)?.short)
         .filter(Boolean)
         .join(", ");
 
       return interval === 1
-        ? `Every week on ${selectedDays}`
-        : `Every ${interval} weeks on ${selectedDays}`;
+        ? `Every week on ${selectedDaysText}`
+        : `Every ${interval} weeks on ${selectedDaysText}`;
     }
 
     if (type === "monthly") {

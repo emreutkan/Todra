@@ -4,8 +4,8 @@ import { Platform } from "react-native";
 import { STORAGE_KEYS } from "../constants/StorageKeys";
 
 // Import Task type from types.ts to maintain consistency
-import { Task } from "../types";
 import { taskStorageService } from "../services/taskStorageService";
+import { Task } from "../types";
 
 // Define the settings shape
 type Settings = {
@@ -14,6 +14,7 @@ type Settings = {
   confirmDeleteEnabled: boolean;
   autoArchiveEnabled: boolean;
   showCompletedTasks: boolean;
+  darkModeEnabled: boolean;
   lastBackupDate: string | null;
 };
 
@@ -24,6 +25,7 @@ const defaultSettings: Settings = {
   confirmDeleteEnabled: true,
   autoArchiveEnabled: false,
   showCompletedTasks: false,
+  darkModeEnabled: false,
   lastBackupDate: null,
 };
 
@@ -119,7 +121,6 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({
   const getArchivedTasks = async (): Promise<Task[]> => {
     return await taskStorageService.getArchivedTasks();
   };
-
 
   // Function to archive completed tasks
   const archiveCompletedTasks = async (): Promise<number> => {

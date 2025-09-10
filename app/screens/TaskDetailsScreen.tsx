@@ -1,25 +1,28 @@
 import { Ionicons } from "@expo/vector-icons";
-import DateTimePicker from "@react-native-community/datetimepicker";
 import { RouteProp, useNavigation, useRoute } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { format, isToday, isTomorrow } from "date-fns";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
   Animated,
-  Modal,
   Platform,
   ScrollView,
   StatusBar,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
+import CategorySelector from "../components/AddTaskComponents/CategorySelector";
+import PrioritySelectorAdd from "../components/AddTaskComponents/PrioritySelector";
 import RepetitionSelector from "../components/AddTaskComponents/RepetitionSelector";
+import DateTimeButton from "../components/common/DateTimeButton";
+import PrioritySelector from "../components/common/PrioritySelector";
 import ScreenHeader from "../components/common/ScreenHeader";
+import TaskDescription from "../components/common/TaskDescription";
+import TaskTitleInput from "../components/common/TaskTitleInput";
 import { useTheme } from "../context/ThemeContext";
 import {
   deleteTask,
@@ -63,9 +66,15 @@ const TaskDetailsScreen = () => {
   >(undefined);
   const [tempDate, setTempDate] = useState<Date>(new Date());
   const [tempPriority, setTempPriority] = useState<TaskPriority>("normal");
+  const [tempCategory, setTempCategory] = useState<string>("");
 
   // Animation values
-  const fadeAnim = new Animated.Value(0);
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const [isAnimating, setIsAnimating] = useState(false);
+
+  // Refs for scrolling to sections
+  const scrollViewRef = useRef<ScrollView>(null);
+  const repetitionSectionY = useRef<number>(0);
 
   useEffect(() => {
     loadTask();
@@ -73,12 +82,33 @@ const TaskDetailsScreen = () => {
 
   // Animate elements when task loads
   useEffect(() => {
-    if (task) {
+    if (task && !isAnimating) {
+      setIsAnimating(true);
       Animated.timing(fadeAnim, {
         toValue: 1,
         duration: 300,
         useNativeDriver: true,
-      }).start();
+      }).start(() => {
+        // Use setTimeout to avoid scheduling updates during render
+        setTimeout(() => {
+          setIsAnimating(false);
+        }, 0);
+      });
+    }
+  }, [task, fadeAnim, isAnimating]);
+
+  // Ensure temp repetition mirrors the task on load
+  useEffect(() => {
+    if (task) {
+      setTempRepetition(
+        task.repetition ?? {
+          enabled: false,
+          type: "weekly",
+          interval: 1,
+          daysOfWeek: [],
+        }
+      );
+      setTempCategory(task.category || "");
     }
   }, [task]);
 
@@ -201,14 +231,15 @@ const TaskDetailsScreen = () => {
       await updateTask(updatedTask);
       setTask(updatedTask);
 
-      // Provide visual feedback
+      // Provide visual feedback with a separate animation value
+      const feedbackAnim = new Animated.Value(1);
       Animated.sequence([
-        Animated.timing(fadeAnim, {
+        Animated.timing(feedbackAnim, {
           toValue: 0.7,
           duration: 200,
           useNativeDriver: true,
         }),
-        Animated.timing(fadeAnim, {
+        Animated.timing(feedbackAnim, {
           toValue: 1,
           duration: 300,
           useNativeDriver: true,
@@ -221,97 +252,136 @@ const TaskDetailsScreen = () => {
   };
 
   // Editing functions
-  const startEditing = (field: string) => {
-    console.log("Starting to edit field:", field, "Task:", !!task);
+  const startEditing = useCallback(
+    (field: string) => {
+      console.log("Starting to edit field:", field, "Task:", !!task);
 
-    if (!task) {
-      console.log("Cannot start editing: no task loaded");
-      Alert.alert("Error", "Task not loaded yet");
-      return;
-    }
-
-    try {
-      switch (field) {
-        case "title":
-          console.log("Setting title edit mode");
-          setTempTitle(task.title || "");
-          setEditingField("title");
-          break;
-        case "description":
-          console.log("Setting description edit mode");
-          setTempDescription(task.description || "");
-          setEditingField("description");
-          break;
-        case "date":
-          console.log("Setting date edit mode");
-          setTempDate(new Date(task.dueDate));
-          setEditingField("date");
-          break;
-        case "priority":
-          console.log("Setting priority edit mode");
-          setTempPriority(task.priority || "normal");
-          setEditingField("priority");
-          break;
-        default:
-          console.log("Unknown field to edit:", field);
-          return;
+      if (!task) {
+        console.log("Cannot start editing: no task loaded");
+        Alert.alert("Error", "Task not loaded yet");
+        return;
       }
-      console.log("Edit mode set successfully for:", field);
-    } catch (error) {
-      console.error("Error starting edit for field:", field, error);
-      Alert.alert(
-        "Error",
-        "Failed to start editing: " + (error as Error).message
-      );
-    }
-  };
 
-  const saveEdit = async () => {
-    if (!task || !editingField) {
-      console.log("No task or editing field:", { task: !!task, editingField });
-      return;
-    }
+      // Prevent editing if already editing another field
+      if (editingField && editingField !== field) {
+        console.log("Already editing another field:", editingField);
+        return;
+      }
 
-    try {
-      let updatedTask = { ...task };
-
-      switch (editingField) {
-        case "title":
-          if (tempTitle.trim()) {
-            updatedTask.title = tempTitle.trim();
-          } else {
-            console.log("Title is empty, not saving");
-            return;
+      try {
+        // Use setTimeout to batch state updates and avoid scheduling conflicts
+        setTimeout(() => {
+          switch (field) {
+            case "title":
+              console.log("Setting title edit mode");
+              setTempTitle(task.title || "");
+              setEditingField("title");
+              break;
+            case "description":
+              console.log("Setting description edit mode");
+              setTempDescription(task.description || "");
+              setEditingField("description");
+              break;
+            case "date":
+              console.log("Setting date edit mode");
+              setTempDate(new Date(task.dueDate));
+              setEditingField("date");
+              break;
+            case "priority":
+              console.log("Setting priority edit mode");
+              setTempPriority(task.priority || "normal");
+              setEditingField("priority");
+              break;
+            case "category":
+              console.log("Setting category edit mode");
+              setTempCategory(task.category || "");
+              setEditingField("category");
+              break;
+            default:
+              console.log("Unknown field to edit:", field);
+              return;
           }
-          break;
-        case "description":
-          updatedTask.description = tempDescription.trim();
-          break;
-        case "date":
-          updatedTask.dueDate = tempDate.getTime();
-          break;
-        case "priority":
-          updatedTask.priority = tempPriority;
-          break;
-        default:
-          console.log("Unknown editing field:", editingField);
-          return;
+          console.log("Edit mode set successfully for:", field);
+        }, 0);
+      } catch (error) {
+        console.error("Error starting edit for field:", field, error);
+        Alert.alert(
+          "Error",
+          "Failed to start editing: " + (error as Error).message
+        );
+      }
+    },
+    [task, editingField]
+  );
+
+  const saveEdit = useCallback(
+    async (nextValue?: any) => {
+      if (!task || !editingField) {
+        console.log("No task or editing field:", {
+          task: !!task,
+          editingField,
+        });
+        return;
       }
 
-      console.log("Saving task update:", { editingField, updatedTask });
-      await updateTask(updatedTask);
-      setTask(updatedTask);
-      setEditingField(null);
-    } catch (error) {
-      console.error("Error updating task:", error);
-      Alert.alert("Error", "Failed to update task");
-      setEditingField(null); // Reset editing state on error
-    }
-  };
+      try {
+        let updatedTask = { ...task };
 
-  const cancelEdit = () => {
-    setEditingField(null);
-  };
+        switch (editingField) {
+          case "title":
+            if (tempTitle.trim()) {
+              updatedTask.title = tempTitle.trim();
+            } else {
+              console.log("Title is empty, not saving");
+              setEditingField(null);
+              return;
+            }
+            break;
+          case "description":
+            updatedTask.description = tempDescription.trim();
+            break;
+          case "date":
+            if (nextValue instanceof Date) {
+              updatedTask.dueDate = nextValue.getTime();
+            } else {
+              updatedTask.dueDate = tempDate.getTime();
+            }
+            break;
+          case "priority":
+            updatedTask.priority = (nextValue ?? tempPriority) as TaskPriority;
+            break;
+          case "category":
+            updatedTask.category = (nextValue ?? tempCategory) as string;
+            break;
+          default:
+            console.log("Unknown editing field:", editingField);
+            setEditingField(null);
+            return;
+        }
+
+        console.log("Saving task update:", { editingField, updatedTask });
+        await updateTask(updatedTask);
+
+        // Use setTimeout to batch state updates
+        setTimeout(() => {
+          setTask(updatedTask);
+          setEditingField(null);
+        }, 0);
+      } catch (error) {
+        console.error("Error updating task:", error);
+        Alert.alert("Error", "Failed to update task");
+        setEditingField(null); // Reset editing state on error
+      }
+    },
+    [task, editingField, tempTitle, tempDescription, tempDate, tempPriority]
+  );
+
+  const cancelEdit = useCallback(() => {
+    // Use setTimeout to avoid scheduling updates during render
+    setTimeout(() => {
+      setEditingField(null);
+    }, 0);
+  }, []);
 
   const handleDelete = async () => {
     Alert.alert(
@@ -338,17 +408,9 @@ const TaskDetailsScreen = () => {
 
   // Repetition management functions
   const handleRepetitionPress = () => {
-    if (task?.repetition) {
-      setTempRepetition({ ...task.repetition });
-    } else {
-      setTempRepetition({
-        enabled: false,
-        type: "weekly",
-        interval: 1,
-        daysOfWeek: [],
-      });
-    }
-    setShowRepetitionModal(true);
+    // Scroll to repetition section instead of opening a modal
+    const targetY = Math.max((repetitionSectionY.current || 0) - 24, 0);
+    scrollViewRef.current?.scrollTo({ y: targetY, animated: true });
   };
 
   const handleRepetitionSave = async () => {
@@ -374,10 +436,7 @@ const TaskDetailsScreen = () => {
     }
   };
 
-  const handleRepetitionCancel = () => {
-    setShowRepetitionModal(false);
-    setTempRepetition(undefined);
-  };
+  // No modal cancel needed; inline editing
 
   const handleRemoveRepetition = async () => {
     if (!task) return;
@@ -532,13 +591,6 @@ const TaskDetailsScreen = () => {
     );
   }
 
-  console.log(
-    "Rendering TaskDetailsScreen - Task:",
-    !!task,
-    "Editing field:",
-    editingField
-  );
-
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
@@ -563,7 +615,8 @@ const TaskDetailsScreen = () => {
       <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}>
+        contentContainerStyle={styles.scrollContent}
+        ref={scrollViewRef}>
         {/* Main Task Card */}
         {task && (
           <Animated.View
@@ -572,7 +625,7 @@ const TaskDetailsScreen = () => {
               {
                 backgroundColor: colors.card,
                 borderColor: colors.border,
-                opacity: fadeAnim,
+                opacity: editingField ? 1 : fadeAnim,
               },
             ]}>
             {/* Status Indicator */}
@@ -622,198 +675,295 @@ const TaskDetailsScreen = () => {
             {/* Title - Editable */}
             <View style={styles.titleSection}>
               {editingField === "title" && task ? (
-                <TextInput
-                  style={[
-                    styles.taskTitle,
-                    styles.editingField,
-                    {
-                      color: colors.text,
-                      borderColor: colors.primary,
-                    },
-                  ]}
-                  value={tempTitle}
-                  onChangeText={setTempTitle}
-                  autoFocus={true}
-                  multiline={true}
-                  placeholder="Enter task title..."
-                  placeholderTextColor={colors.textSecondary}
-                  onBlur={saveEdit}
-                />
+                <View style={styles.editingContainer}>
+                  <TaskTitleInput
+                    value={tempTitle}
+                    onChangeText={setTempTitle}
+                    placeholder="Enter task title..."
+                    autoFocus={true}
+                    multiline={true}
+                    onSubmitEditing={saveEdit}
+                    returnKeyType="done"
+                    style={[
+                      styles.taskTitle,
+                      styles.editingField,
+                      {
+                        color: colors.text,
+                        borderColor: colors.primary,
+                        backgroundColor: colors.surface,
+                      },
+                    ]}
+                  />
+                  <View style={styles.editActions}>
+                    <TouchableOpacity
+                      style={[
+                        styles.editButton,
+                        { backgroundColor: colors.success },
+                      ]}
+                      onPress={saveEdit}
+                      activeOpacity={0.7}>
+                      <Ionicons name="checkmark" size={16} color="white" />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[
+                        styles.editButton,
+                        { backgroundColor: colors.error },
+                      ]}
+                      onPress={cancelEdit}
+                      activeOpacity={0.7}>
+                      <Ionicons name="close" size={16} color="white" />
+                    </TouchableOpacity>
+                  </View>
+                </View>
               ) : (
-                <TouchableOpacity
+                <TaskTitleInput
+                  value={task?.title || "Untitled Task"}
+                  onChangeText={() => {}}
+                  placeholder="Untitled Task"
+                  editable={false}
                   onPress={() => startEditing("title")}
-                  style={styles.clickableField}>
-                  <Text style={[styles.taskTitle, { color: colors.text }]}>
-                    {task?.title || "Untitled Task"}
-                  </Text>
-                </TouchableOpacity>
+                  showEditIcon={true}
+                  style={styles.taskTitle}
+                />
               )}
             </View>
 
-            {/* Priority - Editable */}
+            {/* Priority - Editable (using AddTask selector for consistency) */}
             <View style={styles.prioritySection}>
               {editingField === "priority" && task ? (
-                <View
-                  style={[
-                    styles.priorityEditContainer,
-                    styles.editingField,
-                    { borderColor: colors.primary },
-                  ]}>
-                  {(["low", "normal", "high"] as TaskPriority[]).map(
-                    (priority) => (
-                      <TouchableOpacity
-                        key={priority}
-                        style={[
-                          styles.priorityOption,
-                          {
-                            backgroundColor:
-                              tempPriority === priority
-                                ? getPriorityColor(priority)
-                                : colors.surface,
-                            borderColor: getPriorityColor(priority),
-                          },
-                        ]}
-                        onPress={() => {
-                          setTempPriority(priority);
-                          saveEdit();
-                        }}>
-                        <Text
-                          style={[
-                            styles.priorityOptionText,
-                            {
-                              color:
-                                tempPriority === priority
-                                  ? "white"
-                                  : colors.text,
-                            },
-                          ]}>
-                          {priority.charAt(0).toUpperCase() + priority.slice(1)}
-                        </Text>
-                      </TouchableOpacity>
-                    )
-                  )}
-                </View>
-              ) : (
-                <TouchableOpacity
-                  onPress={() => startEditing("priority")}
-                  style={styles.clickableField}>
+                <View style={styles.editingContainer}>
                   <View
                     style={[
-                      styles.priorityBadge,
+                      styles.editingField,
                       {
-                        backgroundColor: getPriorityColor(
-                          task?.priority || "normal"
-                        ),
+                        borderColor: colors.primary,
+                        backgroundColor: colors.surface,
+                        padding: SIZES.small,
                       },
                     ]}>
-                    <Text style={styles.priorityText}>
-                      {(task?.priority || "normal").charAt(0).toUpperCase() +
-                        (task?.priority || "normal").slice(1)}
-                    </Text>
+                    <PrioritySelectorAdd
+                      selectedPriority={tempPriority}
+                      onSelectPriority={(priority) => {
+                        setTempPriority(priority);
+                        saveEdit(priority);
+                      }}
+                    />
                   </View>
-                </TouchableOpacity>
+                  <View style={styles.editActions}>
+                    <TouchableOpacity
+                      style={[
+                        styles.editButton,
+                        { backgroundColor: colors.error },
+                      ]}
+                      onPress={cancelEdit}
+                      activeOpacity={0.7}>
+                      <Ionicons name="close" size={16} color="white" />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              ) : (
+                <PrioritySelector
+                  selectedPriority={task?.priority || "normal"}
+                  onSelectPriority={() => {}}
+                  editable={false}
+                  onPress={() => startEditing("priority")}
+                  showEditIcon={true}
+                />
               )}
             </View>
 
             {/* Due Date & Time - Editable */}
             <View style={styles.dateTimeSection}>
               {editingField === "date" && task ? (
-                <View
-                  style={[
-                    styles.dateEditContainer,
-                    styles.editingField,
-                    { borderColor: colors.primary },
-                  ]}>
-                  <DateTimePicker
-                    value={tempDate}
-                    mode="date"
-                    display={Platform.OS === "ios" ? "spinner" : "default"}
-                    onChange={(event, selectedDate) => {
-                      if (selectedDate) {
-                        setTempDate(selectedDate);
-                        saveEdit();
-                      }
-                    }}
-                    minimumDate={new Date()}
-                  />
-                  <DateTimePicker
-                    value={tempDate}
-                    mode="time"
-                    display={Platform.OS === "ios" ? "spinner" : "default"}
-                    onChange={(event, selectedTime) => {
-                      if (selectedTime) {
-                        setTempDate(selectedTime);
-                        saveEdit();
-                      }
-                    }}
-                  />
+                <View style={styles.editingContainer}>
+                  <View
+                    style={[
+                      styles.editingField,
+                      {
+                        borderColor: colors.primary,
+                        backgroundColor: colors.surface,
+                        padding: SIZES.small,
+                      },
+                    ]}>
+                    <DateTimeButton
+                      value={tempDate}
+                      onDateChange={(date) => {
+                        setTempDate(date);
+                        saveEdit(date);
+                      }}
+                      mode="both"
+                      minimumDate={new Date()}
+                    />
+                  </View>
+                  <View style={styles.editActions}>
+                    <TouchableOpacity
+                      style={[
+                        styles.editButton,
+                        { backgroundColor: colors.error },
+                      ]}
+                      onPress={cancelEdit}
+                      activeOpacity={0.7}>
+                      <Ionicons name="close" size={16} color="white" />
+                    </TouchableOpacity>
+                  </View>
                 </View>
               ) : (
                 <TouchableOpacity
                   onPress={() => startEditing("date")}
                   style={styles.clickableField}>
-                  <View style={styles.dateTimeInfo}>
-                    <Text style={[styles.dateText, { color: colors.text }]}>
-                      {task?.dueDate
-                        ? formatDateDisplay(new Date(task.dueDate))
-                        : "No date set"}
-                    </Text>
-                    <Text
-                      style={[
-                        styles.timeText,
-                        { color: colors.textSecondary },
-                      ]}>
-                      {task?.dueDate
-                        ? formatTimeDisplay(new Date(task.dueDate))
-                        : "No time set"}
-                    </Text>
+                  <View style={styles.dateTimeContainer}>
+                    <View style={styles.dateTimeInfo}>
+                      <Text style={[styles.dateText, { color: colors.text }]}>
+                        {task?.dueDate
+                          ? formatDateDisplay(new Date(task.dueDate))
+                          : "No date set"}
+                      </Text>
+                      <Text
+                        style={[
+                          styles.timeText,
+                          { color: colors.textSecondary },
+                        ]}>
+                        {task?.dueDate
+                          ? formatTimeDisplay(new Date(task.dueDate))
+                          : "No time set"}
+                      </Text>
+                    </View>
+                    <Ionicons
+                      name="create-outline"
+                      size={16}
+                      color={colors.textSecondary}
+                      style={styles.editIcon}
+                    />
                   </View>
                 </TouchableOpacity>
+              )}
+            </View>
+
+            {/* Repetition */}
+            <View style={styles.sectionContainer}>
+              {tempRepetition && (
+                <View style={{ marginBottom: SIZES.small }}>
+                  <RepetitionSelector
+                    repetition={tempRepetition}
+                    onRepetitionChange={setTempRepetition}
+                  />
+                </View>
               )}
             </View>
 
             {/* Description - Editable */}
             <View style={styles.descriptionSection}>
               {editingField === "description" && task ? (
-                <TextInput
-                  style={[
-                    styles.descriptionText,
-                    styles.editingField,
-                    {
-                      color: colors.text,
-                      borderColor: colors.primary,
-                    },
-                  ]}
-                  value={tempDescription}
-                  onChangeText={setTempDescription}
-                  placeholder="Add a description..."
-                  placeholderTextColor={colors.textSecondary}
-                  multiline={true}
-                  numberOfLines={4}
-                  autoFocus={true}
-                  onBlur={saveEdit}
-                />
+                <View style={styles.editingContainer}>
+                  <TaskDescription
+                    value={tempDescription}
+                    onChangeText={setTempDescription}
+                    placeholder="Add a description..."
+                    autoFocus={true}
+                    onSubmitEditing={saveEdit}
+                    returnKeyType="done"
+                    style={[
+                      styles.descriptionText,
+                      styles.editingField,
+                      {
+                        color: colors.text,
+                        borderColor: colors.primary,
+                        backgroundColor: colors.surface,
+                      },
+                    ]}
+                  />
+                  <View style={styles.editActions}>
+                    <TouchableOpacity
+                      style={[
+                        styles.editButton,
+                        { backgroundColor: colors.success },
+                      ]}
+                      onPress={saveEdit}
+                      activeOpacity={0.7}>
+                      <Ionicons name="checkmark" size={16} color="white" />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[
+                        styles.editButton,
+                        { backgroundColor: colors.error },
+                      ]}
+                      onPress={cancelEdit}
+                      activeOpacity={0.7}>
+                      <Ionicons name="close" size={16} color="white" />
+                    </TouchableOpacity>
+                  </View>
+                </View>
               ) : (
-                <TouchableOpacity
+                <TaskDescription
+                  value={task?.description || ""}
+                  onChangeText={() => {}}
+                  placeholder="Add a description..."
+                  editable={false}
                   onPress={() => startEditing("description")}
-                  style={styles.clickableField}>
-                  <Text
-                    style={[styles.descriptionText, { color: colors.text }]}>
-                    {task?.description || "Add a description..."}
-                  </Text>
-                </TouchableOpacity>
+                  showEditIcon={true}
+                  style={styles.descriptionText}
+                />
               )}
             </View>
 
-            {/* Category */}
+            {/* Category - Editable (using AddTask selector for consistency) */}
             <View style={styles.categorySection}>
-              <Text
-                style={[styles.categoryLabel, { color: colors.textSecondary }]}>
-                Category
-              </Text>
-              <Text style={[styles.categoryText, { color: colors.text }]}>
-                {task?.category || "Uncategorized"}
-              </Text>
+              {editingField === "category" && task ? (
+                <View style={styles.editingContainer}>
+                  <View
+                    style={[
+                      styles.editingField,
+                      {
+                        borderColor: colors.primary,
+                        backgroundColor: colors.surface,
+                        padding: SIZES.small,
+                      },
+                    ]}>
+                    <CategorySelector
+                      selectedCategory={tempCategory}
+                      onSelectCategory={(categoryId) => {
+                        setTempCategory(categoryId);
+                        saveEdit(categoryId);
+                      }}
+                    />
+                  </View>
+                  <View style={styles.editActions}>
+                    <TouchableOpacity
+                      style={[
+                        styles.editButton,
+                        { backgroundColor: colors.error },
+                      ]}
+                      onPress={cancelEdit}
+                      activeOpacity={0.7}>
+                      <Ionicons name="close" size={16} color="white" />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              ) : (
+                <TouchableOpacity
+                  onPress={() => startEditing("category")}
+                  activeOpacity={0.7}
+                  style={styles.clickableField}>
+                  <View style={{ flex: 1 }}>
+                    <Text
+                      style={[
+                        styles.categoryLabel,
+                        { color: colors.textSecondary },
+                      ]}>
+                      Category
+                    </Text>
+                    <Text style={[styles.categoryText, { color: colors.text }]}>
+                      {task?.category || "Uncategorized"}
+                    </Text>
+                  </View>
+                  <Ionicons
+                    name="create-outline"
+                    size={16}
+                    color={colors.textSecondary}
+                    style={styles.editIcon}
+                  />
+                </TouchableOpacity>
+              )}
             </View>
           </Animated.View>
         )}
@@ -842,24 +992,7 @@ const TaskDetailsScreen = () => {
           <Ionicons name="trash-outline" size={22} color={colors.error} />
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={[
-            styles.repetitionButton,
-            {
-              borderColor: task?.isRecurring ? colors.primary : colors.border,
-              backgroundColor: task?.isRecurring
-                ? colors.primary + "10"
-                : colors.card,
-            },
-          ]}
-          onPress={handleRepetitionPress}
-          activeOpacity={0.7}>
-          <Ionicons
-            name="repeat"
-            size={22}
-            color={task?.isRecurring ? colors.primary : colors.textSecondary}
-          />
-        </TouchableOpacity>
+        {/* Repetition quick button removed */}
 
         <TouchableOpacity
           style={[
@@ -881,87 +1014,7 @@ const TaskDetailsScreen = () => {
         </TouchableOpacity>
       </View>
 
-      {/* Repetition Management Modal */}
-      <Modal
-        visible={showRepetitionModal}
-        transparent={true}
-        animationType="slide"
-        onRequestClose={handleRepetitionCancel}>
-        <View style={styles.modalOverlay}>
-          <View
-            style={[
-              styles.modalContainer,
-              { backgroundColor: colors.background },
-            ]}>
-            {/* Modal Header */}
-            <View
-              style={[
-                styles.modalHeader,
-                { borderBottomColor: colors.border },
-              ]}>
-              <Text style={[styles.modalTitle, { color: colors.text }]}>
-                {task?.isRecurring ? "Edit Repetition" : "Set Repetition"}
-              </Text>
-              <TouchableOpacity
-                style={styles.closeButton}
-                onPress={handleRepetitionCancel}
-                activeOpacity={0.7}>
-                <Ionicons name="close" size={24} color={colors.text} />
-              </TouchableOpacity>
-            </View>
-
-            {/* Modal Content */}
-            <View style={styles.modalContent}>
-              {tempRepetition && (
-                <RepetitionSelector
-                  repetition={tempRepetition}
-                  onRepetitionChange={setTempRepetition}
-                />
-              )}
-            </View>
-
-            {/* Modal Footer */}
-            <View
-              style={[styles.modalFooter, { borderTopColor: colors.border }]}>
-              {task?.isRecurring && (
-                <TouchableOpacity
-                  style={[styles.removeButton, { borderColor: colors.error }]}
-                  onPress={handleRemoveRepetition}
-                  activeOpacity={0.7}>
-                  <Text
-                    style={[styles.removeButtonText, { color: colors.error }]}>
-                    Remove
-                  </Text>
-                </TouchableOpacity>
-              )}
-              <TouchableOpacity
-                style={[
-                  styles.cancelModalButton,
-                  { borderColor: colors.border },
-                ]}
-                onPress={handleRepetitionCancel}
-                activeOpacity={0.7}>
-                <Text
-                  style={[
-                    styles.cancelModalButtonText,
-                    { color: colors.text },
-                  ]}>
-                  Cancel
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.saveButton, { backgroundColor: colors.primary }]}
-                onPress={handleRepetitionSave}
-                activeOpacity={0.7}>
-                <Text
-                  style={[styles.saveButtonText, { color: colors.onPrimary }]}>
-                  Save
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
+      {/* Repetition modal removed in favor of inline section */}
     </View>
   );
 };
@@ -989,43 +1042,49 @@ const styles = StyleSheet.create({
 
   // Main Card
   mainCard: {
-    borderRadius: 16,
+    borderRadius: 20,
     borderWidth: 1,
-    padding: SIZES.medium,
+    padding: SIZES.large,
     marginBottom: SIZES.medium,
-    elevation: 2,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
+    elevation: 4,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
   },
 
   // Status
   statusRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: SIZES.medium,
+    marginBottom: SIZES.large,
+    paddingVertical: SIZES.small,
+    paddingHorizontal: SIZES.medium,
+    borderRadius: 12,
+    backgroundColor: "rgba(0,0,0,0.02)",
   },
   statusIndicator: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
     marginRight: SIZES.small,
   },
   statusText: {
-    fontSize: SIZES.font,
-    fontWeight: "600",
+    fontSize: SIZES.font + 1,
+    fontWeight: "700",
+    letterSpacing: 0.5,
   },
 
   // Title Section
   titleSection: {
-    marginBottom: SIZES.medium,
+    marginBottom: SIZES.large,
   },
   taskTitle: {
-    fontSize: 24,
-    fontWeight: "bold",
-    lineHeight: 32,
+    fontSize: 26,
+    fontWeight: "800",
+    lineHeight: 34,
+    letterSpacing: 0.3,
   },
 
   // Priority Section
@@ -1034,30 +1093,19 @@ const styles = StyleSheet.create({
   },
   priorityBadge: {
     paddingHorizontal: SIZES.medium,
-    paddingVertical: SIZES.small / 2,
-    borderRadius: 16,
+    paddingVertical: SIZES.small,
+    borderRadius: 20,
     alignSelf: "flex-start",
+    elevation: 2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
   },
   priorityText: {
     color: "white",
     fontSize: SIZES.font,
-    fontWeight: "600",
-  },
-  priorityEditContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: SIZES.small,
-    marginBottom: SIZES.small,
-  },
-  priorityOption: {
-    paddingHorizontal: SIZES.medium,
-    paddingVertical: SIZES.small,
-    borderRadius: 16,
-    borderWidth: 1,
-  },
-  priorityOptionText: {
-    fontSize: SIZES.font,
-    fontWeight: "600",
+    fontWeight: "700",
+    letterSpacing: 0.5,
   },
 
   // Date & Time Section
@@ -1075,42 +1123,80 @@ const styles = StyleSheet.create({
   timeText: {
     fontSize: SIZES.font - 2,
   },
-  dateEditContainer: {
-    gap: SIZES.small,
-  },
 
   // Description Section
   descriptionSection: {
-    marginBottom: SIZES.medium,
+    marginBottom: SIZES.large,
   },
   descriptionText: {
-    fontSize: SIZES.font,
-    lineHeight: 24,
+    fontSize: SIZES.font + 1,
+    lineHeight: 26,
+    letterSpacing: 0.2,
   },
 
   // Category Section
   categorySection: {
-    paddingTop: SIZES.small,
+    paddingTop: SIZES.medium,
     borderTopWidth: 1,
-    borderTopColor: "rgba(0,0,0,0.1)",
+    borderTopColor: "rgba(0,0,0,0.08)",
+    backgroundColor: "rgba(0,0,0,0.02)",
+    marginHorizontal: -SIZES.large,
+    paddingHorizontal: SIZES.large,
+    paddingBottom: SIZES.small,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
   },
   categoryLabel: {
-    fontSize: SIZES.font - 2,
-    marginBottom: 4,
+    fontSize: SIZES.font - 1,
+    marginBottom: 6,
+    fontWeight: "600",
+    letterSpacing: 0.3,
   },
   categoryText: {
-    fontSize: SIZES.font,
-    fontWeight: "500",
+    fontSize: SIZES.font + 1,
+    fontWeight: "600",
+    letterSpacing: 0.2,
   },
 
   // Editable Fields
   clickableField: {
     paddingVertical: SIZES.small / 2,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  editingContainer: {
+    gap: SIZES.small,
   },
   editingField: {
     borderWidth: 2,
     borderRadius: 8,
     padding: SIZES.small,
+  },
+  editActions: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    gap: SIZES.small,
+  },
+  editButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  editIcon: {
+    marginLeft: SIZES.small,
+  },
+  priorityContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  dateTimeContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   cancelButton: {
     paddingHorizontal: SIZES.small,

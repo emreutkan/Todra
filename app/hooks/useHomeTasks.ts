@@ -60,7 +60,7 @@ export const useHomeTasks = (selectedDate?: Date) => {
         if (!task) return;
 
         const updatedTask = { ...task, completed: !task.completed };
-        await updateTask(taskId, updatedTask);
+        await updateTask(updatedTask);
 
         setAllTasks((prev) =>
           prev.map((t) => (t.id === taskId ? updatedTask : t))
