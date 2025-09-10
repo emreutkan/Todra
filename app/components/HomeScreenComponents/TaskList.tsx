@@ -290,9 +290,13 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     flexDirection: "row",
     alignItems: "center",
+    // Remove side spacing for the header by negating list container margins
+    marginHorizontal: -SIZES.medium,
+    paddingHorizontal: SIZES.medium,
   },
   statsContainer: {
     flexDirection: "row",
+    // Ensure items stretch edge-to-edge without side gaps
     justifyContent: "space-around",
     flex: 1,
   },
