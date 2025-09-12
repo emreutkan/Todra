@@ -37,3 +37,6 @@ yarn-error.*
 
 # EAS configuration (contains sensitive credentials)
 eas.json
+
+android/
+ios/

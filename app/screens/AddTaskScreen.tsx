@@ -342,7 +342,7 @@ const AddTaskScreen: React.FC = () => {
     },
     scrollContent: {
       padding: SIZES.medium,
-      paddingTop: 100, // Add more top padding for better spacing after header slides up
+      paddingTop: 120, // Add more top padding for better spacing after header slides up
       paddingBottom: 100, // Add extra padding to prevent content from being hidden behind floating buttons
     },
     loadingContainer: {

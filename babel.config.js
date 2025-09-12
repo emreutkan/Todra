@@ -5,13 +5,12 @@ module.exports = function (api) {
   return {
     presets: ["babel-preset-expo"],
     plugins: [
-      // Keep this first per Reanimated docs
-      "react-native-reanimated/plugin",
+      // Use worklets plugin instead of reanimated plugin (reanimated plugin moved to worklets)
+      "react-native-worklets/plugin",
       isProduction && [
-        "transform-remove-console",
+        "babel-plugin-transform-remove-console",
         { exclude: ["error", "warn"] },
       ],
     ].filter(Boolean),
   };
 };
-
