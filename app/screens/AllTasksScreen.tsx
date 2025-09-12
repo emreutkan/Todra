@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+// import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { StatusBar } from "expo-status-bar";
 import React from "react";
 import {
@@ -15,12 +15,13 @@ import ScreenHeader from "../components/common/ScreenHeader";
 import TaskItem from "../components/common/TaskItem";
 import { useTheme } from "../context/ThemeContext";
 import { useAllTasks } from "../hooks/useAllTasks";
-import { RootStackParamList, Task } from "../types";
+import { Task } from "../types";
 
-type AllTasksScreenNavigationProp = NativeStackNavigationProp<
-  RootStackParamList,
-  "AllTasks"
->;
+// Navigation prop type (currently unused but kept for future use)
+// type AllTasksScreenNavigationProp = NativeStackNavigationProp<
+//   RootStackParamList,
+//   "AllTasks"
+// >;
 
 const AllTasksScreen: React.FC = () => {
   const { colors, isDark } = useTheme();

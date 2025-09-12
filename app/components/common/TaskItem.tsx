@@ -19,7 +19,7 @@ import {
 } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
 import { Task, TaskPriority } from "../../types";
-import { formatDate, getPriorityColor } from "../../utils/taskUtils";
+import { formatDate } from "../../utils/taskUtils";
 
 const { width } = Dimensions.get("window");
 const SWIPE_THRESHOLD = -100;
@@ -47,7 +47,7 @@ const TaskItem: React.FC<TaskItemProps> = ({
   onPress,
   isOverdue = false,
   arePrereqsMet = true,
-  priority,
+  priority: _priority,
   mode = "home",
   showSwipeActions = false,
   showAnimations = true,
@@ -173,10 +173,7 @@ const TaskItem: React.FC<TaskItemProps> = ({
     return `${timeString} ${relativeTime}`;
   };
 
-  // Get priority color
-  const priorityColor = priority
-    ? getPriorityColor(priority, colors)
-    : getPriorityColor(item.priority, colors);
+  // Priority color is not currently used in the UI
 
   // Check if task is overdue
   const taskIsOverdue =

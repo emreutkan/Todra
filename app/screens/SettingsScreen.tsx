@@ -106,7 +106,7 @@ const SettingsScreen: React.FC = () => {
             onValueChange={(value) => updateSetting("soundEnabled", value)}
           />
           <SettingsButton
-            icon="bell-outline"
+            icon="notifications-outline"
             label="Test Notification"
             onPress={handleTestNotification}
             marginTop={8}

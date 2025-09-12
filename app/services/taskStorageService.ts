@@ -195,8 +195,7 @@ export const taskStorageService = {
   // Update a task in either active or archived list
   updateTask: async (updatedTask: Task): Promise<boolean> => {
     try {
-      // Get the original task to compare reminder settings
-      let originalTask: Task | null = null;
+      // Original task comparison logic removed as it's not currently used
 
       // Check active tasks first
       let activeTasks = await taskStorageService.getActiveTasks();
@@ -205,7 +204,7 @@ export const taskStorageService = {
       );
 
       if (activeIndex !== -1) {
-        originalTask = activeTasks[activeIndex];
+        // Store original task for comparison (currently unused)
         // Update in active tasks
         activeTasks[activeIndex] = updatedTask;
         const success = await taskStorageService.saveActiveTasks(activeTasks);
@@ -225,7 +224,7 @@ export const taskStorageService = {
       );
 
       if (archivedIndex !== -1) {
-        originalTask = archivedTasks[archivedIndex];
+        // Store original task for comparison (currently unused)
         // Update in archived tasks
         archivedTasks[archivedIndex] = updatedTask;
         return await taskStorageService.saveArchivedTasks(archivedTasks);

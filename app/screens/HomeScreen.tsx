@@ -40,7 +40,6 @@ const HomeScreen: React.FC = () => {
   const {
     tasks,
     loading,
-    refreshing,
     loadTasks,
     handleToggleTaskCompletion,
     handleDeleteTask,
@@ -58,19 +57,16 @@ const HomeScreen: React.FC = () => {
     setPriorityFilter,
   } = useHomeFilters(tasks);
 
-  const { completionStats, calculateTaskStats } = useHomeStats();
+  const { calculateTaskStats } = useHomeStats();
 
   const { categories, loadCategories } = useHomeCategories();
   const [isFilterVisible, setIsFilterVisible] = useState(false);
 
   // Animation values
   const taskOpacity = useState(new Animated.Value(0))[0];
-  const filterViewHeight = useState(new Animated.Value(0))[0];
 
   // New scroll-based animation values
   const scrollY = useRef(new Animated.Value(0)).current;
-  const collapsibleContentHeight = useRef(new Animated.Value(1)).current;
-  const collapsibleContentOpacity = useRef(new Animated.Value(1)).current;
 
   // Start entrance animations when component mounts
   useEffect(() => {

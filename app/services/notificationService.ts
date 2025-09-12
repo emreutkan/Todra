@@ -44,7 +44,10 @@ export const notificationService = {
     const seconds = Math.ceil(triggerMs / 1000);
     const id = await Notifications.scheduleNotificationAsync({
       content: { title, body: body ?? "Task reminder" },
-      trigger: { seconds, type: "timeInterval" },
+      trigger: {
+        seconds,
+        type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+      },
     });
     return id;
   },
@@ -61,7 +64,10 @@ export const notificationService = {
     const seconds = Math.ceil((when - Date.now()) / 1000);
     const id = await Notifications.scheduleNotificationAsync({
       content: { title, body: body ?? "Task reminder" },
-      trigger: { seconds, type: "timeInterval" },
+      trigger: {
+        seconds,
+        type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+      },
     });
     return id;
   },
@@ -125,7 +131,10 @@ export const notificationService = {
           title: "Test Notification",
           body: "This is a test notification to verify the system is working",
         },
-        trigger: { seconds: 1 },
+        trigger: {
+          seconds: 1,
+          type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+        },
       });
       console.log("Test notification scheduled with ID:", id);
       return id;

@@ -17,7 +17,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.emreutkan.todra",
+      "bundleIdentifier": "irfanemreutkan.app.todra",
       "buildNumber": "1"
     },
     "android": {
@@ -25,8 +25,7 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.emreutkan.todra",
-      "versionCode": 1
+      "package": "irfanemreutkan.app.todra"
     },
     "web": {
       "favicon": "./assets/icon.png"
@@ -36,7 +35,7 @@
       "**/*"
     ],
     "updates": {
-      "url": "https://u.expo.dev/d6f53cab-7842-4c6c-b65c-b944069db23f",
+      "url": "https://u.expo.dev/75cf929a-134a-4d4d-b713-b668268d9282",
       "enabled": true,
       "checkAutomatically": "ON_LOAD"
     },
@@ -45,8 +44,9 @@
     ],
     "extra": {
       "eas": {
-        "projectId": "d6f53cab-7842-4c6c-b65c-b944069db23f"
+        "projectId": "75cf929a-134a-4d4d-b713-b668268d9282"
       }
-    }
+    },
+    "owner": "emreutkan"
   }
 }

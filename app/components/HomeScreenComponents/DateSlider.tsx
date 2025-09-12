@@ -34,7 +34,7 @@ const DateSlider: React.FC<DateSliderProps> = ({
   today,
   selectedMonth,
   onDateChange,
-  filterType = "dueDate",
+  filterType: _filterType = "dueDate",
 }) => {
   const { colors } = useTheme();
   const flatListRef = useRef<FlatList>(null);
@@ -260,7 +260,7 @@ const DateSlider: React.FC<DateSliderProps> = ({
       <FlatList
         ref={flatListRef}
         data={dateRange}
-        keyExtractor={(item, index) => `date-${index}`}
+        keyExtractor={(_item, index) => `date-${index}`}
         renderItem={renderDateItem}
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -268,7 +268,7 @@ const DateSlider: React.FC<DateSliderProps> = ({
         snapToInterval={DAY_ITEM_WIDTH + ITEM_SPACING}
         snapToAlignment="center"
         onScrollToIndexFailed={handleScrollToIndexFailed}
-        getItemLayout={(data, index) => ({
+        getItemLayout={(_data, index) => ({
           length: DAY_ITEM_WIDTH + ITEM_SPACING,
           offset: (DAY_ITEM_WIDTH + ITEM_SPACING) * index,
           index,
