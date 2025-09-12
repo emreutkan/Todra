@@ -139,12 +139,14 @@ const CustomDatePicker: React.FC<CustomDatePickerProps> = ({
   };
 
   if (mode === "time") {
-    const hours = useMemo(() => Array.from({ length: 24 }, (_, i) => i), []);
-    const step = 5;
-    const minutes = useMemo(
+    let hours = useMemo(() => Array.from({ length: 24 }, (_, i) => i), []);
+    hours = hours.concat(hours).concat(hours).concat(hours);
+    const step = 1;
+    let minutes = useMemo(
       () => Array.from({ length: 60 / step }, (_, i) => i * step),
       []
     );
+    minutes = minutes.concat(minutes).concat(minutes).concat(minutes);
     const hourIndex = tempDate.getHours();
     const minuteIndex = Math.round(tempDate.getMinutes() / step);
 
@@ -182,7 +184,7 @@ const CustomDatePicker: React.FC<CustomDatePickerProps> = ({
   }
 
   // Date picker (Month / Day / Year wheels)
-  const monthNames = useMemo(
+  let monthNames = useMemo(
     () => [
       "Jan",
       "Feb",
@@ -199,6 +201,10 @@ const CustomDatePicker: React.FC<CustomDatePickerProps> = ({
     ],
     []
   );
+  monthNames = monthNames
+    .concat(monthNames)
+    .concat(monthNames)
+    .concat(monthNames);
 
   const selectedYear = tempDate.getFullYear();
   const selectedMonth = tempDate.getMonth();
@@ -218,10 +224,10 @@ const CustomDatePicker: React.FC<CustomDatePickerProps> = ({
     () => new Date(selectedYear, selectedMonth + 1, 0).getDate(),
     [selectedYear, selectedMonth]
   );
-  const days = useMemo(
-    () => Array.from({ length: daysInMonth }, (_, i) => i + 1),
-    [daysInMonth]
-  );
+  const days = useMemo(() => {
+    const dayArray = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+    return dayArray.concat(dayArray).concat(dayArray).concat(dayArray);
+  }, [daysInMonth]);
 
   const yearIndex = years.findIndex((y) => y === selectedYear);
   const monthIndex = selectedMonth;
@@ -284,14 +290,12 @@ const styles = StyleSheet.create({
   container: {
     height: 250,
     borderRadius: 12,
-    overflow: "hidden",
   },
   row: {
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "stretch",
     flex: 1,
-    height: 250,
   },
   wheelColumn: {
     width: 110,
@@ -302,14 +306,15 @@ const styles = StyleSheet.create({
     position: "relative",
   },
   selection: {
-    position: "absolute",
-    top: "50%",
+    // position: "absolute",
+    top: "49.2%", // DO NOT CHANGE THIS
     left: 0,
     right: 0,
-    height: 40,
-    marginTop: -20,
+    height: 44,
+    marginTop: -18, // DO NOT CHANGE THIS
     borderWidth: 1,
     borderRadius: 8,
+    zIndex: 100,
   },
   wheelItem: {
     height: 40,

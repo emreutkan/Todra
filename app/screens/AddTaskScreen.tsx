@@ -19,6 +19,7 @@ import { SIZES } from "../theme";
 // Component imports
 import CategorySelector from "../components/AddTaskComponents/CategorySelector";
 import DateTimePicker from "../components/AddTaskComponents/DateTimePicker";
+import FormSection from "../components/AddTaskComponents/FormSection";
 import PredecessorTaskSelector from "../components/AddTaskComponents/PredecessorTaskSelector";
 import PrioritySelector from "../components/AddTaskComponents/PrioritySelector";
 import RepetitionSelector from "../components/AddTaskComponents/RepetitionSelector";
@@ -40,8 +41,7 @@ const createButtonStyles = () =>
     buttonContainer: {
       flexDirection: "row",
       gap: 16,
-      alignItems: "flex-end",
-      justifyContent: "flex-end",
+
       paddingHorizontal: 10,
       paddingVertical: 12,
       zIndex: 1000,
@@ -80,7 +80,7 @@ const createButtonStyles = () =>
           shadowRadius: 6,
         },
         android: {
-          elevation: 6,
+          // elevation: 6,
         },
       }),
     },
@@ -92,7 +92,7 @@ const createButtonStyles = () =>
           shadowRadius: 8,
         },
         android: {
-          elevation: 8,
+          // elevation: 20,
         },
       }),
     },
@@ -342,8 +342,8 @@ const AddTaskScreen: React.FC = () => {
     },
     scrollContent: {
       padding: SIZES.medium,
-      paddingTop: 120, // Add more top padding for better spacing after header slides up
-      paddingBottom: 120, // Add extra padding to prevent content from being hidden behind floating buttons
+      paddingTop: 100, // Add more top padding for better spacing after header slides up
+      paddingBottom: 100, // Add extra padding to prevent content from being hidden behind floating buttons
     },
     loadingContainer: {
       flex: 1,
@@ -405,14 +405,14 @@ const AddTaskScreen: React.FC = () => {
         />
 
         <DateTimePicker dueDate={dueDate} onDateChange={setDueDate} />
-        {/* Remind me under due date/time */}
-        <View style={{ marginTop: 12 }}>
+
+        <FormSection title="Set Reminder">
           <RemindMeButton
             value={remindMe}
             onChange={setRemindMe}
             maxOffsetMs={Math.max(dueDate.getTime() - Date.now(), 0)}
           />
-        </View>
+        </FormSection>
 
         <RepetitionSelector
           repetition={repetition}

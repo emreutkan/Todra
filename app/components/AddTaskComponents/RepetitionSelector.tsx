@@ -266,7 +266,7 @@ const RepetitionSelector: React.FC<RepetitionSelectorProps> = ({
           shadowRadius: 10,
         },
         android: {
-          elevation: 10,
+          // elevation: 10,
         },
       }),
     },
