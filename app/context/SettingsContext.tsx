@@ -4,6 +4,7 @@ import { Platform } from "react-native";
 import { STORAGE_KEYS } from "../constants/StorageKeys";
 
 // Import Task type from types.ts to maintain consistency
+import { categoryStorageService } from "../services/categoryStorageService";
 import { taskStorageService } from "../services/taskStorageService";
 import { Task } from "../types";
 
@@ -35,7 +36,7 @@ type SettingsContextType = {
   updateSetting: <K extends keyof Settings>(key: K, value: Settings[K]) => void;
   resetSettings: () => void;
   exportData: () => Promise<string>;
-  importData: (data: string) => Promise<boolean>;
+  importData: (data: string, mode?: "merge" | "replace") => Promise<boolean>;
   clearAllTasks: () => Promise<boolean>;
   archiveCompletedTasks: () => Promise<number>;
   getCurrentTasks: () => Promise<Task[]>;
@@ -160,26 +161,25 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({
   // Export data function
   const exportData = async (): Promise<string> => {
     try {
-      // Get all tasks from AsyncStorage
-      const allTasks = (await AsyncStorage.getItem("@tasks")) || "[]";
-      const allCategories = (await AsyncStorage.getItem("@categories")) || "[]";
+      // Fetch from centralized services to ensure correct keys and formats
+      const currentTasks = await taskStorageService.getActiveTasks();
+      const archivedTasks = await taskStorageService.getArchivedTasks();
+      const categories = await categoryStorageService.loadCategories();
 
-      // Create a well-formatted export object with current timestamp
       const exportObject = {
         metadata: {
           version: "1.0.0",
           exportDate: new Date().toISOString(),
           platform: Platform.OS,
         },
-        data: {
-          tasks: JSON.parse(allTasks),
-          categories: JSON.parse(allCategories),
-          settings: settings,
-        },
+        // Export in a flat, self-descriptive shape
+        currentTasks,
+        archivedTasks,
+        categories,
+        settings,
       };
 
-      // Convert to string for export
-      return JSON.stringify(exportObject, null, 2); // Pretty print with indentation
+      return JSON.stringify(exportObject, null, 2);
     } catch (error) {
       console.error("Failed to export data:", error);
       throw new Error("Failed to export data");
@@ -187,33 +187,91 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   // Import data function
-  const importData = async (data: string): Promise<boolean> => {
+  const importData = async (
+    data: string,
+    mode: "merge" | "replace" = "replace"
+  ): Promise<boolean> => {
     try {
-      const parsedData = JSON.parse(data);
+      const parsed = JSON.parse(data);
 
-      // Validate the data structure
-      if (!parsedData.currentTasks || !Array.isArray(parsedData.currentTasks)) {
-        throw new Error("Invalid data format: missing or invalid currentTasks");
+      // Accept multiple shapes: legacy { data: { tasks, archivedTasks, categories, settings } }
+      // or new flat { currentTasks, archivedTasks, categories, settings }
+      const inferred = (() => {
+        if (parsed?.data) {
+          return {
+            currentTasks: parsed.data.tasks || parsed.data.currentTasks || [],
+            archivedTasks: parsed.data.archivedTasks || [],
+            categories: parsed.data.categories || [],
+            settings: parsed.data.settings,
+          };
+        }
+        return {
+          currentTasks: parsed.currentTasks || [],
+          archivedTasks: parsed.archivedTasks || [],
+          categories: parsed.categories || [],
+          settings: parsed.settings,
+        };
+      })();
+
+      if (!Array.isArray(inferred.currentTasks)) {
+        throw new Error("Invalid data format: currentTasks must be an array");
+      }
+      if (!Array.isArray(inferred.archivedTasks)) {
+        throw new Error("Invalid data format: archivedTasks must be an array");
       }
 
+      // Save tasks
+      if (mode === "replace") {
+        await taskStorageService.saveActiveTasks(inferred.currentTasks);
+        await taskStorageService.saveArchivedTasks(inferred.archivedTasks);
+      } else {
+        // Merge and dedupe by id; incoming overrides existing
+        const existingActive = await taskStorageService.getActiveTasks();
+        const existingArchived = await taskStorageService.getArchivedTasks();
+
+        const mergedById = <T extends { id: string }>(
+          base: T[],
+          incoming: T[]
+        ) => {
+          const map = new Map<string, T>();
+          for (const item of base) map.set(item.id, item);
+          for (const item of incoming) map.set(item.id, item);
+          return Array.from(map.values());
+        };
+
+        const mergedActive = mergedById(existingActive, inferred.currentTasks);
+        const mergedArchived = mergedById(
+          existingArchived,
+          inferred.archivedTasks
+        );
+
+        await taskStorageService.saveActiveTasks(mergedActive);
+        await taskStorageService.saveArchivedTasks(mergedArchived);
+      }
+
+      // Save categories
       if (
-        !parsedData.archivedTasks ||
-        !Array.isArray(parsedData.archivedTasks)
+        Array.isArray(inferred.categories) &&
+        inferred.categories.length > 0
       ) {
-        // If archivedTasks is missing, create an empty array
-        parsedData.archivedTasks = [];
+        if (mode === "replace") {
+          await categoryStorageService.saveCategories(inferred.categories);
+        } else {
+          const existingCategories =
+            await categoryStorageService.loadCategories();
+          const map = new Map<string, any>();
+          for (const c of existingCategories) map.set(c.id, c);
+          for (const c of inferred.categories) map.set(c.id, c);
+          await categoryStorageService.saveCategories(Array.from(map.values()));
+        }
       }
 
-      // Save the imported data using centralized service
-      await taskStorageService.saveActiveTasks(parsedData.currentTasks);
-      await taskStorageService.saveArchivedTasks(parsedData.archivedTasks);
-
-      // Import settings if available
-      if (parsedData.settings) {
+      // Save settings if present
+      if (inferred.settings && typeof inferred.settings === "object") {
         setSettings({
-          ...defaultSettings, // Start with defaults for any missing fields
-          ...parsedData.settings,
-          // Mark the last backup date as the import date
+          ...defaultSettings,
+          ...(mode === "replace" ? {} : settings),
+          ...inferred.settings,
           lastBackupDate: new Date().toISOString(),
         });
       }

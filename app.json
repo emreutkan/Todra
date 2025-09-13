@@ -2,7 +2,7 @@
   "expo": {
     "name": "Todra",
     "slug": "Todra",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "runtimeVersion": {
       "policy": "appVersion"
     },
@@ -11,19 +11,21 @@
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#383838"
     },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "irfanemreutkan.app.todra",
-      "buildNumber": "1"
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#383838"
       },
       "package": "irfanemreutkan.app.todra"
     },

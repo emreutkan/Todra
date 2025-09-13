@@ -9,7 +9,10 @@
       "distribution": "internal"
     },
     "preview": {
-      "distribution": "internal"
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      }
     },
     "production": {
       "autoIncrement": true,
@@ -26,10 +29,9 @@
   "submit": {
     "production": {
       "ios": {
-        "ascAppId": null
+        "ascAppId": "6752448805"
       },
       "android": {
-        "serviceAccountKeyPath": null
       }
     }
   }

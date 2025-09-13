@@ -35,7 +35,11 @@ export const useSettingsActions = () => {
 
       // On Android, write to a temporary file first
       if (Platform.OS === "android") {
-        const filePath = `${FileSystem.cacheDirectory}${fileName}`;
+        const baseDir =
+          (FileSystem as any).cacheDirectory ||
+          (FileSystem as any).documentDirectory ||
+          "";
+        const filePath = `${baseDir}${fileName}`;
         await FileSystem.writeAsStringAsync(filePath, data);
 
         // Share the file
@@ -70,31 +74,48 @@ export const useSettingsActions = () => {
 
   const handleImportData = useCallback(async () => {
     try {
-      // Open document picker to select a JSON file
+      // Expo SDK 53: getDocumentAsync returns { assets?: [{ uri, name, size, mimeType }], canceled }
       const result = await DocumentPicker.getDocumentAsync({
         type: "application/json",
+        multiple: false,
         copyToCacheDirectory: true,
       });
 
-      if ((result as any).type === "success") {
-        // Read the file content
-        const fileContent = await FileSystem.readAsStringAsync(
-          (result as any).uri
-        );
-        const success = await importData(fileContent);
+      if ((result as any).canceled) return;
 
-        if (success) {
-          Alert.alert(
-            "Import Successful",
-            "Your data has been successfully imported. The app will refresh to show the imported data."
-          );
-        } else {
-          Alert.alert(
-            "Import Failed",
-            "There was a problem with the file format. Please ensure you're using a valid TaskPlanner backup file."
-          );
-        }
-      }
+      const asset = (result as any).assets?.[0];
+      const uri = asset?.uri || (result as any).uri; // fallback for older shapes
+      if (!uri) throw new Error("No file selected");
+
+      const fileContent = await FileSystem.readAsStringAsync(uri);
+
+      // Ask user how to import
+      Alert.alert("Import Data", "How would you like to import the data?", [
+        {
+          text: "Merge",
+          onPress: async () => {
+            const ok = await importData(fileContent, "merge");
+            if (ok) {
+              Alert.alert("Done", "Data merged successfully.");
+            } else {
+              Alert.alert("Import Failed", "Could not merge data.");
+            }
+          },
+        },
+        {
+          text: "Replace",
+          style: "destructive",
+          onPress: async () => {
+            const ok = await importData(fileContent, "replace");
+            if (ok) {
+              Alert.alert("Done", "Data replaced successfully.");
+            } else {
+              Alert.alert("Import Failed", "Could not replace data.");
+            }
+          },
+        },
+        { text: "Cancel", style: "cancel" },
+      ]);
     } catch (error) {
       Alert.alert(
         "Import Failed",
