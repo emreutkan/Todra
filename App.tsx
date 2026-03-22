@@ -1,5 +1,15 @@
 import { Ionicons } from "@expo/vector-icons";
 import {
+  Fraunces_400Regular,
+  Fraunces_600SemiBold,
+} from "@expo-google-fonts/fraunces";
+import {
+  NunitoSans_400Regular,
+  NunitoSans_500Medium,
+  NunitoSans_600SemiBold,
+  NunitoSans_700Bold,
+} from "@expo-google-fonts/nunito-sans";
+import {
   DarkTheme,
   DefaultTheme,
   NavigationContainer,
@@ -8,15 +18,15 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { useFonts } from "expo-font";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect } from "react";
+import { applyGlobalTypography } from "./app/bootstrapTypography";
 import { SettingsProvider } from "./app/context/SettingsContext";
 import { ThemeProvider, useTheme } from "./app/context/ThemeContext";
-import { COLORS } from "./app/theme";
+import { ToastProvider } from "./app/context/ToastContext";
 
-// Import screens
 import AddTaskScreen from "./app/screens/AddTaskScreen";
-import AllTasksScreen from "./app/screens/AllTasksScreen"; // New import
+import AllTasksScreen from "./app/screens/AllTasksScreen";
 import HomeScreen from "./app/screens/HomeScreen";
-import SettingsScreen from "./app/screens/SettingsScreen"; // New import
+import SettingsScreen from "./app/screens/SettingsScreen";
 import SplashScreen from "./app/screens/SplashScreen";
 import TaskDetailsScreen from "./app/screens/TaskDetailsScreen";
 
@@ -30,21 +40,18 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 function AppContent() {
   const { colors, isDark } = useTheme();
 
-  // removed unused isReady state
-
   const MyTheme = {
     ...(isDark ? DarkTheme : DefaultTheme),
     colors: {
       ...(isDark ? DarkTheme.colors : DefaultTheme.colors),
-      background: colors.background || COLORS.background,
-      card: colors.card || COLORS.card,
-      text: colors.text || COLORS.text,
-      border: colors.border || COLORS.border,
-      primary: colors.primary || COLORS.primary,
+      background: colors.background,
+      card: colors.card,
+      text: colors.text,
+      border: colors.border,
+      primary: colors.primary,
     },
   };
 
-  // No artificial delay or initial placeholder
   useEffect(() => {
     (async () => {
       try {
@@ -54,7 +61,6 @@ function AppContent() {
     })();
   }, []);
 
-  // Foreground behavior
   useEffect(() => {
     Notifications.setNotificationHandler({
       handleNotification: async () => ({
@@ -75,7 +81,7 @@ function AppContent() {
         screenOptions={{
           headerShown: false,
           contentStyle: {
-            backgroundColor: colors.background || COLORS.background,
+            backgroundColor: colors.background,
           },
           animation: "fade",
         }}>
@@ -101,7 +107,21 @@ function AppContent() {
 }
 
 export default function App() {
-  const [fontsLoaded] = useFonts(Ionicons.font);
+  const [fontsLoaded] = useFonts({
+    ...Ionicons.font,
+    Fraunces_400Regular,
+    Fraunces_600SemiBold,
+    NunitoSans_400Regular,
+    NunitoSans_500Medium,
+    NunitoSans_600SemiBold,
+    NunitoSans_700Bold,
+  });
+
+  useEffect(() => {
+    if (fontsLoaded) {
+      applyGlobalTypography();
+    }
+  }, [fontsLoaded]);
 
   if (!fontsLoaded) {
     return null;
@@ -110,7 +130,9 @@ export default function App() {
   return (
     <SettingsProvider>
       <ThemeProvider>
-        <AppContent />
+        <ToastProvider>
+          <AppContent />
+        </ToastProvider>
       </ThemeProvider>
     </SettingsProvider>
   );

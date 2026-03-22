@@ -7,13 +7,15 @@ import {
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { StatusBar } from "expo-status-bar";
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { Alert, Animated, StyleSheet, View } from "react-native";
+import * as Haptics from "expo-haptics";
+import { Animated, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import BottomNavigator from "../components/HomeScreenComponents/BottomNavigator";
 import DateSlider from "../components/HomeScreenComponents/DateSlider";
 import FilterPopup from "../components/HomeScreenComponents/FilterPopup";
 import TaskList from "../components/HomeScreenComponents/TaskList";
 import { useTheme } from "../context/ThemeContext";
+import { useToast } from "../context/ToastContext";
 import { useHomeCategories } from "../hooks/useHomeCategories";
 import { useHomeDateRange } from "../hooks/useHomeDateRange";
 import { useHomeFilters } from "../hooks/useHomeFilters";
@@ -31,6 +33,7 @@ const HomeScreen: React.FC = () => {
   const navigation = useNavigation<HomeScreenNavigationProp>();
   const route = useRoute<HomeScreenRouteProp>();
   const { colors, isDark } = useTheme();
+  const { showToast } = useToast();
   const insets = useSafeAreaInsets();
 
   const { today, currentDate, selectedMonth, dateRange, handleDateChange } =
@@ -96,9 +99,13 @@ const HomeScreen: React.FC = () => {
 
       // Check for success message from AddTaskScreen
       if (route.params?.showSuccessMessage) {
-        Alert.alert("Success", route.params.message || "Task action completed");
-
-        // Clear the parameters to avoid showing the message again
+        void Haptics.notificationAsync(
+          Haptics.NotificationFeedbackType.Success
+        );
+        showToast(
+          route.params.message || "Task action completed",
+          "success"
+        );
         navigation.setParams({
           showSuccessMessage: undefined,
           message: undefined,
@@ -109,7 +116,7 @@ const HomeScreen: React.FC = () => {
       return () => {
         // Clean up any subscriptions if needed
       };
-    }, [route.params?.timestamp, loadTasks])
+    }, [route.params?.timestamp, loadTasks, showToast, navigation])
   );
 
   // Calculate stats when filtered tasks change

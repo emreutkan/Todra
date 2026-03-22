@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
 import React, { useRef } from "react";
 import { Animated, Platform, StyleSheet, TouchableOpacity } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
@@ -74,7 +75,10 @@ const AddButton: React.FC<AddButtonProps> = ({
       ]}>
       <TouchableOpacity
         activeOpacity={1}
-        onPress={onPress}
+        onPress={() => {
+          void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+          onPress();
+        }}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
         accessibilityLabel={label}

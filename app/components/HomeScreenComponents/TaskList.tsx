@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { useSettings } from "../../context/SettingsContext";
 import { useTheme } from "../../context/ThemeContext";
+import { typography } from "../../typography";
 import { SIZES } from "../../theme";
 import { Task, TaskPriority } from "../../types";
 import EmptyTasksState from "../common/EmptyTasksState";
@@ -163,12 +164,22 @@ const TaskList: React.FC<TaskListProps> = ({
                 { backgroundColor: priorityColor },
               ]}
             />
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>
+            <Text
+              style={[
+                typography.headline,
+                styles.sectionTitle,
+                { color: colors.text },
+              ]}>
               {section.title}
             </Text>
           </View>
           {isExpanded ? (
-            <Text style={[styles.sectionCount, { color: colors.text }]}>
+            <Text
+              style={[
+                typography.bodySemiBold,
+                styles.sectionCount,
+                { color: colors.text },
+              ]}>
               {section.count}
             </Text>
           ) : (
@@ -197,28 +208,58 @@ const TaskList: React.FC<TaskListProps> = ({
         ]}>
         <View style={styles.statsContainer}>
           <View style={styles.statItem}>
-            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
+            <Text
+              style={[
+                typography.captionMedium,
+                styles.statLabel,
+                { color: colors.textSecondary },
+              ]}>
               Completed
             </Text>
-            <Text style={[styles.statValue, { color: colors.success }]}>
+            <Text
+              style={[
+                typography.title,
+                styles.statValue,
+                { color: colors.success },
+              ]}>
               {completed}
             </Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statItem}>
-            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
+            <Text
+              style={[
+                typography.captionMedium,
+                styles.statLabel,
+                { color: colors.textSecondary },
+              ]}>
               Remaining
             </Text>
-            <Text style={[styles.statValue, { color: colors.primary }]}>
+            <Text
+              style={[
+                typography.title,
+                styles.statValue,
+                { color: colors.primary },
+              ]}>
               {remaining}
             </Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statItem}>
-            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
+            <Text
+              style={[
+                typography.captionMedium,
+                styles.statLabel,
+                { color: colors.textSecondary },
+              ]}>
               Total
             </Text>
-            <Text style={[styles.statValue, { color: colors.text }]}>
+            <Text
+              style={[
+                typography.title,
+                styles.statValue,
+                { color: colors.text },
+              ]}>
               {total}
             </Text>
           </View>
@@ -309,12 +350,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   statLabel: {
-    fontSize: SIZES.small,
     marginBottom: SIZES.small,
   },
   statValue: {
-    fontSize: SIZES.medium,
-    fontWeight: "600",
+    fontSize: 22,
   },
   statDivider: {
     width: 1,
@@ -339,8 +378,7 @@ const styles = StyleSheet.create({
     marginRight: SIZES.small,
   },
   sectionTitle: {
-    fontSize: SIZES.medium,
-    fontWeight: "600",
+    flexShrink: 1,
   },
   sectionBadge: {
     paddingHorizontal: SIZES.small,
@@ -349,8 +387,7 @@ const styles = StyleSheet.create({
     marginLeft: SIZES.small,
   },
   sectionCount: {
-    fontSize: SIZES.small,
-    fontWeight: "600",
+    fontSize: 15,
   },
 });
 

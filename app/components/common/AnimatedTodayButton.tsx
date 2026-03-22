@@ -1,6 +1,7 @@
 import React, { useRef } from "react";
 import { Animated, StyleSheet, Text, TouchableOpacity } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
+import { typography } from "../../typography";
 import { SIZES } from "../../theme";
 
 interface AnimatedTodayButtonProps {
@@ -71,7 +72,7 @@ const AnimatedTodayButton: React.FC<AnimatedTodayButtonProps> = ({
   // Interpolate border color from original to green
   const borderColor = borderColorAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: [colors.border, "#22c55e"], // Green color
+    outputRange: [colors.border, colors.success],
   });
 
   // Interpolate text padding for left alignment effect
@@ -99,7 +100,14 @@ const AnimatedTodayButton: React.FC<AnimatedTodayButtonProps> = ({
               paddingRight: textPaddingRight,
             },
           ]}>
-          <Text style={[styles.text, { color: colors.primary }]}>{text}</Text>
+          <Text
+            style={[
+              typography.bodySemiBold,
+              styles.text,
+              { color: colors.primary },
+            ]}>
+            {text}
+          </Text>
         </Animated.View>
       </Animated.View>
     </TouchableOpacity>

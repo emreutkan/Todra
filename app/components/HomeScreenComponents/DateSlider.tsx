@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
 import { SIZES } from "../../theme";
+import { typography } from "../../typography";
 import AnimatedTodayButton from "../common/AnimatedTodayButton";
 import DateTimeModal from "../common/DateTimeModal";
 
@@ -234,7 +235,12 @@ const DateSlider: React.FC<DateSliderProps> = ({
           accessibilityRole="button"
           accessibilityLabel={`Select date for ${selectedMonth}`}
           accessibilityHint="Opens date picker to select a different month and year">
-          <Text style={[styles.monthText, { color: colors.text }]}>
+          <Text
+            style={[
+              typography.headline,
+              styles.monthText,
+              { color: colors.text },
+            ]}>
             {selectedMonth}
           </Text>
         </TouchableOpacity>
@@ -315,8 +321,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   monthText: {
-    fontSize: SIZES.small + 1,
-    fontWeight: "600",
+    fontSize: 17,
   },
 
   dateItem: {

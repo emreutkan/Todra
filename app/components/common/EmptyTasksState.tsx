@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
-import { SIZES } from "../../theme";
+import { typography } from "../../typography";
 
 interface EmptyTasksStateProps {
   title?: string;
@@ -25,8 +25,16 @@ const EmptyTasksState: React.FC<EmptyTasksStateProps> = ({
           { backgroundColor: colors.card, borderColor: colors.border },
         ]}>
         <Ionicons name={icon} size={70} color={colors.text + "40"} />
-        <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
-        <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+        <Text
+          style={[typography.headline, styles.title, { color: colors.text }]}>
+          {title}
+        </Text>
+        <Text
+          style={[
+            typography.bodySmall,
+            styles.subtitle,
+            { color: colors.textSecondary },
+          ]}>
           {subtitle}
         </Text>
       </View>
@@ -49,12 +57,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   title: {
-    fontSize: SIZES.large,
-    fontWeight: "bold",
     marginTop: 20,
+    textAlign: "center",
   },
   subtitle: {
-    fontSize: SIZES.medium,
     textAlign: "center",
     marginTop: 10,
   },

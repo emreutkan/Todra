@@ -1,18 +1,22 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import * as Haptics from "expo-haptics";
 import { StatusBar } from "expo-status-bar";
 import React, { useCallback, useEffect, useState } from "react";
 import {
   Alert,
   FlatList,
-  Platform,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useToast } from "../context/ToastContext";
 import { useTheme } from "../context/ThemeContext";
+import { PRIORITY_COLORS } from "../theme";
+import { typography } from "../typography";
 import {
   getArchivedTasks,
   unarchiveTask,
@@ -27,6 +31,8 @@ type ArchivedTasksScreenNavigationProp = NativeStackNavigationProp<
 const ArchivedTasksScreen: React.FC = () => {
   const navigation = useNavigation<ArchivedTasksScreenNavigationProp>();
   const { colors, isDark } = useTheme();
+  const insets = useSafeAreaInsets();
+  const { showToast } = useToast();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -60,9 +66,9 @@ const ArchivedTasksScreen: React.FC = () => {
   const handleUnarchiveTask = async (taskId: string) => {
     try {
       await unarchiveTask(taskId);
-      // Refresh the task list
       loadArchivedTasks();
-      Alert.alert("Success", "Task restored to active tasks");
+      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      showToast("Task restored to active tasks", "success");
     } catch (error) {
       console.error("Error unarchiving task:", error);
       Alert.alert("Error", "Failed to restore task");
@@ -78,7 +84,7 @@ const ArchivedTasksScreen: React.FC = () => {
   };
 
   const renderItem = ({ item }: { item: Task }) => {
-    const categoryColor = item.category ? "#3498db" : "transparent";
+    const categoryColor = item.category ? colors.info : "transparent";
 
     return (
       <View
@@ -96,6 +102,7 @@ const ArchivedTasksScreen: React.FC = () => {
             />
             <Text
               style={[
+                typography.bodySemiBold,
                 styles.taskTitle,
                 { color: colors.text },
                 item.completed && styles.completedText,
@@ -107,7 +114,14 @@ const ArchivedTasksScreen: React.FC = () => {
           {item.completed && (
             <View
               style={[styles.statusBadge, { backgroundColor: colors.success }]}>
-              <Text style={styles.statusText}>Completed</Text>
+              <Text
+                style={[
+                  typography.captionMedium,
+                  styles.statusText,
+                  { color: colors.onPrimary },
+                ]}>
+                Completed
+              </Text>
             </View>
           )}
         </View>
@@ -120,7 +134,11 @@ const ArchivedTasksScreen: React.FC = () => {
               color={colors.textSecondary}
             />
             <Text
-              style={[styles.taskDetailText, { color: colors.textSecondary }]}>
+              style={[
+                typography.bodySmall,
+                styles.taskDetailText,
+                { color: colors.textSecondary },
+              ]}>
               Created: {formatDate(item.createdAt)}
             </Text>
           </View>
@@ -134,6 +152,7 @@ const ArchivedTasksScreen: React.FC = () => {
               />
               <Text
                 style={[
+                  typography.bodySmall,
                   styles.taskDetailText,
                   { color: colors.textSecondary },
                 ]}>
@@ -154,18 +173,40 @@ const ArchivedTasksScreen: React.FC = () => {
                   styles.categoryBadge,
                   { backgroundColor: categoryColor },
                 ]}>
-                <Text style={styles.categoryText}>{item.category}</Text>
+                <Text
+                  style={[
+                    typography.captionMedium,
+                    styles.categoryText,
+                    { color: colors.onPrimary },
+                  ]}>
+                  {item.category}
+                </Text>
               </View>
             </View>
           )}
         </View>
 
-        <View style={styles.actionContainer}>
+        <View
+          style={[
+            styles.actionContainer,
+            { borderTopColor: colors.border },
+          ]}>
           <TouchableOpacity
             style={[styles.actionButton, { backgroundColor: colors.primary }]}
             onPress={() => handleUnarchiveTask(item.id)}>
-            <Ionicons name="return-up-back-outline" size={18} color="#fff" />
-            <Text style={styles.actionButtonText}>Restore</Text>
+            <Ionicons
+              name="return-up-back-outline"
+              size={18}
+              color={colors.onPrimary}
+            />
+            <Text
+              style={[
+                typography.bodySmall,
+                styles.actionButtonText,
+                { color: colors.onPrimary },
+              ]}>
+              Restore
+            </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -179,7 +220,12 @@ const ArchivedTasksScreen: React.FC = () => {
             ]}
             onPress={() => handleTaskPress(item.id)}>
             <Ionicons name="eye-outline" size={18} color={colors.text} />
-            <Text style={[styles.actionButtonText, { color: colors.text }]}>
+            <Text
+              style={[
+                typography.bodySmall,
+                styles.actionButtonText,
+                { color: colors.text },
+              ]}>
               View
             </Text>
           </TouchableOpacity>
@@ -191,21 +237,27 @@ const ArchivedTasksScreen: React.FC = () => {
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case "high":
-        return "#e74c3c";
+        return PRIORITY_COLORS.high;
       case "normal":
-        return "#3498db";
+        return PRIORITY_COLORS.normal;
       case "low":
-        return "#2ecc71";
+        return PRIORITY_COLORS.low;
       default:
-        return "#95a5a6";
+        return colors.textSecondary;
     }
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <View
+      style={[
+        styles.container,
+        {
+          backgroundColor: colors.background,
+          paddingTop: insets.top,
+        },
+      ]}>
       <StatusBar style={isDark ? "light" : "dark"} />
 
-      {/* Header */}
       <View
         style={[
           styles.header,
@@ -214,7 +266,12 @@ const ArchivedTasksScreen: React.FC = () => {
         <TouchableOpacity style={styles.backButton} onPress={handleBackPress}>
           <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>
+        <Text
+          style={[
+            typography.title,
+            styles.headerTitle,
+            { color: colors.text },
+          ]}>
           Archived Tasks
         </Text>
         <View style={styles.placeholder} />
@@ -232,13 +289,22 @@ const ArchivedTasksScreen: React.FC = () => {
               size={64}
               color={colors.textSecondary}
             />
-            <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
+            <Text
+              style={[
+                typography.body,
+                styles.emptyText,
+                { color: colors.textSecondary },
+              ]}>
               {loading
                 ? "Loading archived tasks..."
                 : "No archived tasks found"}
             </Text>
             <Text
-              style={[styles.emptySubtext, { color: colors.textSecondary }]}>
+              style={[
+                typography.bodySmall,
+                styles.emptySubtext,
+                { color: colors.textSecondary },
+              ]}>
               {!loading && "Complete tasks and archive them to see them here"}
             </Text>
           </View>
@@ -251,14 +317,6 @@ const ArchivedTasksScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    ...Platform.select({
-      ios: {
-        paddingTop: 50,
-      },
-      android: {
-        paddingTop: 25,
-      },
-    }),
   },
   header: {
     flexDirection: "row",
@@ -272,8 +330,8 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   headerTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
+    flex: 1,
+    textAlign: "center",
   },
   placeholder: {
     width: 40,
@@ -306,8 +364,6 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   taskTitle: {
-    fontSize: 16,
-    fontWeight: "600",
     flex: 1,
   },
   completedText: {
@@ -320,11 +376,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     marginLeft: 8,
   },
-  statusText: {
-    fontSize: 12,
-    color: "white",
-    fontWeight: "500",
-  },
+  statusText: {},
   taskDetails: {
     marginTop: 8,
   },
@@ -334,7 +386,6 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   taskDetailText: {
-    fontSize: 14,
     marginLeft: 6,
   },
   categoryBadge: {
@@ -343,18 +394,13 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     marginLeft: 6,
   },
-  categoryText: {
-    fontSize: 12,
-    color: "white",
-    fontWeight: "500",
-  },
+  categoryText: {},
   actionContainer: {
     flexDirection: "row",
     justifyContent: "flex-end",
     marginTop: 12,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: "#e0e0e0",
   },
   actionButton: {
     flexDirection: "row",
@@ -366,9 +412,6 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   actionButtonText: {
-    color: "#ffffff",
-    fontSize: 14,
-    fontWeight: "600",
     marginLeft: 4,
   },
   emptyContainer: {

@@ -2,13 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 // import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { StatusBar } from "expo-status-bar";
 import React from "react";
-import {
-  FlatList,
-  Platform,
-  StyleSheet,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { FlatList, StyleSheet, TouchableOpacity, View } from "react-native";
 import CategoryTabs from "../components/AllTasksComponents/CategoryTabs";
 import EmptyTasksState from "../components/common/EmptyTasksState";
 import ScreenHeader from "../components/common/ScreenHeader";
@@ -114,14 +108,6 @@ const AllTasksScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    ...Platform.select({
-      ios: {
-        paddingTop: 50,
-      },
-      android: {
-        paddingTop: 25,
-      },
-    }),
   },
   actionButton: {
     padding: 8,

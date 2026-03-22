@@ -6,10 +6,12 @@ import {
   format,
 } from "date-fns";
 import React, { useEffect, useMemo, useRef } from "react";
+import * as Haptics from "expo-haptics";
 import {
   Alert,
   Animated,
   Dimensions,
+  Easing,
   PanResponder,
   StyleSheet,
   Text,
@@ -19,6 +21,7 @@ import {
 } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
 import { Task, TaskPriority } from "../../types";
+import { typography } from "../../typography";
 import { formatDate } from "../../utils/taskUtils";
 
 const { width } = Dimensions.get("window");
@@ -69,11 +72,11 @@ const TaskItem: React.FC<TaskItemProps> = ({
           delay: index * 50,
           useNativeDriver: true,
         }),
-        Animated.spring(scale, {
+        Animated.timing(scale, {
           toValue: 1,
-          tension: 100,
-          friction: 8,
-          delay: index * 50,
+          duration: 420,
+          delay: index * 45,
+          easing: Easing.out(Easing.cubic),
           useNativeDriver: true,
         }),
       ]).start();
@@ -198,6 +201,7 @@ const TaskItem: React.FC<TaskItemProps> = ({
     }
 
     if (onToggleComplete) {
+      void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       onToggleComplete(item.id);
     }
   };
@@ -311,6 +315,7 @@ const TaskItem: React.FC<TaskItemProps> = ({
                   <View style={styles.titleRow}>
                     <Text
                       style={[
+                        typography.bodySemiBold,
                         styles.taskTitle,
                         {
                           color: colors.text,
@@ -345,6 +350,7 @@ const TaskItem: React.FC<TaskItemProps> = ({
                   {item.description && (
                     <Text
                       style={[
+                        typography.bodySmall,
                         styles.description,
                         { color: colors.textSecondary },
                       ]}
@@ -355,6 +361,7 @@ const TaskItem: React.FC<TaskItemProps> = ({
 
                   <Text
                     style={[
+                      typography.captionMedium,
                       styles.dueDate,
                       {
                         color: taskIsOverdue
@@ -380,6 +387,7 @@ const TaskItem: React.FC<TaskItemProps> = ({
                     />
                     <Text
                       style={[
+                        typography.captionMedium,
                         styles.statusText,
                         { color: colors.textSecondary },
                       ]}>
@@ -434,8 +442,6 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   taskTitle: {
-    fontSize: 16,
-    fontWeight: "600",
     flex: 1,
     marginRight: 8,
   },
@@ -450,14 +456,9 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
   description: {
-    fontSize: 14,
-    lineHeight: 20,
     marginBottom: 8,
   },
-  dueDate: {
-    fontSize: 12,
-    fontWeight: "500",
-  },
+  dueDate: {},
   completeButton: {
     width: 28,
     height: 28,
@@ -484,10 +485,7 @@ const styles = StyleSheet.create({
   statusIcon: {
     marginRight: 4,
   },
-  statusText: {
-    fontSize: 12,
-    fontWeight: "500",
-  },
+  statusText: {},
 });
 
 export default TaskItem;

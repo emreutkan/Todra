@@ -1,5 +1,4 @@
 import { Ionicons } from "@expo/vector-icons";
-import { BlurView } from "expo-blur";
 import { StatusBar } from "expo-status-bar";
 import React, { useRef } from "react";
 import {
@@ -26,28 +25,13 @@ import RepetitionSelector from "../components/AddTaskComponents/RepetitionSelect
 import TaskDescription from "../components/AddTaskComponents/TaskDescription";
 import TaskTitleInput from "../components/AddTaskComponents/TaskTitleInput";
 import RemindMeButton from "../components/common/RemindMeButton";
+import GlassBar from "../components/common/GlassBar";
 import ScreenHeader from "../components/common/ScreenHeader";
 import { useAddTask } from "../hooks/useAddTask";
 
 // Styles for the floating buttons
 const createButtonStyles = () =>
   StyleSheet.create({
-    wrapper: {
-      borderRadius: 100,
-      overflow: "hidden",
-      alignSelf: "flex-end",
-      marginRight: 10,
-    },
-    buttonContainer: {
-      flexDirection: "row",
-      gap: 16,
-
-      paddingHorizontal: 10,
-      paddingVertical: 12,
-      zIndex: 1000,
-      backgroundColor: "transparent",
-      flexShrink: 0,
-    },
     fab: {
       width: 56,
       height: 56,
@@ -272,7 +256,7 @@ const AnimatedLargeSaveButton = ({
 };
 
 const AddTaskScreen: React.FC = () => {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const bottomInsets = useSafeAreaInsets();
 
   // Animation values for sliding header
@@ -365,7 +349,7 @@ const AddTaskScreen: React.FC = () => {
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       style={styles.container}>
-      <StatusBar style="dark" />
+      <StatusBar style={isDark ? "light" : "dark"} />
 
       <Animated.View
         style={[
@@ -431,33 +415,27 @@ const AddTaskScreen: React.FC = () => {
       </Animated.ScrollView>
 
       <View style={{ position: "absolute", bottom: 0, left: 0, right: 0 }}>
-        <View
-          style={[
-            createButtonStyles().wrapper,
-            { marginBottom: bottomInsets.bottom },
-          ]}>
-          <BlurView
-            style={createButtonStyles().buttonContainer}
-            intensity={100}
-            tint="systemUltraThinMaterialLight">
-            <AnimatedActionButton
-              onPress={handleCancel}
-              iconName="close"
-              iconColor={colors.error}
-              backgroundColor={colors.card}
-              borderColor={colors.border}
-              label="Cancel"
-            />
-            <AnimatedLargeSaveButton
-              onPress={handleSave}
-              iconName="checkmark"
-              iconColor="white"
-              backgroundColor={colors.primary}
-              label="Save Task"
-              enabled={isFormValid}
-            />
-          </BlurView>
-        </View>
+        <GlassBar
+          wrapperStyle={{
+            marginBottom: bottomInsets.bottom,
+          }}>
+          <AnimatedActionButton
+            onPress={handleCancel}
+            iconName="close"
+            iconColor={colors.error}
+            backgroundColor={colors.card}
+            borderColor={colors.border}
+            label="Cancel"
+          />
+          <AnimatedLargeSaveButton
+            onPress={handleSave}
+            iconName="checkmark"
+            iconColor={colors.onPrimary}
+            backgroundColor={colors.primary}
+            label="Save Task"
+            enabled={isFormValid}
+          />
+        </GlassBar>
       </View>
     </KeyboardAvoidingView>
   );

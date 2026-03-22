@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
 import { SIZES } from "../../theme";
+import { typography } from "../../typography";
 import { TaskPriority } from "../../types";
 
 interface FilterPopupProps {
@@ -34,7 +35,7 @@ const FilterPopup: React.FC<FilterPopupProps> = ({
   onPriorityChange,
   onClear,
 }) => {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const scaleAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -60,8 +61,8 @@ const FilterPopup: React.FC<FilterPopupProps> = ({
     <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
       <Pressable style={styles.backdrop} onPress={onClose}>
         <BlurView
-          intensity={40}
-          tint={"default"}
+          intensity={isDark ? 36 : 44}
+          tint={isDark ? "dark" : "light"}
           style={StyleSheet.absoluteFill}
         />
       </Pressable>
@@ -76,7 +77,9 @@ const FilterPopup: React.FC<FilterPopupProps> = ({
             transform: [{ scale: scaleAnim }],
           },
         ]}>
-        <Text style={[styles.title, { color: colors.text }]}>Filters</Text>
+        <Text style={[typography.title, styles.title, { color: colors.text }]}>
+          Filters
+        </Text>
 
         <Text style={[styles.sectionLabel, { color: colors.text }]}>
           Category
