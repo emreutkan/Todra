@@ -26,21 +26,18 @@ const TaskTitleInputComponent: React.FC<TaskTitleInputProps> = ({
   const { colors } = useTheme();
 
   return (
-    <FormSection
-      title="Title"
-      subtitle={
-        showTitleError ? undefined : "Required — pick something you'll recognize"
-      }>
+    <FormSection title="Title">
       <TaskTitleInput
         value={value}
         onChangeText={onChangeText}
-        placeholder="e.g. Call the dentist"
+        placeholder="What needs doing?"
         autoFocus
         returnKeyType="next"
+        hero
       />
       {showTitleError ? (
         <Text style={[styles.error, { color: colors.error }]}>
-          Add a title to save this task.
+          Add a title to save.
         </Text>
       ) : null}
       {onChangeRemindMe && (

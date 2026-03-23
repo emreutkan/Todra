@@ -131,9 +131,9 @@ const RepetitionSelector: React.FC<RepetitionSelectorProps> = ({
       justifyContent: "space-between",
       paddingVertical: 12,
       paddingHorizontal: 16,
-      backgroundColor: colors.card,
-      borderRadius: 12,
-      borderWidth: 1,
+      backgroundColor: colors.surface,
+      borderRadius: 10,
+      borderWidth: StyleSheet.hairlineWidth,
       borderColor: colors.border,
     },
     repetitionInfo: {
@@ -141,7 +141,7 @@ const RepetitionSelector: React.FC<RepetitionSelectorProps> = ({
     },
     repetitionTitle: {
       fontSize: 16,
-      fontWeight: "600",
+      fontWeight: "500",
       color: colors.text,
       marginBottom: 2,
     },
@@ -334,10 +334,7 @@ const RepetitionSelector: React.FC<RepetitionSelectorProps> = ({
   });
 
   return (
-    <FormSection
-      title="Repeat"
-      optional
-      subtitle="When on, you can't link other tasks as prerequisites">
+    <FormSection title="Repeat" optional>
       <TouchableOpacity
         style={styles.repetitionContainer}
         onPress={handleToggleRepetition}

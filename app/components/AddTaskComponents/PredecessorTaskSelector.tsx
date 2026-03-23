@@ -205,9 +205,7 @@ const PredecessorTaskSelector: React.FC<PredecessorTaskSelectorProps> = ({
 
   return (
     <View style={styles.container}>
-      <FormSection
-        title="Must complete first"
-        subtitle="This task stays blocked until these are done">
+      <FormSection title="Must complete first">
         <TouchableOpacity
           style={styles.button}
           onPress={handleOpenModal}
@@ -260,8 +258,7 @@ const PredecessorTaskSelector: React.FC<PredecessorTaskSelectorProps> = ({
             <View style={styles.modalContent}>
               <Text
                 style={[styles.modalSubtitle, { color: colors.textSecondary }]}>
-                You can check off this task only after everything selected here
-                is complete.
+                Finish these before you can complete this task.
               </Text>
 
               {nonOverdueTasks.length === 0 ? (
@@ -271,8 +268,7 @@ const PredecessorTaskSelector: React.FC<PredecessorTaskSelectorProps> = ({
                       styles.emptyStateText,
                       { color: colors.textSecondary },
                     ]}>
-                    No open tasks with a future due date. Try adding a task or
-                    changing this one's due date.
+                    No other open tasks with a future due date.
                   </Text>
                 </View>
               ) : (

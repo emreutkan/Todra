@@ -14,14 +14,11 @@ const TaskDescriptionComponent: React.FC<TaskDescriptionProps> = ({
 }) => {
   return (
     <View>
-      <FormSection
-        title="Notes"
-        optional
-        subtitle="Steps, links, or anything that helps later">
+      <FormSection title="Notes" optional>
         <TaskDescription
           value={value}
           onChangeText={onChangeText}
-          placeholder="Anything that helps you get it done"
+          placeholder="Details (optional)"
           numberOfLines={6}
         />
       </FormSection>

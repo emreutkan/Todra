@@ -11,13 +11,16 @@ interface ScreenHeaderProps {
     showBackButton?: boolean;
     onBackPress?: () => void;
     rightComponent?: React.ReactNode;
+    /** Larger Fraunces title for focal screens (e.g. Add Task) */
+    titleEmphasis?: "default" | "hero";
 }
 
 const ScreenHeader: React.FC<ScreenHeaderProps> = ({
                                                        title,
                                                        showBackButton = false,
                                                        onBackPress,
-                                                       rightComponent
+                                                       rightComponent,
+                                                       titleEmphasis = "default",
                                                    }) => {
     const { colors } = useTheme();
     const insets = useSafeAreaInsets();
@@ -43,8 +46,19 @@ const ScreenHeader: React.FC<ScreenHeaderProps> = ({
                 )}
 
                 <Text
-                    style={[typography.title, styles.headerTitle, { color: colors.text }]}
-                    numberOfLines={1}
+                    style={[
+                        titleEmphasis === "hero"
+                            ? {
+                                  ...typography.display,
+                                  fontSize: 26,
+                                  lineHeight: 30,
+                                  letterSpacing: -0.35,
+                              }
+                            : typography.title,
+                        styles.headerTitle,
+                        { color: colors.text },
+                    ]}
+                    numberOfLines={titleEmphasis === "hero" ? 2 : 1}
                     ellipsizeMode="tail"
                 >
                     {title}

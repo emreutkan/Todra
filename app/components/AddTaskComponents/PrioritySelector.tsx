@@ -13,9 +13,7 @@ const PrioritySelectorComponent: React.FC<PrioritySelectorProps> = ({
   onSelectPriority,
 }) => {
   return (
-    <FormSection
-      title="Priority"
-      subtitle="Used to sort your list — you can change it anytime">
+    <FormSection title="Priority">
       <PrioritySelector
         selectedPriority={selectedPriority}
         onSelectPriority={onSelectPriority}

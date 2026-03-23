@@ -45,21 +45,27 @@ const AddTaskMoreOptions: React.FC<AddTaskMoreOptionsProps> = ({
         accessibilityRole="button"
         accessibilityState={{ expanded: open }}
         accessibilityLabel={open ? "Hide more options" : "Show more options"}
-        accessibilityHint="Category, priority, reminders, repeat, and prerequisites"
+        accessibilityHint="Category, priority, and other settings"
         hitSlop={{ top: 6, bottom: 6, left: 4, right: 4 }}
         style={[
           styles.header,
           {
-            borderColor: colors.border,
             backgroundColor: colors.card,
+            borderTopWidth: StyleSheet.hairlineWidth,
+            borderRightWidth: StyleSheet.hairlineWidth,
+            borderBottomWidth: StyleSheet.hairlineWidth,
+            borderLeftWidth: 3,
+            borderLeftColor: colors.primary,
+            borderColor: colors.border,
           },
         ]}>
-        <Text style={[typography.bodySemiBold, { color: colors.text, flex: 1 }]}>
+        <Text
+          style={[typography.bodySemiBold, { color: colors.text, flex: 1 }]}>
           More options
         </Text>
         <Ionicons
           name={open ? "chevron-up" : "chevron-down"}
-          size={22}
+          size={20}
           color={colors.textSecondary}
         />
       </TouchableOpacity>
@@ -79,7 +85,6 @@ const styles = StyleSheet.create({
     paddingVertical: SIZES.medium,
     paddingHorizontal: SIZES.medium,
     borderRadius: SIZES.base,
-    borderWidth: 1,
   },
   body: {
     paddingTop: SIZES.medium,

@@ -1,6 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
+import { LinearGradient } from "expo-linear-gradient";
 import { StatusBar } from "expo-status-bar";
-import React, { useRef } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Animated,
@@ -23,17 +25,27 @@ import PrioritySelector from "../components/AddTaskComponents/PrioritySelector";
 import RepetitionSelector from "../components/AddTaskComponents/RepetitionSelector";
 import TaskDescription from "../components/AddTaskComponents/TaskDescription";
 import TaskTitleInput from "../components/AddTaskComponents/TaskTitleInput";
-import GlassBar from "../components/common/GlassBar";
 import RemindMeButton from "../components/common/RemindMeButton";
 import ScreenHeader from "../components/common/ScreenHeader";
 import { useTheme } from "../context/ThemeContext";
 import { useAddTask } from "../hooks/useAddTask";
 import { useReducedMotion } from "../hooks/useReducedMotion";
 import { SIZES } from "../theme";
-import { typography } from "../typography";
+import { FONT, typography } from "../typography";
 
-const PRESS_SCALE = 1.06;
-const PRESS_SCALE_REDUCED = 1.03;
+const PRESS_SCALE = 1.04;
+const PRESS_SCALE_SAVE = 1.06;
+const PRESS_SCALE_REDUCED = 1.02;
+const PRESS_SCALE_SAVE_REDUCED = 1.03;
+
+const LOADING_COPY_EDIT = [
+  "Opening this task…",
+  "Pulling in what you saved…",
+] as const;
+const LOADING_COPY_NEW = [
+  "Setting up something new…",
+  "Almost there…",
+] as const;
 
 const createButtonStyles = (shadowColor: string) =>
   StyleSheet.create({
@@ -46,7 +58,7 @@ const createButtonStyles = (shadowColor: string) =>
       zIndex: 1000,
     },
     largeFab: {
-      minWidth: 140,
+      minWidth: 152,
       height: 56,
       borderRadius: 28,
       paddingHorizontal: 18,
@@ -75,9 +87,9 @@ const createButtonStyles = (shadowColor: string) =>
       ...Platform.select({
         ios: {
           shadowColor,
-          shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.1,
-          shadowRadius: 6,
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.05,
+          shadowRadius: 4,
         },
         android: {},
       }),
@@ -86,9 +98,9 @@ const createButtonStyles = (shadowColor: string) =>
       ...Platform.select({
         ios: {
           shadowColor,
-          shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.3,
-          shadowRadius: 8,
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.1,
+          shadowRadius: 5,
         },
         android: {},
       }),
@@ -124,7 +136,7 @@ const AnimatedActionButton = ({
     }
     Animated.timing(pressScale, {
       toValue: PRESS_SCALE,
-      duration: 200,
+      duration: 140,
       useNativeDriver: true,
     }).start();
   };
@@ -136,7 +148,7 @@ const AnimatedActionButton = ({
     }
     Animated.timing(pressScale, {
       toValue: 1,
-      duration: 200,
+      duration: 140,
       useNativeDriver: true,
     }).start();
   };
@@ -189,16 +201,16 @@ const AnimatedLargeSaveButton = ({
   const { colors } = useTheme();
   const pressScale = useRef(new Animated.Value(1)).current;
   const styles = createButtonStyles(colors.shadowColor);
-  const toScale = reducedMotion ? PRESS_SCALE_REDUCED : PRESS_SCALE;
+  const targetScale = reducedMotion ? PRESS_SCALE_SAVE_REDUCED : PRESS_SCALE_SAVE;
 
   const handlePressIn = () => {
     if (reducedMotion) {
-      pressScale.setValue(toScale);
+      pressScale.setValue(targetScale);
       return;
     }
     Animated.timing(pressScale, {
-      toValue: PRESS_SCALE,
-      duration: 200,
+      toValue: PRESS_SCALE_SAVE,
+      duration: 160,
       useNativeDriver: true,
     }).start();
   };
@@ -210,10 +222,20 @@ const AnimatedLargeSaveButton = ({
     }
     Animated.timing(pressScale, {
       toValue: 1,
-      duration: 200,
+      duration: 160,
       useNativeDriver: true,
     }).start();
   };
+
+  const primaryShadow =
+    Platform.OS === "ios"
+      ? {
+          shadowColor: colors.primary,
+          shadowOffset: { width: 0, height: 6 },
+          shadowOpacity: enabled ? 0.28 : 0.1,
+          shadowRadius: 14,
+        }
+      : { elevation: enabled ? 5 : 1 };
 
   return (
     <Animated.View
@@ -223,7 +245,7 @@ const AnimatedLargeSaveButton = ({
           backgroundColor: enabled ? backgroundColor : backgroundColor + "40",
           transform: [{ scale: pressScale }],
         },
-        styles.largeShadow,
+        primaryShadow,
       ]}>
       <TouchableOpacity
         activeOpacity={0.85}
@@ -243,8 +265,10 @@ const AnimatedLargeSaveButton = ({
         />
         <Text
           style={[
-            typography.bodySemiBold,
+            typography.body,
             {
+              fontFamily: FONT.bodySemiBold,
+              fontSize: 16,
               color: enabled ? iconColor : iconColor + "80",
             },
           ]}>
@@ -288,6 +312,34 @@ const AddTaskScreen: React.FC = () => {
 
   const showTitleError = saveAttempted && !title.trim();
 
+  const [loadingLine, setLoadingLine] = useState(0);
+  const loadingLines = isEditing ? LOADING_COPY_EDIT : LOADING_COPY_NEW;
+  useEffect(() => {
+    if (!loading) return;
+    setLoadingLine(0);
+    const id = setInterval(() => {
+      setLoadingLine((i) => (i + 1) % loadingLines.length);
+    }, 2600);
+    return () => clearInterval(id);
+  }, [loading, isEditing, loadingLines.length]);
+
+  const titleReadyPulse = useRef(false);
+  useEffect(() => {
+    if (loading || reducedMotion) return;
+    if (isFormValid && !titleReadyPulse.current) {
+      void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      titleReadyPulse.current = true;
+    }
+    if (!isFormValid) {
+      titleReadyPulse.current = false;
+    }
+  }, [isFormValid, loading, reducedMotion]);
+
+  const handleSaveWithFeedback = useCallback(() => {
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    handleSave();
+  }, [handleSave]);
+
   const styles = StyleSheet.create({
     container: {
       flex: 1,
@@ -298,12 +350,25 @@ const AddTaskScreen: React.FC = () => {
     },
     scrollContent: {
       padding: SIZES.medium,
+      paddingTop: SIZES.large,
     },
     loadingContainer: {
       flex: 1,
       justifyContent: "center",
       alignItems: "center",
       backgroundColor: colors.background,
+    },
+    footer: {
+      borderTopWidth: StyleSheet.hairlineWidth,
+    },
+    footerInner: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "flex-end",
+      gap: 12,
+      paddingHorizontal: SIZES.medium,
+      paddingTop: SIZES.small,
+      paddingBottom: SIZES.small,
     },
   });
 
@@ -313,29 +378,49 @@ const AddTaskScreen: React.FC = () => {
         style={styles.loadingContainer}
         accessibilityLabel="Loading task"
         accessibilityLiveRegion="polite">
+        <LinearGradient
+          colors={[colors.background, colors.surface]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 0.9, y: 1 }}
+          style={StyleSheet.absoluteFill}
+        />
         <ActivityIndicator size="large" color={colors.primary} />
         <Text
           style={[
             typography.bodySmall,
-            { color: colors.textSecondary, marginTop: SIZES.medium },
+            {
+              color: colors.textSecondary,
+              marginTop: SIZES.large,
+              textAlign: "center",
+              paddingHorizontal: SIZES.extraLarge,
+            },
           ]}>
-          Loading…
+          {loadingLines[loadingLine]}
         </Text>
       </View>
     );
   }
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={styles.container}>
-      <StatusBar style={isDark ? "light" : "dark"} />
-
-      <ScreenHeader
-        title={isEditing ? "Edit task" : "New task"}
-        showBackButton
-        onBackPress={handleCancel}
+    <View style={styles.container}>
+      <LinearGradient
+        colors={[colors.background, colors.surface]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0.9, y: 1 }}
+        style={StyleSheet.absoluteFill}
+        pointerEvents="none"
       />
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ flex: 1 }}>
+        <StatusBar style={isDark ? "light" : "dark"} />
+
+        <ScreenHeader
+          title={isEditing ? "Edit task" : "New task"}
+          titleEmphasis="hero"
+          showBackButton
+          onBackPress={handleCancel}
+        />
 
       <ScrollView
         style={styles.body}
@@ -366,10 +451,7 @@ const AddTaskScreen: React.FC = () => {
             onSelectPriority={setPriority}
           />
 
-          <FormSection
-            title="Reminders"
-            optional
-            subtitle="Optional nudge before the due time">
+          <FormSection title="Reminders" optional>
             <RemindMeButton
               value={remindMe}
               onChange={setRemindMe}
@@ -392,22 +474,31 @@ const AddTaskScreen: React.FC = () => {
         </AddTaskMoreOptions>
       </ScrollView>
 
-      <View style={{ position: "absolute", bottom: 0, left: 0, right: 0 }}>
-        <GlassBar
-          wrapperStyle={{
-            marginBottom: bottomInsets.bottom,
-          }}>
+      <View
+        style={[
+          styles.footer,
+          {
+            position: "absolute",
+            bottom: 0,
+            left: 0,
+            right: 0,
+            backgroundColor: colors.card,
+            borderTopColor: colors.border,
+            paddingBottom: bottomInsets.bottom,
+          },
+        ]}>
+        <View style={styles.footerInner}>
           <AnimatedActionButton
             onPress={handleCancel}
             iconName="close"
-            iconColor={colors.error}
-            backgroundColor={colors.card}
+            iconColor={colors.textSecondary}
+            backgroundColor={colors.surface}
             borderColor={colors.border}
             label="Close without saving"
             reducedMotion={reducedMotion}
           />
           <AnimatedLargeSaveButton
-            onPress={handleSave}
+            onPress={handleSaveWithFeedback}
             iconName="checkmark"
             iconColor={colors.onPrimary}
             backgroundColor={colors.primary}
@@ -416,9 +507,10 @@ const AddTaskScreen: React.FC = () => {
             enabled={isFormValid}
             reducedMotion={reducedMotion}
           />
-        </GlassBar>
+        </View>
       </View>
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
+    </View>
   );
 };
 

@@ -137,7 +137,7 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
 
   if (loading) {
     return (
-      <FormSection title="Category" subtitle="Choose a label for this task">
+      <FormSection title="Category">
         <View style={styles.loadingContainer}>
           <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
             Loading categories…
@@ -148,7 +148,7 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
   }
 
   return (
-    <FormSection title="Category" subtitle="Tap a chip to select — long-press to edit">
+    <FormSection title="Category">
       <FlatList
         horizontal
         data={categories}
