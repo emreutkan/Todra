@@ -34,6 +34,8 @@ import TaskDetailsScreen from "./app/screens/TaskDetailsScreen";
 
 import * as Notifications from "expo-notifications";
 import ArchivedTasksScreen from "./app/screens/ArchivedTasksScreen";
+import AiAssistantScreen from "./app/screens/AiAssistantScreen";
+import AiSettingsScreen from "./app/screens/AiSettingsScreen";
 import { notificationService } from "./app/services/notificationService";
 import { RootStackParamList } from "./app/types";
 
@@ -108,6 +110,8 @@ function AppContent() {
         <Stack.Screen name="Settings" component={SettingsScreen} />
         <Stack.Screen name="AllTasks" component={AllTasksScreen} />
         <Stack.Screen name="ArchivedTasks" component={ArchivedTasksScreen} />
+        <Stack.Screen name="AiAssistant" component={AiAssistantScreen} />
+        <Stack.Screen name="AiSettings" component={AiSettingsScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

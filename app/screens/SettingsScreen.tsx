@@ -138,6 +138,15 @@ const SettingsScreen: React.FC = () => {
           />
         </SettingsSection>
 
+        {/* AI */}
+        <SettingsSection title="AI assistant">
+          <SettingsButton
+            icon="chatbubble-ellipses-outline"
+            label="AI assistant"
+            onPress={() => navigation.navigate("AiAssistant")}
+          />
+        </SettingsSection>
+
         {/* Data Management Section */}
         <SettingsSection title="Data Management">
           <SettingsButton
