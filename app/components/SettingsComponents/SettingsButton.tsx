@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
+import { typography } from "../../typography";
 
 interface SettingsButtonProps {
   icon: keyof typeof Ionicons.glyphMap;
@@ -85,7 +86,7 @@ const styles = StyleSheet.create({
   },
   settingButtonText: {
     flex: 1,
-    fontSize: 16,
+    ...typography.body,
   },
 });
 

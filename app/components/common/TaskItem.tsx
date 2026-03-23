@@ -5,7 +5,7 @@ import {
   differenceInMinutes,
   format,
 } from "date-fns";
-import React, { useEffect, useMemo, useRef } from "react";
+import React, { useEffect, useMemo, useRef, useCallback } from "react";
 import * as Haptics from "expo-haptics";
 import {
   Alert,
@@ -37,6 +37,10 @@ interface TaskItemProps {
   showAnimations?: boolean;
 }
 
+/** Checkbox “depresses” on press; row scales slightly for tactile card press. */
+const PRESS_SCALE_CHECKBOX = 0.88;
+const PRESS_SCALE_ROW = 0.985;
+
 const TaskItem: React.FC<TaskItemProps> = ({
   item,
   index = 0,
@@ -55,6 +59,11 @@ const TaskItem: React.FC<TaskItemProps> = ({
   const opacity = useRef(new Animated.Value(0)).current;
   const scale = useRef(new Animated.Value(0.95)).current;
   const pressAnim = useRef(new Animated.Value(1)).current;
+  const rowCardPressAnim = useRef(new Animated.Value(1)).current;
+  const checkPopScale = useRef(
+    new Animated.Value(item.completed ? 1 : 0)
+  ).current;
+  const prevCompletedRef = useRef(item.completed);
 
   const shouldAnimateEntrance =
     showAnimations && !reduceMotionEnabled;
@@ -82,6 +91,35 @@ const TaskItem: React.FC<TaskItemProps> = ({
       scale.setValue(1);
     }
   }, [index, shouldAnimateEntrance, opacity, scale]);
+
+  // One-shot checkmark pop when task flips to completed (skipped with reduce motion)
+  useEffect(() => {
+    const becameComplete =
+      item.completed && !prevCompletedRef.current;
+    prevCompletedRef.current = item.completed;
+
+    if (!item.completed) {
+      checkPopScale.setValue(0);
+      return;
+    }
+
+    if (reduceMotionEnabled) {
+      checkPopScale.setValue(1);
+      return;
+    }
+
+    if (becameComplete) {
+      checkPopScale.setValue(0);
+      Animated.spring(checkPopScale, {
+        toValue: 1,
+        friction: 7,
+        tension: 140,
+        useNativeDriver: true,
+      }).start();
+    } else {
+      checkPopScale.setValue(1);
+    }
+  }, [item.completed, reduceMotionEnabled, checkPopScale]);
 
   // Format due date based on mode
   const formatDueDate = (dueDate: number) => {
@@ -172,34 +210,66 @@ const TaskItem: React.FC<TaskItemProps> = ({
     }
 
     if (onToggleComplete) {
-      void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      if (!item.completed) {
+        void Haptics.notificationAsync(
+          Haptics.NotificationFeedbackType.Success
+        );
+      } else {
+        void Haptics.selectionAsync();
+      }
       onToggleComplete(item.id);
     }
   };
 
-  const handlePressIn = () => {
+  const handleCheckboxPressIn = () => {
     if (reduceMotionEnabled) {
-      pressAnim.setValue(1.2);
+      pressAnim.setValue(PRESS_SCALE_CHECKBOX);
     } else {
       Animated.timing(pressAnim, {
-        toValue: 1.2,
-        duration: 200,
+        toValue: PRESS_SCALE_CHECKBOX,
+        duration: 90,
+        easing: Easing.out(Easing.quad),
         useNativeDriver: true,
       }).start();
     }
   };
 
-  const handlePressOut = () => {
+  const handleCheckboxPressOut = () => {
     if (reduceMotionEnabled) {
       pressAnim.setValue(1);
     } else {
-      Animated.timing(pressAnim, {
+      Animated.spring(pressAnim, {
         toValue: 1,
-        duration: 200,
+        friction: 8,
+        tension: 220,
         useNativeDriver: true,
       }).start();
     }
   };
+
+  const handleRowPressIn = useCallback(() => {
+    if (reduceMotionEnabled) {
+      return;
+    }
+    Animated.timing(rowCardPressAnim, {
+      toValue: PRESS_SCALE_ROW,
+      duration: 100,
+      easing: Easing.out(Easing.quad),
+      useNativeDriver: true,
+    }).start();
+  }, [reduceMotionEnabled, rowCardPressAnim]);
+
+  const handleRowPressOut = useCallback(() => {
+    if (reduceMotionEnabled) {
+      return;
+    }
+    Animated.spring(rowCardPressAnim, {
+      toValue: 1,
+      friction: 9,
+      tension: 420,
+      useNativeDriver: true,
+    }).start();
+  }, [reduceMotionEnabled, rowCardPressAnim]);
 
   return (
     <Animated.View
@@ -210,13 +280,14 @@ const TaskItem: React.FC<TaskItemProps> = ({
         },
       ]}>
       <View style={styles.container}>
-        <View
+        <Animated.View
           style={[
             styles.taskItem,
             {
               backgroundColor: colors.card,
               borderColor: colors.border,
               opacity: item.completed ? 0.7 : 1,
+              transform: [{ scale: rowCardPressAnim }],
             },
             taskIsOverdue && {
               borderColor: colors.error,
@@ -246,18 +317,24 @@ const TaskItem: React.FC<TaskItemProps> = ({
                     },
                   ]}>
                   {item.completed && (
-                    <Ionicons
-                      name="checkmark"
-                      size={16}
-                      color={colors.onPrimary}
-                      style={styles.checkmarkIcon}
-                    />
+                    <Animated.View
+                      style={[
+                        styles.checkmarkIcon,
+                        { transform: [{ scale: checkPopScale }] },
+                      ]}
+                      pointerEvents="none">
+                      <Ionicons
+                        name="checkmark"
+                        size={16}
+                        color={colors.onPrimary}
+                      />
+                    </Animated.View>
                   )}
                   <TouchableOpacity
                     activeOpacity={1}
                     onPress={handleToggleComplete}
-                    onPressIn={handlePressIn}
-                    onPressOut={handlePressOut}
+                    onPressIn={handleCheckboxPressIn}
+                    onPressOut={handleCheckboxPressOut}
                     style={styles.completeButtonTouchable}
                     hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                     accessibilityRole="checkbox"
@@ -275,7 +352,9 @@ const TaskItem: React.FC<TaskItemProps> = ({
               <TouchableOpacity
                 style={styles.mainTaskPressable}
                 onPress={handlePress}
-                activeOpacity={0.7}
+                onPressIn={handleRowPressIn}
+                onPressOut={handleRowPressOut}
+                activeOpacity={0.92}
                 accessibilityRole="button"
                 accessibilityLabel={mainAccessibilityLabel}>
                 <View style={styles.taskInfo}>
@@ -365,7 +444,7 @@ const TaskItem: React.FC<TaskItemProps> = ({
               </TouchableOpacity>
             </View>
           </View>
-        </View>
+        </Animated.View>
       </View>
     </Animated.View>
   );
@@ -447,7 +526,13 @@ const styles = StyleSheet.create({
   },
   checkmarkIcon: {
     position: "absolute",
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
     zIndex: 1,
+    alignItems: "center",
+    justifyContent: "center",
   },
   statusContainer: {
     flexDirection: "row",

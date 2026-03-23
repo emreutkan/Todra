@@ -87,11 +87,12 @@ const FilterPopup: React.FC<FilterPopupProps> = ({
             transform: [{ scale: scaleAnim }],
           },
         ]}>
-        <Text style={[typography.title, styles.title, { color: colors.text }]}>
+        <Text style={[typography.title, styles.popupTitle, { color: colors.text }]}>
           Filters
         </Text>
 
-        <Text style={[styles.sectionLabel, { color: colors.text }]}>
+        <Text
+          style={[typography.subbodySemiBold, styles.sectionLabel, { color: colors.text }]}>
           Category
         </Text>
         <ScrollView
@@ -111,7 +112,7 @@ const FilterPopup: React.FC<FilterPopupProps> = ({
             ]}>
             <Text
               style={[
-                styles.chipText,
+                typography.captionMedium,
                 {
                   color:
                     activeCategory === null ? colors.onPrimary : colors.text,
@@ -139,7 +140,7 @@ const FilterPopup: React.FC<FilterPopupProps> = ({
               ]}>
               <Text
                 style={[
-                  styles.chipText,
+                  typography.captionMedium,
                   {
                     color:
                       activeCategory === category
@@ -153,7 +154,8 @@ const FilterPopup: React.FC<FilterPopupProps> = ({
           ))}
         </ScrollView>
 
-        <Text style={[styles.sectionLabel, { color: colors.text }]}>
+        <Text
+          style={[typography.subbodySemiBold, styles.sectionLabel, { color: colors.text }]}>
           Priority
         </Text>
         <View style={styles.row}>
@@ -172,7 +174,7 @@ const FilterPopup: React.FC<FilterPopupProps> = ({
               ]}>
               <Text
                 style={[
-                  styles.chipText,
+                  typography.captionMedium,
                   {
                     color:
                       selectedPriority === prio
@@ -192,7 +194,8 @@ const FilterPopup: React.FC<FilterPopupProps> = ({
           <Pressable
             onPress={onClear}
             style={[styles.footerButton, { borderColor: colors.border }]}>
-            <Text style={[styles.footerButtonText, { color: colors.text }]}>
+            <Text
+              style={[typography.captionSemiBold, { color: colors.text }]}>
               Reset
             </Text>
           </Pressable>
@@ -203,10 +206,7 @@ const FilterPopup: React.FC<FilterPopupProps> = ({
               { backgroundColor: colors.primary },
             ]}>
             <Text
-              style={[
-                styles.footerButtonTextPrimary,
-                { color: colors.onPrimary },
-              ]}>
+              style={[typography.captionBold, { color: colors.onPrimary }]}>
               Done
             </Text>
           </Pressable>
@@ -229,14 +229,10 @@ const styles = StyleSheet.create({
     width: "90%",
     transformOrigin: "bottom right",
   },
-  title: {
-    fontSize: SIZES.large,
-    fontWeight: "700",
+  popupTitle: {
     marginBottom: SIZES.small,
   },
   sectionLabel: {
-    fontSize: SIZES.medium,
-    fontWeight: "600",
     marginTop: SIZES.small,
     marginBottom: SIZES.small,
   },
@@ -254,10 +250,6 @@ const styles = StyleSheet.create({
     minHeight: 44,
     alignItems: "center",
     justifyContent: "center",
-  },
-  chipText: {
-    fontSize: SIZES.small,
-    fontWeight: "500",
   },
   footerRow: {
     flexDirection: "row",
@@ -279,14 +271,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     minHeight: 44,
     justifyContent: "center",
-  },
-  footerButtonText: {
-    fontSize: SIZES.small,
-    fontWeight: "600",
-  },
-  footerButtonTextPrimary: {
-    fontSize: SIZES.small,
-    fontWeight: "700",
   },
 });
 

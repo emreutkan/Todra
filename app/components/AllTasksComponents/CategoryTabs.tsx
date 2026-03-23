@@ -1,6 +1,7 @@
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
+import { typography } from "../../typography";
 import { TaskCategory } from "../../hooks/useAllTasks";
 
 interface CategoryTabsProps {
@@ -83,8 +84,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 2,
   },
   tabText: {
-    fontSize: 16,
-    fontWeight: "500",
+    ...typography.bodyMedium,
   },
 });
 

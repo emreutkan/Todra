@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
 import { RepetitionRule } from "../../types";
+import { typography } from "../../typography";
 import FormSection from "./FormSection";
 
 interface RepetitionSelectorProps {
@@ -140,13 +141,12 @@ const RepetitionSelector: React.FC<RepetitionSelectorProps> = ({
       flex: 1,
     },
     repetitionTitle: {
-      fontSize: 16,
-      fontWeight: "500",
+      ...typography.bodyMedium,
       color: colors.text,
       marginBottom: 2,
     },
     repetitionDescription: {
-      fontSize: 14,
+      ...typography.bodySmall,
       color: colors.textSecondary,
     },
     toggleButton: {
@@ -178,8 +178,7 @@ const RepetitionSelector: React.FC<RepetitionSelectorProps> = ({
       backgroundColor: colors.primary + "10",
     },
     typeButtonText: {
-      fontSize: 13,
-      fontWeight: "600",
+      ...typography.chip,
       color: colors.text,
       marginLeft: 6,
     },
@@ -193,9 +192,8 @@ const RepetitionSelector: React.FC<RepetitionSelectorProps> = ({
       gap: 8,
     },
     intervalLabel: {
-      fontSize: 14,
+      ...typography.bodySmallMedium,
       color: colors.text,
-      fontWeight: "500",
     },
     intervalButton: {
       paddingVertical: 6,
@@ -210,8 +208,7 @@ const RepetitionSelector: React.FC<RepetitionSelectorProps> = ({
       backgroundColor: colors.primary,
     },
     intervalButtonText: {
-      fontSize: 14,
-      fontWeight: "600",
+      ...typography.bodySmallSemiBold,
       color: colors.text,
     },
     selectedIntervalButtonText: {
@@ -221,9 +218,8 @@ const RepetitionSelector: React.FC<RepetitionSelectorProps> = ({
       marginTop: 12,
     },
     daySelectorLabel: {
-      fontSize: 14,
+      ...typography.bodySmallMedium,
       color: colors.text,
-      fontWeight: "500",
       marginBottom: 8,
     },
     dayButtons: {
@@ -244,8 +240,7 @@ const RepetitionSelector: React.FC<RepetitionSelectorProps> = ({
       backgroundColor: colors.primary + "15",
     },
     dayButtonText: {
-      fontSize: 12,
-      fontWeight: "600",
+      ...typography.captionSemiBold,
       color: colors.text,
     },
     selectedDayButtonText: {
@@ -284,8 +279,7 @@ const RepetitionSelector: React.FC<RepetitionSelectorProps> = ({
       borderBottomColor: colors.border,
     },
     modalTitle: {
-      fontSize: 18,
-      fontWeight: "600",
+      ...typography.headline,
       color: colors.text,
     },
     closeButton: {
@@ -314,8 +308,7 @@ const RepetitionSelector: React.FC<RepetitionSelectorProps> = ({
       alignItems: "center",
     },
     cancelButtonText: {
-      fontSize: 16,
-      fontWeight: "600",
+      ...typography.button,
       color: colors.text,
     },
     confirmButton: {
@@ -327,8 +320,7 @@ const RepetitionSelector: React.FC<RepetitionSelectorProps> = ({
       alignItems: "center",
     },
     confirmButtonText: {
-      fontSize: 16,
-      fontWeight: "600",
+      ...typography.button,
       color: colors.onPrimary,
     },
   });

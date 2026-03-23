@@ -2,6 +2,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { RouteProp, useNavigation, useRoute } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { BlurView } from "expo-blur";
+import { LinearGradient } from "expo-linear-gradient";
+import { StatusBar } from "expo-status-bar";
 import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -9,7 +11,6 @@ import {
   Animated,
   Platform,
   ScrollView,
-  StatusBar,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -27,7 +28,14 @@ import {
   updateTask as updateTaskService,
 } from "../services/taskStorageService";
 import { SIZES } from "../theme";
+import { typography } from "../typography";
 import { RootStackParamList, Task } from "../types";
+
+/** Tight stack inside grouped cards; generous gaps between sections (arrange rhythm). */
+const SECTION_AFTER_HERO = SIZES.extraLarge;
+const GROUP_LABEL_GAP = SIZES.small;
+const FIELD_ROW_PAD_V = SIZES.medium;
+const FIELD_ROW_PAD_H = SIZES.small;
 
 // Import AddTaskScreen components for edit mode
 import ActionFooter from "../components/AddTaskComponents/ActionFooter";
@@ -127,6 +135,7 @@ const AnimatedAddStyleButton = ({
   backgroundColor,
   label,
   reducedMotion,
+  strongShadow,
 }: {
   onPress: () => void;
   iconName: keyof typeof Ionicons.glyphMap;
@@ -134,6 +143,8 @@ const AnimatedAddStyleButton = ({
   backgroundColor: string;
   label: string;
   reducedMotion: boolean;
+  /** Primary-style glow for the main action (e.g. mark complete). */
+  strongShadow?: boolean;
 }) => {
   const { colors } = useTheme();
   const pressScale = useRef(new Animated.Value(1)).current;
@@ -171,9 +182,23 @@ const AnimatedAddStyleButton = ({
           transform: [{ scale: pressScale }],
         },
         styles.addStyleShadow,
-        {
-          shadowColor: colors.shadowColor,
-        },
+        { shadowColor: colors.shadowColor },
+        strongShadow &&
+          Platform.select({
+            ios: {
+              shadowColor: backgroundColor,
+              shadowOffset: { width: 0, height: 8 },
+              shadowOpacity: 0.38,
+              shadowRadius: 14,
+            },
+            android: { elevation: 12 },
+            default: {
+              shadowColor: backgroundColor,
+              shadowOffset: { width: 0, height: 6 },
+              shadowOpacity: 0.32,
+              shadowRadius: 12,
+            },
+          }),
       ]}>
       <TouchableOpacity
         activeOpacity={1}
@@ -466,8 +491,14 @@ const TaskDetailsScreen = () => {
 
     return (
       <View style={styles.prerequisitesSection}>
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>
-          Prerequisites
+        {renderSectionTitle("Prerequisites")}
+        <Text
+          style={[
+            typography.bodySmall,
+            styles.prerequisitesSubcopy,
+            { color: colors.textSecondary },
+          ]}>
+          Finish these before you can complete this task.
         </Text>
         <View style={styles.prerequisitesContainer}>
           {relatedTasks.map((prereqTask) => (
@@ -507,6 +538,7 @@ const TaskDetailsScreen = () => {
                 <View>
                   <Text
                     style={[
+                      typography.subbodySemiBold,
                       styles.prerequisiteTitle,
                       {
                         color: colors.text,
@@ -586,6 +618,17 @@ const TaskDetailsScreen = () => {
     }`;
   };
 
+  const renderSectionTitle = (label: string, extraRowStyle?: object) => (
+    <View style={[styles.sectionTitleRow, extraRowStyle]}>
+      <View
+        style={[styles.sectionTitleAccent, { backgroundColor: colors.primary }]}
+      />
+      <Text style={[typography.titleMedium, { color: colors.text, flex: 1 }]}>
+        {label}
+      </Text>
+    </View>
+  );
+
   const renderStaticTaskDetails = () => {
     if (!task) return null;
 
@@ -594,17 +637,21 @@ const TaskDetailsScreen = () => {
       ? formatDateTime(new Date(task.archivedAt).getTime())
       : null;
 
+    const rowHairline = { backgroundColor: colors.hairline };
+
     return (
       <Animated.View
         style={[
           styles.mainCard,
           {
+            opacity: fadeAnim,
             backgroundColor: colors.card,
             borderColor: colors.border,
+            borderLeftWidth: 4,
+            borderLeftColor: colors.primary,
             shadowColor: colors.shadowColor,
           },
         ]}>
-        {/* Status Row */}
         <View
           style={[
             styles.statusRow,
@@ -632,7 +679,7 @@ const TaskDetailsScreen = () => {
                   ? "alert"
                   : "time"
               }
-              size={16}
+              size={18}
               color={colors.onPrimary}
             />
           </View>
@@ -667,135 +714,160 @@ const TaskDetailsScreen = () => {
           )}
         </View>
 
-        {/* Task Title */}
-        <View
-          style={[styles.staticField, { borderBottomColor: colors.hairline }]}>
-          <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>
-            Title
-          </Text>
-          <Text style={[styles.fieldValue, { color: colors.text }]}>
-            {task.title}
-          </Text>
-        </View>
+        <Text style={[typography.display, styles.heroTitle, { color: colors.text }]}>
+          {task.title}
+        </Text>
 
-        {/* Description */}
-        {task.description && (
-          <View
-            style={[styles.staticField, { borderBottomColor: colors.hairline }]}>
-            <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>
-              Description
+        {task.description ? (
+          <View style={styles.heroNotesBlock}>
+            <Text
+              style={[typography.label, styles.inlineLabel, { color: colors.textSecondary }]}>
+              Notes
             </Text>
-            <Text style={[styles.fieldValue, { color: colors.text }]}>
+            <Text style={[typography.subbody, { color: colors.text }]}>
               {task.description}
             </Text>
           </View>
-        )}
+        ) : null}
 
-        {/* Category */}
+        {renderSectionTitle(
+          "Organize",
+          !task.description ? styles.sectionTitleFirst : undefined
+        )}
         <View
-          style={[styles.staticField, { borderBottomColor: colors.hairline }]}>
-          <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>
-            Category
-          </Text>
-          <View style={styles.categoryRow}>
-            <Text style={[styles.fieldValue, { color: colors.text }]}>
+          style={[
+            styles.fieldGroupCard,
+            { borderColor: colors.border, marginBottom: SECTION_AFTER_HERO },
+          ]}>
+          <View
+            style={[
+              styles.fieldRowPadded,
+              { paddingVertical: FIELD_ROW_PAD_V, paddingHorizontal: FIELD_ROW_PAD_H },
+            ]}>
+            <Text style={[typography.label, styles.inlineLabel, { color: colors.textSecondary }]}>
+              Category
+            </Text>
+            <Text style={[typography.bodySmallMedium, { color: colors.text }]}>
               {task.category}
             </Text>
           </View>
-        </View>
-
-        {/* Priority */}
-        <View
-          style={[styles.staticField, { borderBottomColor: colors.hairline }]}>
-          <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>
-            Priority
-          </Text>
+          <View style={[styles.rowDivider, rowHairline]} />
           <View
             style={[
-              styles.priorityBadge,
-              {
-                backgroundColor:
-                  task.priority === "high"
-                    ? colors.error
-                    : task.priority === "low"
-                    ? colors.success
-                    : colors.warning,
-                shadowColor: colors.shadowColor,
-              },
+              styles.fieldRowPadded,
+              { paddingVertical: FIELD_ROW_PAD_V, paddingHorizontal: FIELD_ROW_PAD_H },
             ]}>
-            <Text style={[styles.priorityText, { color: colors.onPrimary }]}>
-              {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
+            <Text style={[typography.label, styles.inlineLabel, { color: colors.textSecondary }]}>
+              Priority
             </Text>
-          </View>
-        </View>
-
-        {/* Due Date */}
-        <View
-          style={[styles.staticField, { borderBottomColor: colors.hairline }]}>
-          <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>
-            Due Date
-          </Text>
-          <Text style={[styles.fieldValue, { color: colors.text }]}>
-            {dueDateTime.full}
-          </Text>
-        </View>
-
-        {/* Archived Date */}
-        {task.archived && archivedDateTime && (
-          <View
-            style={[styles.staticField, { borderBottomColor: colors.hairline }]}>
-            <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>
-              Archived
-            </Text>
-            <Text style={[styles.fieldValue, { color: colors.text }]}>
-              {archivedDateTime.full}
-            </Text>
-          </View>
-        )}
-
-        {/* Reminder */}
-        <View
-          style={[styles.staticField, { borderBottomColor: colors.hairline }]}>
-          <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>
-            Reminder
-          </Text>
-          <Text style={[styles.fieldValue, { color: colors.text }]}>
-            {formatReminderText(task.remindMe)}
-          </Text>
-        </View>
-
-        {/* Repetition */}
-        <View
-          style={[styles.staticField, { borderBottomColor: colors.hairline }]}>
-          <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>
-            Repetition
-          </Text>
-          <Text style={[styles.fieldValue, { color: colors.text }]}>
-            {formatRepetitionText(task.repetition)}
-          </Text>
-        </View>
-
-        {/* Recurring Task Info */}
-        {task.isRecurring && (
-          <View
-            style={[styles.staticField, { borderBottomColor: colors.hairline }]}>
-            <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>
-              Recurring Task
-            </Text>
-            <View style={styles.recurringInfo}>
-              <Ionicons name="repeat" size={16} color={colors.primary} />
-              <Text
-                style={[
-                  styles.fieldValue,
-                  { color: colors.text, marginLeft: 8 },
-                ]}>
-                {task.parentTaskId
-                  ? "Generated from recurring task"
-                  : "Original recurring task"}
+            <View
+              style={[
+                styles.priorityBadge,
+                {
+                  backgroundColor:
+                    task.priority === "high"
+                      ? colors.error
+                      : task.priority === "low"
+                      ? colors.success
+                      : colors.warning,
+                  shadowColor: colors.shadowColor,
+                  marginTop: GROUP_LABEL_GAP,
+                },
+              ]}>
+              <Text style={[styles.priorityText, { color: colors.onPrimary }]}>
+                {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
               </Text>
             </View>
           </View>
-        )}
+        </View>
+
+        {renderSectionTitle("Schedule")}
+        <View style={[styles.fieldGroupCard, { borderColor: colors.border }]}>
+          <View
+            style={[
+              styles.fieldRowPadded,
+              { paddingVertical: FIELD_ROW_PAD_V, paddingHorizontal: FIELD_ROW_PAD_H },
+            ]}>
+            <Text style={[typography.label, styles.inlineLabel, { color: colors.textSecondary }]}>
+              Due
+            </Text>
+            <Text style={[typography.bodySmallMedium, { color: colors.text }]}>
+              {dueDateTime.full}
+            </Text>
+          </View>
+          {task.archived && archivedDateTime ? (
+            <>
+              <View style={[styles.rowDivider, rowHairline]} />
+              <View
+                style={[
+                  styles.fieldRowPadded,
+                  { paddingVertical: FIELD_ROW_PAD_V, paddingHorizontal: FIELD_ROW_PAD_H },
+                ]}>
+                <Text
+                  style={[typography.label, styles.inlineLabel, { color: colors.textSecondary }]}>
+                  Archived on
+                </Text>
+                <Text style={[typography.bodySmallMedium, { color: colors.text }]}>
+                  {archivedDateTime.full}
+                </Text>
+              </View>
+            </>
+          ) : null}
+          <View style={[styles.rowDivider, rowHairline]} />
+          <View
+            style={[
+              styles.fieldRowPadded,
+              { paddingVertical: FIELD_ROW_PAD_V, paddingHorizontal: FIELD_ROW_PAD_H },
+            ]}>
+            <Text style={[typography.label, styles.inlineLabel, { color: colors.textSecondary }]}>
+              Reminder
+            </Text>
+            <Text style={[typography.bodySmallMedium, { color: colors.text }]}>
+              {formatReminderText(task.remindMe)}
+            </Text>
+          </View>
+          <View style={[styles.rowDivider, rowHairline]} />
+          <View
+            style={[
+              styles.fieldRowPadded,
+              { paddingVertical: FIELD_ROW_PAD_V, paddingHorizontal: FIELD_ROW_PAD_H },
+            ]}>
+            <Text style={[typography.label, styles.inlineLabel, { color: colors.textSecondary }]}>
+              Repetition
+            </Text>
+            <Text style={[typography.bodySmallMedium, { color: colors.text }]}>
+              {formatRepetitionText(task.repetition)}
+            </Text>
+          </View>
+          {task.isRecurring ? (
+            <>
+              <View style={[styles.rowDivider, rowHairline]} />
+              <View
+                style={[
+                  styles.fieldRowPadded,
+                  styles.recurringRow,
+                  { paddingVertical: FIELD_ROW_PAD_V, paddingHorizontal: FIELD_ROW_PAD_H },
+                ]}>
+                <Text
+                  style={[typography.label, styles.inlineLabel, { color: colors.textSecondary }]}>
+                  Recurring
+                </Text>
+                <View style={styles.recurringInfo}>
+                  <Ionicons name="repeat" size={16} color={colors.primary} />
+                  <Text
+                    style={[
+                      typography.bodySmallMedium,
+                      { color: colors.text, marginLeft: SIZES.small },
+                    ]}>
+                    {task.parentTaskId
+                      ? "Generated from recurring task"
+                      : "Original recurring task"}
+                  </Text>
+                </View>
+              </View>
+            </>
+          ) : null}
+        </View>
       </Animated.View>
     );
   };
@@ -822,7 +894,7 @@ const TaskDetailsScreen = () => {
         <DateTimePicker dueDate={dueDate} onDateChange={setDueDate} />
 
         {/* Remind me under due date/time */}
-        <View style={{ marginTop: 12 }}>
+        <View style={{ marginTop: SIZES.medium }}>
           <RemindMeButton
             value={remindMe}
             onChange={setRemindMe}
@@ -852,9 +924,10 @@ const TaskDetailsScreen = () => {
     return (
       <View
         style={[styles.mainContainer, { backgroundColor: colors.background }]}>
-        <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
+        <StatusBar style={isDark ? "light" : "dark"} />
         <ScreenHeader
-          title="Task Details"
+          title="Task details"
+          titleEmphasis="hero"
           showBackButton={true}
           onBackPress={() => navigation.goBack()}
         />
@@ -872,9 +945,10 @@ const TaskDetailsScreen = () => {
     return (
       <View
         style={[styles.mainContainer, { backgroundColor: colors.background }]}>
-        <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
+        <StatusBar style={isDark ? "light" : "dark"} />
         <ScreenHeader
-          title="Task Details"
+          title="Task details"
+          titleEmphasis="hero"
           showBackButton={true}
           onBackPress={() => navigation.goBack()}
         />
@@ -896,9 +970,17 @@ const TaskDetailsScreen = () => {
   return (
     <View
       style={[styles.mainContainer, { backgroundColor: colors.background }]}>
-      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
+      <StatusBar style={isDark ? "light" : "dark"} />
+      <LinearGradient
+        colors={[colors.background, colors.surface]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0.88, y: 1 }}
+        style={StyleSheet.absoluteFill}
+        pointerEvents="none"
+      />
       <ScreenHeader
-        title={isEditMode ? "Edit Task" : "Task Details"}
+        title={isEditMode ? "Edit task" : task.title}
+        titleEmphasis="hero"
         showBackButton={true}
         onBackPress={() => navigation.goBack()}
       />
@@ -934,8 +1016,8 @@ const TaskDetailsScreen = () => {
           <View style={[styles.wrapper, { marginBottom: bottomInsets.bottom }]}>
             <BlurView
               style={styles.container}
-              intensity={100}
-              tint="systemUltraThinMaterialLight">
+              intensity={isDark ? 48 : 100}
+              tint={isDark ? "dark" : "light"}>
               <AnimatedActionButton
                 onPress={handleDelete}
                 iconName="trash-outline"
@@ -952,6 +1034,7 @@ const TaskDetailsScreen = () => {
                 backgroundColor={colors.success}
                 label={task.completed ? "Mark Incomplete" : "Mark Complete"}
                 reducedMotion={reducedMotion}
+                strongShadow
               />
               <AnimatedActionButton
                 onPress={handleEdit}
@@ -980,8 +1063,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    padding: SIZES.small,
-    paddingBottom: 120, // Add extra padding to prevent content from being hidden behind floating buttons
+    paddingHorizontal: SIZES.medium,
+    paddingTop: SIZES.base,
+    paddingBottom: 120,
   },
   loadingContainer: {
     flex: 1,
@@ -989,83 +1073,97 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   loadingText: {
-    fontSize: SIZES.medium,
+    ...typography.body,
     marginTop: SIZES.medium,
   },
 
-  // Main Card
   mainCard: {
-    padding: SIZES.small,
-    paddingTop: SIZES.medium,
-    paddingBottom: SIZES.medium,
-    borderRadius: 12,
-    marginBottom: SIZES.small,
+    padding: SIZES.medium,
+    paddingBottom: SIZES.extraLarge,
+    borderRadius: 16,
+    marginBottom: SIZES.medium,
     borderWidth: 1,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.14,
+    shadowRadius: 14,
+    elevation: 5,
   },
 
-  // Status
   statusRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: SIZES.medium,
-    paddingVertical: SIZES.small,
-    paddingHorizontal: SIZES.small,
-    borderRadius: 8,
+    marginBottom: SIZES.extraLarge,
+    paddingVertical: SIZES.medium + 2,
+    paddingHorizontal: SIZES.medium,
+    borderRadius: 14,
     borderWidth: 1,
   },
   statusIndicator: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     alignItems: "center",
     justifyContent: "center",
-    marginRight: SIZES.small,
+    marginRight: SIZES.medium,
   },
   statusText: {
-    fontSize: SIZES.font + 1,
-    fontWeight: "700",
-    letterSpacing: 0.5,
+    ...typography.headlineBold,
+    flex: 1,
   },
 
-  // Static Fields
-  staticField: {
+  heroTitle: {
     marginBottom: SIZES.small,
-    paddingVertical: SIZES.small / 2,
-    borderBottomWidth: 1,
   },
-  fieldLabel: {
-    fontSize: SIZES.font - 2,
-    fontWeight: "600",
-    marginBottom: SIZES.small / 2,
-    letterSpacing: 0.3,
+  heroNotesBlock: {
+    marginBottom: SECTION_AFTER_HERO,
+    gap: GROUP_LABEL_GAP,
+  },
+  sectionTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    marginBottom: GROUP_LABEL_GAP,
+  },
+  sectionTitleAccent: {
+    width: 4,
+    height: 22,
+    borderRadius: 2,
+  },
+  sectionTitleFirst: {
+    marginTop: SIZES.large,
+  },
+  fieldGroupCard: {
+    borderRadius: 14,
+    borderWidth: 1,
+    overflow: "hidden",
+  },
+  fieldRowPadded: {},
+  rowDivider: {
+    height: StyleSheet.hairlineWidth,
+    marginLeft: SIZES.small,
+  },
+  inlineLabel: {
+    marginBottom: 4,
     textTransform: "uppercase",
   },
-  fieldValue: {
-    fontSize: SIZES.font,
-    lineHeight: 20,
-    letterSpacing: 0.2,
-    fontWeight: "500",
+  recurringRow: {
+    paddingBottom: SIZES.small,
   },
 
   // Priority Badge
   priorityBadge: {
-    paddingHorizontal: SIZES.small,
-    paddingVertical: SIZES.small / 2,
-    borderRadius: 16,
+    paddingHorizontal: SIZES.medium,
+    paddingVertical: 6,
+    borderRadius: 20,
     alignSelf: "flex-start",
-    elevation: 2,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
+    elevation: 3,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
   },
   priorityText: {
-    fontSize: SIZES.font,
-    fontWeight: "700",
-    letterSpacing: 0.5,
+    ...typography.bodySmallBold,
+    letterSpacing: 0.4,
   },
 
   // Archived Badge
@@ -1078,15 +1176,8 @@ const styles = StyleSheet.create({
     marginLeft: SIZES.small,
   },
   archivedText: {
-    fontSize: 12,
-    fontWeight: "600",
+    ...typography.captionSemiBold,
     marginLeft: 4,
-  },
-
-  // Category Row
-  categoryRow: {
-    flexDirection: "row",
-    alignItems: "center",
   },
 
   // Recurring Info
@@ -1095,14 +1186,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
 
-  // Section Title
-  sectionTitle: {
-    fontSize: SIZES.font + 1,
-    fontWeight: "600",
-    marginBottom: SIZES.small,
+  prerequisitesSubcopy: {
+    marginBottom: SIZES.medium,
+    maxWidth: 320,
   },
   prerequisitesSection: {
-    marginBottom: SIZES.small,
+    marginBottom: SIZES.extraLarge,
   },
   prerequisitesContainer: {
     gap: SIZES.small,
@@ -1111,9 +1200,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    borderRadius: 8,
-    borderWidth: 1,
-    padding: SIZES.small,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    padding: SIZES.medium,
   },
   prerequisiteContent: {
     flexDirection: "row",
@@ -1129,8 +1218,7 @@ const styles = StyleSheet.create({
     marginRight: SIZES.small,
   },
   prerequisiteTitle: {
-    fontSize: SIZES.font - 1,
-    fontWeight: "500",
+    flexShrink: 1,
   },
 
   // Bottom Button Container (matching HomeScreen exactly)

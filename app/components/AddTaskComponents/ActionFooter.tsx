@@ -8,6 +8,7 @@ import {
   View,
 } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
+import { typography } from "../../typography";
 
 interface ActionFooterProps {
   onCancel: () => void;
@@ -108,14 +109,12 @@ const styles = StyleSheet.create({
     // elevation: 5,
   },
   cancelButtonText: {
-    fontWeight: "600",
+    ...typography.button,
     marginLeft: 8,
-    fontSize: 16,
   },
   saveButtonText: {
-    fontWeight: "600",
+    ...typography.button,
     marginRight: 8,
-    fontSize: 16,
   },
 });
 

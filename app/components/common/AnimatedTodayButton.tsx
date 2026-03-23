@@ -3,7 +3,6 @@ import { Animated, StyleSheet, Text, TouchableOpacity, View } from "react-native
 import { useTheme } from "../../context/ThemeContext";
 import { useReducedMotion } from "../../hooks/useReducedMotion";
 import { typography } from "../../typography";
-import { SIZES } from "../../theme";
 
 interface AnimatedTodayButtonProps {
   onPress: () => void;
@@ -66,11 +65,7 @@ const AnimatedTodayButton: React.FC<AnimatedTodayButtonProps> = ({
         ]}>
         <View style={styles.textContainer}>
           <Text
-            style={[
-              typography.bodySemiBold,
-              styles.text,
-              { color: colors.primary },
-            ]}>
+            style={[typography.captionSemiBold, { color: colors.primary }]}>
             {text}
           </Text>
         </View>
@@ -93,10 +88,6 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-  },
-  text: {
-    fontSize: SIZES.small,
-    fontWeight: "600",
   },
 });
 

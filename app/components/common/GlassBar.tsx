@@ -8,6 +8,7 @@ import {
   ViewStyle,
 } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
+import { SIZES } from "../../theme";
 
 type GlassBarProps = {
   children: ReactNode;
@@ -55,7 +56,7 @@ const styles = StyleSheet.create({
     borderRadius: 100,
     overflow: "hidden",
     alignSelf: "flex-end",
-    marginRight: 10,
+    marginRight: SIZES.medium,
   },
   clip: {
     position: "relative",
@@ -66,8 +67,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "flex-end",
     justifyContent: "flex-end",
-    paddingHorizontal: 10,
-    paddingVertical: 12,
+    paddingHorizontal: SIZES.medium,
+    paddingVertical: SIZES.medium,
     zIndex: 2,
     flexShrink: 0,
     gap: 16,

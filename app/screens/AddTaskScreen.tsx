@@ -1,3 +1,4 @@
+import { format } from "date-fns";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
@@ -16,7 +17,6 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import AddTaskMoreOptions from "../components/AddTaskComponents/AddTaskMoreOptions";
 import CategorySelector from "../components/AddTaskComponents/CategorySelector";
 import DateTimePicker from "../components/AddTaskComponents/DateTimePicker";
 import FormSection from "../components/AddTaskComponents/FormSection";
@@ -31,7 +31,7 @@ import { useTheme } from "../context/ThemeContext";
 import { useAddTask } from "../hooks/useAddTask";
 import { useReducedMotion } from "../hooks/useReducedMotion";
 import { SIZES } from "../theme";
-import { FONT, typography } from "../typography";
+import { typography } from "../typography";
 
 const PRESS_SCALE = 1.04;
 const PRESS_SCALE_SAVE = 1.06;
@@ -46,6 +46,12 @@ const LOADING_COPY_NEW = [
   "Setting up something new…",
   "Almost there…",
 ] as const;
+
+const runHaptic = (fn: () => Promise<void>) => {
+  void fn().catch(() => {
+    /* Web / unsupported Taptic Engine */
+  });
+};
 
 const createButtonStyles = (shadowColor: string) =>
   StyleSheet.create({
@@ -188,6 +194,7 @@ const AnimatedLargeSaveButton = ({
   saveLabel,
   enabled,
   reducedMotion,
+  disabledHint = "Add a title above to enable saving.",
 }: {
   onPress: () => void;
   iconName: keyof typeof Ionicons.glyphMap;
@@ -197,6 +204,7 @@ const AnimatedLargeSaveButton = ({
   saveLabel: string;
   enabled: boolean;
   reducedMotion: boolean;
+  disabledHint?: string;
 }) => {
   const { colors } = useTheme();
   const pressScale = useRef(new Animated.Value(1)).current;
@@ -252,11 +260,11 @@ const AnimatedLargeSaveButton = ({
         onPress={onPress}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
+        disabled={!enabled}
         accessibilityLabel={label}
-        accessibilityHint={
-          enabled ? undefined : "Add a title above to enable saving."
-        }
+        accessibilityHint={enabled ? undefined : disabledHint}
         accessibilityRole="button"
+        accessibilityState={{ disabled: !enabled }}
         style={styles.largeTouchable}>
         <Ionicons
           name={iconName}
@@ -265,13 +273,15 @@ const AnimatedLargeSaveButton = ({
         />
         <Text
           style={[
-            typography.body,
+            typography.bodySemiBold,
             {
-              fontFamily: FONT.bodySemiBold,
-              fontSize: 16,
               color: enabled ? iconColor : iconColor + "80",
+              flexShrink: 1,
             },
-          ]}>
+          ]}
+          numberOfLines={1}
+          ellipsizeMode="tail"
+          maxFontSizeMultiplier={1.35}>
           {saveLabel}
         </Text>
       </TouchableOpacity>
@@ -310,7 +320,13 @@ const AddTaskScreen: React.FC = () => {
     isEditing,
   } = useAddTask();
 
-  const showTitleError = saveAttempted && !title.trim();
+  const [step, setStep] = useState<1 | 2>(() => (isEditing ? 2 : 1));
+  const [step1ContinueAttempted, setStep1ContinueAttempted] = useState(false);
+  const scrollRef = useRef<ScrollView>(null);
+
+  const showTitleErrorStep1 = step1ContinueAttempted && !title.trim() && step === 1;
+  const showTitleErrorStep2 = saveAttempted && !title.trim() && step === 2;
+  const showTitleError = showTitleErrorStep1 || showTitleErrorStep2;
 
   const [loadingLine, setLoadingLine] = useState(0);
   const loadingLines = isEditing ? LOADING_COPY_EDIT : LOADING_COPY_NEW;
@@ -327,7 +343,7 @@ const AddTaskScreen: React.FC = () => {
   useEffect(() => {
     if (loading || reducedMotion) return;
     if (isFormValid && !titleReadyPulse.current) {
-      void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      runHaptic(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light));
       titleReadyPulse.current = true;
     }
     if (!isFormValid) {
@@ -336,9 +352,35 @@ const AddTaskScreen: React.FC = () => {
   }, [isFormValid, loading, reducedMotion]);
 
   const handleSaveWithFeedback = useCallback(() => {
-    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    if (loading) return;
+    runHaptic(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium));
     handleSave();
-  }, [handleSave]);
+  }, [handleSave, loading]);
+
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ y: 0, animated: !reducedMotion });
+  }, [step, reducedMotion]);
+
+  const trimmedTitle = title.trim();
+  const step2SummaryA11yLabel =
+    trimmedTitle.length > 180
+      ? `${trimmedTitle.slice(0, 180)}…`
+      : trimmedTitle;
+
+  const goToStep2 = useCallback(() => {
+    if (!title.trim()) {
+      setStep1ContinueAttempted(true);
+      return;
+    }
+    setStep1ContinueAttempted(false);
+    setStep(2);
+    runHaptic(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light));
+  }, [title]);
+
+  const goToStep1 = useCallback(() => {
+    setStep(1);
+    runHaptic(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light));
+  }, []);
 
   const styles = StyleSheet.create({
     container: {
@@ -350,7 +392,6 @@ const AddTaskScreen: React.FC = () => {
     },
     scrollContent: {
       padding: SIZES.medium,
-      paddingTop: SIZES.large,
     },
     loadingContainer: {
       flex: 1,
@@ -369,6 +410,34 @@ const AddTaskScreen: React.FC = () => {
       paddingHorizontal: SIZES.medium,
       paddingTop: SIZES.small,
       paddingBottom: SIZES.small,
+    },
+    footerInnerSpread: {
+      justifyContent: "space-between",
+      width: "100%",
+    },
+    stepper: {
+      paddingHorizontal: SIZES.medium,
+      paddingBottom: SIZES.small,
+    },
+    stepperRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      marginBottom: 6,
+    },
+    stepSegment: {
+      flex: 1,
+      height: 3,
+      borderRadius: 2,
+    },
+    stepperCaption: {
+      ...typography.caption,
+      color: colors.textSecondary,
+    },
+    stepSummaryWrap: {
+      width: "100%",
+      maxWidth: "100%",
+      marginBottom: SIZES.medium,
     },
   });
 
@@ -422,57 +491,113 @@ const AddTaskScreen: React.FC = () => {
           onBackPress={handleCancel}
         />
 
-      <ScrollView
-        style={styles.body}
-        contentContainerStyle={[
-          styles.scrollContent,
-          { paddingBottom: bottomInsets.bottom + SIZES.extraLarge * 4 },
-        ]}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}>
-        <TaskTitleInput
-          value={title}
-          onChangeText={setTitle}
-          showTitleError={showTitleError}
-        />
-
-        <TaskDescription value={description} onChangeText={setDescription} />
-
-        <DateTimePicker dueDate={dueDate} onDateChange={setDueDate} />
-
-        <AddTaskMoreOptions initiallyExpanded={isEditing}>
-          <CategorySelector
-            selectedCategory={category}
-            onSelectCategory={setCategory}
-          />
-
-          <PrioritySelector
-            selectedPriority={priority}
-            onSelectPriority={setPriority}
-          />
-
-          <FormSection title="Reminders" optional>
-            <RemindMeButton
-              value={remindMe}
-              onChange={setRemindMe}
-              maxOffsetMs={Math.max(dueDate.getTime() - Date.now(), 0)}
+        <View style={styles.stepper} accessibilityRole="none">
+          <View style={styles.stepperRow}>
+            <View
+              style={[
+                styles.stepSegment,
+                {
+                  backgroundColor:
+                    step >= 1 ? colors.primary : colors.border,
+                  opacity: step === 1 ? 1 : 0.45,
+                },
+              ]}
             />
-          </FormSection>
-
-          <RepetitionSelector
-            repetition={repetition}
-            onRepetitionChange={(newRepetition) => setRepetition(newRepetition)}
-          />
-
-          {!repetition.enabled && (
-            <PredecessorTaskSelector
-              availableTasks={availableTasks}
-              selectedPredecessors={predecessorIds}
-              onSelectPredecessor={handlePredecessorSelect}
+            <View
+              style={[
+                styles.stepSegment,
+                {
+                  backgroundColor:
+                    step >= 2 ? colors.primary : colors.border,
+                  opacity: step === 2 ? 1 : 0.45,
+                },
+              ]}
             />
+          </View>
+          <Text style={styles.stepperCaption}>
+            {step === 1
+              ? "Step 1 of 2 — Title & due date"
+              : "Step 2 of 2 — Notes, category, and more (all optional)"}
+          </Text>
+        </View>
+
+        <ScrollView
+          ref={scrollRef}
+          style={styles.body}
+          contentContainerStyle={[
+            styles.scrollContent,
+            { paddingTop: SIZES.small },
+            { paddingBottom: bottomInsets.bottom + SIZES.extraLarge * 4 },
+          ]}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
+          showsVerticalScrollIndicator={false}>
+          {step === 1 ? (
+            <>
+              <TaskTitleInput
+                value={title}
+                onChangeText={setTitle}
+                showTitleError={showTitleError}
+              />
+              <DateTimePicker dueDate={dueDate} onDateChange={setDueDate} />
+            </>
+          ) : (
+            <>
+              <View style={styles.stepSummaryWrap}>
+                <Text
+                  style={[
+                    typography.caption,
+                    {
+                      color: colors.textSecondary,
+                    },
+                  ]}
+                  numberOfLines={2}
+                  ellipsizeMode="tail"
+                  maxFontSizeMultiplier={1.35}
+                  accessibilityLabel={`Task summary: ${step2SummaryA11yLabel}, due ${format(
+                    dueDate,
+                    "MMMM d, h:mm a"
+                  )}`}>
+                  {trimmedTitle}
+                  {" · Due "}
+                  {format(dueDate, "MMM d, h:mm a")}
+                </Text>
+              </View>
+              <TaskDescription
+                value={description}
+                onChangeText={setDescription}
+              />
+              <CategorySelector
+                selectedCategory={category}
+                onSelectCategory={setCategory}
+              />
+              <PrioritySelector
+                selectedPriority={priority}
+                onSelectPriority={setPriority}
+              />
+              <FormSection title="Reminders" optional>
+                <RemindMeButton
+                  value={remindMe}
+                  onChange={setRemindMe}
+                  maxOffsetMs={Math.max(dueDate.getTime() - Date.now(), 0)}
+                />
+              </FormSection>
+              <RepetitionSelector
+                repetition={repetition}
+                onRepetitionChange={(newRepetition) =>
+                  setRepetition(newRepetition)
+                }
+              />
+              {!repetition.enabled && (
+                <PredecessorTaskSelector
+                  availableTasks={availableTasks}
+                  selectedPredecessors={predecessorIds}
+                  onSelectPredecessor={handlePredecessorSelect}
+                />
+              )}
+            </>
           )}
-        </AddTaskMoreOptions>
-      </ScrollView>
+        </ScrollView>
 
       <View
         style={[
@@ -487,26 +612,57 @@ const AddTaskScreen: React.FC = () => {
             paddingBottom: bottomInsets.bottom,
           },
         ]}>
-        <View style={styles.footerInner}>
-          <AnimatedActionButton
-            onPress={handleCancel}
-            iconName="close"
-            iconColor={colors.textSecondary}
-            backgroundColor={colors.surface}
-            borderColor={colors.border}
-            label="Close without saving"
-            reducedMotion={reducedMotion}
-          />
-          <AnimatedLargeSaveButton
-            onPress={handleSaveWithFeedback}
-            iconName="checkmark"
-            iconColor={colors.onPrimary}
-            backgroundColor={colors.primary}
-            label="Save"
-            saveLabel="Save"
-            enabled={isFormValid}
-            reducedMotion={reducedMotion}
-          />
+        <View
+          style={[
+            styles.footerInner,
+            step === 2 ? styles.footerInnerSpread : null,
+          ]}>
+          {step === 1 ? (
+            <>
+              <AnimatedActionButton
+                onPress={handleCancel}
+                iconName="close"
+                iconColor={colors.textSecondary}
+                backgroundColor={colors.surface}
+                borderColor={colors.border}
+                label="Close without saving"
+                reducedMotion={reducedMotion}
+              />
+              <AnimatedLargeSaveButton
+                onPress={goToStep2}
+                iconName="arrow-forward"
+                iconColor={colors.onPrimary}
+                backgroundColor={colors.primary}
+                label="Continue to optional details"
+                saveLabel="Continue"
+                enabled={isFormValid}
+                reducedMotion={reducedMotion}
+                disabledHint="Add a title above to continue."
+              />
+            </>
+          ) : (
+            <>
+              <AnimatedActionButton
+                onPress={goToStep1}
+                iconName="chevron-back"
+                iconColor={colors.textSecondary}
+                backgroundColor={colors.surface}
+                borderColor={colors.border}
+                label="Back to title and due date"
+                reducedMotion={reducedMotion}
+              />
+              <AnimatedLargeSaveButton
+                onPress={handleSaveWithFeedback}
+                iconName="checkmark"
+                iconColor={colors.onPrimary}
+                backgroundColor={colors.primary}
+                label="Save"
+                saveLabel="Save"
+                enabled={isFormValid}
+                reducedMotion={reducedMotion}
+              />
+            </>
+          )}
         </View>
       </View>
       </KeyboardAvoidingView>

@@ -2,6 +2,7 @@ import { format, isToday, isTomorrow } from "date-fns";
 import React, { useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
+import { typography } from "../../typography";
 import DateTimeModal from "./DateTimeModal";
 
 interface DateTimeButtonProps {
@@ -102,13 +103,11 @@ const DateTimeButton: React.FC<DateTimeButtonProps> = ({
       backgroundColor: colors.border,
     },
     dateText: {
-      fontSize: 15,
-      fontWeight: "500",
+      ...typography.subbodyMedium,
       color: colors.text,
     },
     timeText: {
-      fontSize: 15,
-      fontWeight: "500",
+      ...typography.subbodyMedium,
       color: colors.text,
     },
     singleModeContainer: {
@@ -118,8 +117,7 @@ const DateTimeButton: React.FC<DateTimeButtonProps> = ({
       paddingHorizontal: 12,
     },
     singleModeText: {
-      fontSize: 15,
-      fontWeight: "500",
+      ...typography.subbodyMedium,
       color: colors.text,
     },
   });

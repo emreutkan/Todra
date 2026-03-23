@@ -7,8 +7,9 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
+import { TASK_TITLE_MAX_LENGTH } from "../../constants/taskInputLimits";
 import { SIZES } from "../../theme";
-import { FONT } from "../../typography";
+import { typography } from "../../typography";
 
 interface TaskTitleInputProps {
   value: string;
@@ -47,16 +48,17 @@ const TaskTitleInput: React.FC<TaskTitleInputProps> = ({
       ...style,
     },
     input: {
+      ...typography.body,
       backgroundColor: colors.card,
       borderRadius: SIZES.base,
       padding: SIZES.medium,
       color: colors.text,
-      fontSize: SIZES.medium,
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: colors.border,
       minHeight: multiline ? 60 : 48,
     },
     inputHero: {
+      ...typography.headline,
       borderLeftWidth: 4,
       borderLeftColor: colors.primary,
       borderTopLeftRadius: 0,
@@ -64,8 +66,6 @@ const TaskTitleInput: React.FC<TaskTitleInputProps> = ({
       borderTopRightRadius: SIZES.base,
       borderBottomRightRadius: SIZES.base,
       paddingVertical: 14,
-      fontSize: 18,
-      fontFamily: FONT.bodySemiBold,
       minHeight: multiline ? 60 : 56,
     },
     clickableContainer: {
@@ -80,10 +80,9 @@ const TaskTitleInput: React.FC<TaskTitleInputProps> = ({
       minHeight: 48,
     },
     clickableText: {
+      ...typography.bodyMedium,
       flex: 1,
       color: colors.text,
-      fontSize: SIZES.medium,
-      fontWeight: "500",
     },
     editIcon: {
       marginLeft: SIZES.small,
@@ -122,7 +121,10 @@ const TaskTitleInput: React.FC<TaskTitleInputProps> = ({
       onSubmitEditing={onSubmitEditing}
       multiline={multiline}
       editable={editable}
+      maxLength={TASK_TITLE_MAX_LENGTH}
+      maxFontSizeMultiplier={1.45}
       accessibilityLabel="Task title"
+      accessibilityHint={`Required. Up to ${TASK_TITLE_MAX_LENGTH} characters.`}
     />
   );
 };

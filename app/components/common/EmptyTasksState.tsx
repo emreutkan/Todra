@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
+import { SIZES } from "../../theme";
 import { typography } from "../../typography";
 
 interface EmptyTasksStateProps {
@@ -12,7 +13,7 @@ interface EmptyTasksStateProps {
 
 const EmptyTasksState: React.FC<EmptyTasksStateProps> = ({
   title = "No tasks",
-  subtitle = "Tap the + button to add a new task",
+  subtitle = "Tap + below to add your first task for this day.",
   icon = "calendar-outline",
 }) => {
   const { colors } = useTheme();
@@ -24,7 +25,12 @@ const EmptyTasksState: React.FC<EmptyTasksStateProps> = ({
           styles.content,
           { backgroundColor: colors.card, borderColor: colors.border },
         ]}>
-        <Ionicons name={icon} size={70} color={colors.text + "40"} />
+        <Ionicons
+          name={icon}
+          size={64}
+          color={colors.primary}
+          style={{ opacity: 0.38 }}
+        />
         <Text
           style={[typography.headline, styles.title, { color: colors.text }]}>
           {title}
@@ -47,22 +53,26 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    padding: 20,
+    paddingHorizontal: SIZES.medium,
+    paddingVertical: SIZES.large,
   },
   content: {
     width: "100%",
-    padding: 30,
-    borderRadius: 12,
+    maxWidth: 340,
+    paddingVertical: SIZES.extraLarge,
+    paddingHorizontal: SIZES.medium,
+    borderRadius: SIZES.base + 6,
     alignItems: "center",
     borderWidth: 1,
   },
   title: {
-    marginTop: 20,
+    marginTop: SIZES.medium,
     textAlign: "center",
   },
   subtitle: {
     textAlign: "center",
-    marginTop: 10,
+    marginTop: SIZES.small,
+    paddingHorizontal: SIZES.small,
   },
 });
 

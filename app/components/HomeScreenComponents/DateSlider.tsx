@@ -187,7 +187,7 @@ const DateSlider: React.FC<DateSliderProps> = ({
             <Text
               style={[
                 styles.monthBadgeText,
-                { color: _isSelected ? colors.background : colors.primary },
+                { color: _isSelected ? colors.onPrimary : colors.primary },
               ]}>
               {monthAbbr}
             </Text>
@@ -197,7 +197,9 @@ const DateSlider: React.FC<DateSliderProps> = ({
         <Text
           style={[
             styles.dayName,
-            { color: _isSelected ? colors.background : colors.text + "CC" },
+            {
+              color: _isSelected ? colors.onPrimary : colors.textSecondary,
+            },
           ]}>
           {date
             .toLocaleDateString(undefined, { weekday: "short" })
@@ -207,10 +209,13 @@ const DateSlider: React.FC<DateSliderProps> = ({
         <Text
           style={[
             styles.dateNumber,
-            { color: _isSelected ? colors.background : colors.text },
+            {
+              color: _isSelected ? colors.onPrimary : colors.text,
+            },
             _isToday &&
               !_isSelected && [styles.todayText, { color: colors.primary }],
-          ]}>
+          ]}
+          maxFontSizeMultiplier={1.35}>
           {date.getDate()}
         </Text>
       </TouchableOpacity>
@@ -247,11 +252,7 @@ const DateSlider: React.FC<DateSliderProps> = ({
           accessibilityLabel={`Select date for ${selectedMonth}`}
           accessibilityHint="Opens date picker to select a different month and year">
           <Text
-            style={[
-              typography.headline,
-              styles.monthText,
-              { color: colors.text },
-            ]}>
+            style={[typography.titleMedium, { color: colors.primary }]}>
             {selectedMonth}
           </Text>
         </TouchableOpacity>
@@ -307,23 +308,20 @@ const DateSlider: React.FC<DateSliderProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    paddingVertical: 10,
-    borderBottomWidth: 1,
+    paddingVertical: SIZES.medium,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginHorizontal: 20,
-    marginBottom: 6,
+    alignItems: "center",
+    marginHorizontal: SIZES.medium,
+    marginBottom: SIZES.small,
   },
   monthDisplay: {
     flexDirection: "row",
     alignItems: "center",
   },
-  monthText: {
-    fontSize: 17,
-  },
-
   dateItem: {
     height: 70,
     marginHorizontal: ITEM_SPACING / 2,
@@ -334,16 +332,14 @@ const styles = StyleSheet.create({
   },
 
   dayName: {
-    fontSize: 16,
+    ...typography.bodyMedium,
     marginBottom: 12,
-    fontWeight: "500",
   },
   dateNumber: {
-    fontSize: 18,
-    fontWeight: "600",
+    ...typography.headline,
   },
   todayText: {
-    fontWeight: "700",
+    ...typography.headlineBold,
   },
 
   monthBadge: {
@@ -356,8 +352,7 @@ const styles = StyleSheet.create({
     borderTopRightRadius: SIZES.base,
   },
   monthBadgeText: {
-    fontSize: 9,
-    fontWeight: "600",
+    ...typography.overline,
   },
 });
 

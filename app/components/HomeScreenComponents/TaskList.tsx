@@ -2,19 +2,30 @@ import { MaterialIcons } from "@expo/vector-icons";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Animated,
+  LayoutAnimation,
+  Platform,
   SectionList,
   StyleSheet,
   Text,
   TouchableOpacity,
+  UIManager,
   View,
 } from "react-native";
 import { useSettings } from "../../context/SettingsContext";
 import { useTheme } from "../../context/ThemeContext";
+import { useReducedMotion } from "../../hooks/useReducedMotion";
 import { typography } from "../../typography";
 import { SIZES } from "../../theme";
 import { Task, TaskPriority } from "../../types";
 import EmptyTasksState from "../common/EmptyTasksState";
 import TaskItem from "../common/TaskItem";
+
+if (
+  Platform.OS === "android" &&
+  UIManager.setLayoutAnimationEnabledExperimental
+) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 
 type TaskSection = {
   title: string;
@@ -30,7 +41,8 @@ interface TaskListProps {
   onToggleTaskCompletion: (id: string) => void;
   onTaskPress: (id: string) => void;
   scrollY?: Animated.Value;
-  taskOpacity?: Animated.Value;
+  listEntranceOpacity: Animated.Value;
+  listEntranceTranslateY: Animated.Value;
   loading?: boolean;
   onRefresh?: () => void;
 }
@@ -42,9 +54,12 @@ const TaskList: React.FC<TaskListProps> = ({
   onToggleTaskCompletion,
   onTaskPress,
   scrollY,
+  listEntranceOpacity,
+  listEntranceTranslateY,
 }) => {
   const { colors } = useTheme();
   const { settings } = useSettings();
+  const reducedMotion = useReducedMotion();
   const [expandedSections, setExpandedSections] = useState<{
     [key: string]: boolean;
   }>({});
@@ -146,8 +161,8 @@ const TaskList: React.FC<TaskListProps> = ({
           style={[
             styles.sectionHeader,
             {
-              backgroundColor: colors.background + "F8",
-              borderBottomColor: colors.border,
+              backgroundColor: colors.surface,
+              borderBottomColor: colors.hairline,
             },
           ]}
           accessibilityRole="button"
@@ -160,18 +175,26 @@ const TaskList: React.FC<TaskListProps> = ({
               ? "Double tap to collapse this section"
               : "Double tap to expand this section"
           }
-          onPress={() =>
+          onPress={() => {
+            if (!reducedMotion) {
+              LayoutAnimation.configureNext(
+                LayoutAnimation.Presets.easeInEaseOut
+              );
+            }
             setExpandedSections((prev) => ({
               ...prev,
               [section.title]: !prev[section.title],
-            }))
-          }
-          activeOpacity={0.7}>
+            }));
+          }}
+          activeOpacity={0.75}>
           <View style={styles.sectionHeaderLeft}>
             <View
               style={[
                 styles.priorityIndicator,
-                { backgroundColor: priorityColor },
+                {
+                  backgroundColor: priorityColor,
+                  borderColor: colors.card,
+                },
               ]}
             />
             <Text
@@ -184,25 +207,27 @@ const TaskList: React.FC<TaskListProps> = ({
             </Text>
           </View>
           {isExpanded ? (
-            <Text
+            <View
               style={[
-                typography.bodySemiBold,
-                styles.sectionCount,
-                { color: colors.text },
+                styles.countPill,
+                { backgroundColor: priorityColor + "24" },
               ]}>
-              {section.count}
-            </Text>
+              <Text
+                style={[typography.subbodySemiBold, { color: priorityColor }]}>
+                {section.count}
+              </Text>
+            </View>
           ) : (
             <MaterialIcons
-              name={"keyboard-arrow-up"}
-              size={24}
-              color={colors.text}
+              name="keyboard-arrow-down"
+              size={22}
+              color={colors.textSecondary}
             />
           )}
         </TouchableOpacity>
       );
     },
-    [expandedSections, colors]
+    [expandedSections, colors, reducedMotion]
   );
 
   // Render a simple progress header
@@ -214,10 +239,16 @@ const TaskList: React.FC<TaskListProps> = ({
       <View
         style={[
           styles.progressSection,
-          { backgroundColor: colors.card, borderBottomColor: colors.border },
+          {
+            backgroundColor: colors.surface,
+            borderColor: colors.border,
+          },
         ]}>
         <View style={styles.statsContainer}>
           <View style={styles.statItem}>
+            <View
+              style={[styles.statAccent, { backgroundColor: colors.success }]}
+            />
             <Text
               style={[
                 typography.captionMedium,
@@ -227,11 +258,8 @@ const TaskList: React.FC<TaskListProps> = ({
               Completed
             </Text>
             <Text
-              style={[
-                typography.title,
-                styles.statValue,
-                { color: colors.success },
-              ]}>
+              style={[typography.title, { color: colors.success }]}
+              maxFontSizeMultiplier={1.4}>
               {completed}
             </Text>
           </View>
@@ -239,6 +267,9 @@ const TaskList: React.FC<TaskListProps> = ({
             style={[styles.statDivider, { backgroundColor: colors.hairline }]}
           />
           <View style={styles.statItem}>
+            <View
+              style={[styles.statAccent, { backgroundColor: colors.primary }]}
+            />
             <Text
               style={[
                 typography.captionMedium,
@@ -248,11 +279,8 @@ const TaskList: React.FC<TaskListProps> = ({
               Remaining
             </Text>
             <Text
-              style={[
-                typography.title,
-                styles.statValue,
-                { color: colors.primary },
-              ]}>
+              style={[typography.title, { color: colors.primary }]}
+              maxFontSizeMultiplier={1.4}>
               {remaining}
             </Text>
           </View>
@@ -260,6 +288,9 @@ const TaskList: React.FC<TaskListProps> = ({
             style={[styles.statDivider, { backgroundColor: colors.hairline }]}
           />
           <View style={styles.statItem}>
+            <View
+              style={[styles.statAccent, { backgroundColor: colors.accent }]}
+            />
             <Text
               style={[
                 typography.captionMedium,
@@ -269,11 +300,8 @@ const TaskList: React.FC<TaskListProps> = ({
               Total
             </Text>
             <Text
-              style={[
-                typography.title,
-                styles.statValue,
-                { color: colors.text },
-              ]}>
+              style={[typography.title, { color: colors.text }]}
+              maxFontSizeMultiplier={1.4}>
               {total}
             </Text>
           </View>
@@ -282,124 +310,145 @@ const TaskList: React.FC<TaskListProps> = ({
     );
   };
 
+  const listEntranceStyle = {
+    flex: 1,
+    opacity: listEntranceOpacity,
+    transform: [{ translateY: listEntranceTranslateY }],
+  };
+
   if (tasks.length === 0) {
     return (
-      <EmptyTasksState
-        title="No tasks"
-        subtitle="Tap the + button to add a new task"
-        icon="calendar-outline"
-      />
+      <Animated.View style={listEntranceStyle}>
+        <EmptyTasksState
+          title="No tasks"
+          subtitle="Tap + below to add your first task for this day."
+          icon="calendar-outline"
+        />
+      </Animated.View>
     );
   }
 
   return (
-    <SectionList
-      contentContainerStyle={styles.taskList}
-      sections={sections}
-      keyExtractor={(item) => item.id}
-      renderSectionHeader={renderSectionHeader}
-      stickySectionHeadersEnabled
-      ListHeaderComponent={renderTasksHeader}
-      scrollEventThrottle={16}
-      onScroll={
-        scrollY
-          ? Animated.event(
-              [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-              { useNativeDriver: false }
-            )
-          : undefined
-      }
-      renderItem={({ item, index, section }) => {
-        if (!expandedSections[section.title]) return null;
-        const isOverdue = Boolean(
-          item.dueDate && item.dueDate < currentDate.getTime()
-        );
-        const prereqsMet =
-          !item.predecessorIds ||
-          item.predecessorIds.length === 0 ||
-          item.predecessorIds.every(
-            (predId) => tasks.find((t) => t.id === predId)?.completed
+    <Animated.View style={listEntranceStyle}>
+      <SectionList
+        style={{ flex: 1 }}
+        contentContainerStyle={styles.taskList}
+        sections={sections}
+        keyExtractor={(item) => item.id}
+        renderSectionHeader={renderSectionHeader}
+        stickySectionHeadersEnabled
+        ListHeaderComponent={renderTasksHeader}
+        scrollEventThrottle={16}
+        onScroll={
+          scrollY
+            ? Animated.event(
+                [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+                { useNativeDriver: false }
+              )
+            : undefined
+        }
+        renderItem={({ item, index, section }) => {
+          if (!expandedSections[section.title]) return null;
+          const isOverdue = Boolean(
+            item.dueDate && item.dueDate < currentDate.getTime()
           );
-        return (
-          <TaskItem
-            item={item}
-            index={index}
-            onDelete={onDeleteTask}
-            onToggleComplete={onToggleTaskCompletion}
-            onPress={onTaskPress}
-            isOverdue={isOverdue}
-            arePrereqsMet={prereqsMet}
-            priority={section.priority}
-            mode="home"
-            showAnimations={true}
-          />
-        );
-      }}
-    />
+          const prereqsMet =
+            !item.predecessorIds ||
+            item.predecessorIds.length === 0 ||
+            item.predecessorIds.every(
+              (predId) => tasks.find((t) => t.id === predId)?.completed
+            );
+          return (
+            <TaskItem
+              item={item}
+              index={index}
+              onDelete={onDeleteTask}
+              onToggleComplete={onToggleTaskCompletion}
+              onPress={onTaskPress}
+              isOverdue={isOverdue}
+              arePrereqsMet={prereqsMet}
+              priority={section.priority}
+              mode="home"
+              showAnimations={true}
+            />
+          );
+        }}
+      />
+    </Animated.View>
   );
 };
 
 const styles = StyleSheet.create({
   taskList: {
     marginHorizontal: SIZES.medium,
+    paddingBottom: SIZES.small,
   },
   progressSection: {
-    paddingVertical: SIZES.small,
-    borderBottomWidth: 1,
+    paddingVertical: SIZES.medium,
+    borderWidth: 1,
+    borderRadius: SIZES.base + 4,
     flexDirection: "row",
     alignItems: "center",
-    // Remove side spacing for the header by negating list container margins
     marginHorizontal: -SIZES.medium,
-    paddingHorizontal: SIZES.medium,
+    marginBottom: SIZES.medium,
+    paddingHorizontal: SIZES.small,
   },
   statsContainer: {
     flexDirection: "row",
-    // Ensure items stretch edge-to-edge without side gaps
     justifyContent: "space-around",
     flex: 1,
   },
 
   statItem: {
     alignItems: "center",
+    flex: 1,
+    minWidth: 0,
   },
-  statLabel: {
+  statAccent: {
+    width: 4,
+    height: 14,
+    borderRadius: 2,
     marginBottom: SIZES.small,
   },
-  statValue: {
-    fontSize: 22,
+  statLabel: {
+    marginBottom: 4,
   },
   statDivider: {
-    width: 1,
+    width: StyleSheet.hairlineWidth,
     alignSelf: "stretch",
+    marginVertical: SIZES.small,
   },
 
   sectionHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: SIZES.small,
+    paddingVertical: SIZES.medium,
+    paddingHorizontal: 2,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   sectionHeaderLeft: {
     flexDirection: "row",
     alignItems: "center",
+    flex: 1,
+    minWidth: 0,
   },
   priorityIndicator: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    marginRight: SIZES.small,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    marginRight: SIZES.medium,
+    borderWidth: 2,
   },
   sectionTitle: {
     flexShrink: 1,
   },
-  sectionBadge: {
-    paddingHorizontal: SIZES.small,
-    paddingVertical: SIZES.small,
-    borderRadius: 10,
-    marginLeft: SIZES.small,
-  },
-  sectionCount: {
-    fontSize: 15,
+  countPill: {
+    paddingHorizontal: SIZES.medium,
+    paddingVertical: 6,
+    borderRadius: 14,
+    minWidth: 36,
+    alignItems: "center",
   },
 });
 

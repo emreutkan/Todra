@@ -76,17 +76,16 @@ const PredecessorTaskSelector: React.FC<PredecessorTaskSelectorProps> = ({
       flex: 1,
     },
     title: {
-      fontSize: SIZES.medium,
-      fontWeight: "600",
+      ...typography.bodySemiBold,
       color: colors.text,
       marginBottom: 4,
     },
     subtitle: {
-      fontSize: SIZES.small,
+      ...typography.caption,
       color: colors.textSecondary,
     },
     arrow: {
-      fontSize: 18,
+      ...typography.headline,
       color: colors.textSecondary,
     },
     modalOverlay: {
@@ -122,14 +121,14 @@ const PredecessorTaskSelector: React.FC<PredecessorTaskSelectorProps> = ({
       padding: 4,
     },
     closeButtonText: {
-      fontSize: 18,
+      ...typography.headline,
       color: colors.text,
     },
     modalContent: {
       padding: 16,
     },
     modalSubtitle: {
-      fontSize: 14,
+      ...typography.bodySmall,
       color: colors.textSecondary,
       marginBottom: 16,
     },
@@ -157,9 +156,8 @@ const PredecessorTaskSelector: React.FC<PredecessorTaskSelectorProps> = ({
       marginRight: 12,
     },
     taskTitle: {
-      fontSize: 16,
+      ...typography.bodyMedium,
       color: colors.text,
-      fontWeight: "500",
       marginBottom: 4,
     },
     taskDetails: {
@@ -167,12 +165,12 @@ const PredecessorTaskSelector: React.FC<PredecessorTaskSelectorProps> = ({
       alignItems: "center",
     },
     taskCategory: {
-      fontSize: 12,
+      ...typography.caption,
       color: colors.textSecondary,
       marginRight: 8,
     },
     taskDueDate: {
-      fontSize: 12,
+      ...typography.caption,
       color: colors.textSecondary,
     },
     checkbox: {
@@ -188,16 +186,15 @@ const PredecessorTaskSelector: React.FC<PredecessorTaskSelectorProps> = ({
       backgroundColor: colors.primary,
     },
     checkmark: {
+      ...typography.bodySmallBold,
       color: colors.background,
-      fontSize: 16,
-      fontWeight: "bold",
     },
     emptyState: {
       padding: 32,
       alignItems: "center",
     },
     emptyStateText: {
-      fontSize: 16,
+      ...typography.body,
       color: colors.textSecondary,
       textAlign: "center",
     },

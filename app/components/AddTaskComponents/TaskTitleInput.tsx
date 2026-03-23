@@ -36,8 +36,11 @@ const TaskTitleInputComponent: React.FC<TaskTitleInputProps> = ({
         hero
       />
       {showTitleError ? (
-        <Text style={[styles.error, { color: colors.error }]}>
-          Add a title to save.
+        <Text
+          style={[styles.error, { color: colors.error }]}
+          accessibilityRole="alert"
+          accessibilityLiveRegion="polite">
+          Add a title to continue or save.
         </Text>
       ) : null}
       {onChangeRemindMe && (

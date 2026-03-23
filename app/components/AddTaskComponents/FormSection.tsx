@@ -51,13 +51,10 @@ const FormSection: React.FC<FormSectionProps> = ({
     },
     labelDefault: {
       ...typography.bodySemiBold,
-      fontSize: 16,
       color: colors.text,
     },
     labelEditorial: {
-      ...typography.title,
-      fontSize: 20,
-      lineHeight: 26,
+      ...typography.titleMedium,
       color: colors.text,
     },
     subtitle: {

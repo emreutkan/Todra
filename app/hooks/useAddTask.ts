@@ -1,8 +1,12 @@
 import { RouteProp, useNavigation, useRoute } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Alert } from "react-native";
 import { DEFAULT_CATEGORIES } from "../constants/CategoryConstants";
+import {
+  TASK_DESCRIPTION_MAX_LENGTH,
+  TASK_TITLE_MAX_LENGTH,
+} from "../constants/taskInputLimits";
 import {
   addTask,
   getActiveTasks,
@@ -48,6 +52,7 @@ export const useAddTask = () => {
   const [isFormValid, setIsFormValid] = useState(false);
   const [saveAttempted, setSaveAttempted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const saveInFlight = useRef(false);
 
   // Predecessor functionality
   const [predecessorIds, setPredecessorIds] = useState<string[]>([]);
@@ -73,6 +78,10 @@ export const useAddTask = () => {
   // Load available tasks for predecessor selection and existing task data if editing
   useEffect(() => {
     const loadData = async () => {
+      const showInitialLoader = Boolean(isEditing && taskId);
+      if (showInitialLoader) {
+        setLoading(true);
+      }
       try {
         // Load available tasks for predecessor selection
         const tasks = await getActiveTasks();
@@ -91,8 +100,15 @@ export const useAddTask = () => {
 
           if (existingTask) {
             setOriginalTask(existingTask);
-            setTitle(existingTask.title);
-            setDescription(existingTask.description);
+            setTitle(
+              (existingTask.title ?? "").slice(0, TASK_TITLE_MAX_LENGTH)
+            );
+            setDescription(
+              (existingTask.description ?? "").slice(
+                0,
+                TASK_DESCRIPTION_MAX_LENGTH
+              )
+            );
             setPriority(existingTask.priority);
             setDueDate(new Date(existingTask.dueDate));
             setCategory(existingTask.category);
@@ -112,6 +128,10 @@ export const useAddTask = () => {
           "Couldn't load data",
           "Check your connection and try opening this screen again."
         );
+      } finally {
+        if (showInitialLoader) {
+          setLoading(false);
+        }
       }
     };
     loadData();
@@ -147,9 +167,20 @@ export const useAddTask = () => {
       setSaveAttempted(true);
       return;
     }
+    if (saveInFlight.current) {
+      return;
+    }
+    saveInFlight.current = true;
 
     try {
       setLoading(true);
+
+      const titleSafe = title
+        .trim()
+        .slice(0, TASK_TITLE_MAX_LENGTH);
+      const descriptionSafe = description
+        .trim()
+        .slice(0, TASK_DESCRIPTION_MAX_LENGTH);
 
       // Load existing tasks
       const existingTasks = await getActiveTasks();
@@ -167,8 +198,8 @@ export const useAddTask = () => {
         // Update existing task
         const updatedTask: Task = {
           id: taskId,
-          title: title.trim(),
-          description: description.trim(),
+          title: titleSafe,
+          description: descriptionSafe,
           priority,
           completed: originalTask.completed, // Keep existing completion status
           createdAt: originalTask.createdAt, // Keep original creation date
@@ -198,8 +229,8 @@ export const useAddTask = () => {
         // Create new task
         const newTask: Task = {
           id: Date.now().toString(),
-          title: title.trim(),
-          description: description.trim(),
+          title: titleSafe,
+          description: descriptionSafe,
           priority,
           completed: false,
           createdAt: selectedDate.getTime(),
@@ -236,6 +267,7 @@ export const useAddTask = () => {
       );
     } finally {
       setLoading(false);
+      saveInFlight.current = false;
     }
   }, [
     title,
@@ -255,7 +287,14 @@ export const useAddTask = () => {
   ]);
 
   const handleCancel = useCallback(() => {
-    if (title.trim() || description.trim() || predecessorIds.length > 0) {
+    const hasDraft =
+      title.trim().length > 0 ||
+      description.trim().length > 0 ||
+      predecessorIds.length > 0 ||
+      repetition.enabled ||
+      Boolean(remindMe?.enabled);
+
+    if (hasDraft) {
       Alert.alert(
         "Discard changes?",
         "You'll lose anything you entered on this screen.",
@@ -271,7 +310,7 @@ export const useAddTask = () => {
     } else {
       navigation.goBack();
     }
-  }, [title, description, predecessorIds, navigation]);
+  }, [title, description, predecessorIds, repetition.enabled, remindMe, navigation]);
 
   const handlePredecessorSelect = useCallback((taskId: string) => {
     setPredecessorIds((prev) =>

@@ -48,12 +48,7 @@ const ScreenHeader: React.FC<ScreenHeaderProps> = ({
                 <Text
                     style={[
                         titleEmphasis === "hero"
-                            ? {
-                                  ...typography.display,
-                                  fontSize: 26,
-                                  lineHeight: 30,
-                                  letterSpacing: -0.35,
-                              }
+                            ? typography.heroTitle
                             : typography.title,
                         styles.headerTitle,
                         { color: colors.text },

@@ -47,7 +47,9 @@ const AddButton: React.FC<AddButtonProps> = ({
       <TouchableOpacity
         activeOpacity={1}
         onPress={() => {
-          void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+          void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(
+            () => {}
+          );
           onPress();
         }}
         onPressIn={handlePressIn}

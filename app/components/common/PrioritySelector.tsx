@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
 import { PRIORITY_COLORS, SIZES } from "../../theme";
+import { FONT, typography } from "../../typography";
 import { TaskPriority } from "../../types";
 
 interface PrioritySelectorProps {
@@ -118,15 +119,14 @@ const PrioritySelector: React.FC<PrioritySelectorProps> = ({
       backgroundColor: PRIORITY_COLORS[selectedPriority] + "20",
     },
     priorityButtonText: {
+      ...typography.chip,
       color: colors.text,
-      fontSize: 13,
-      fontWeight: "600",
       textAlign: "center",
-      letterSpacing: 0.3,
     },
     selectedText: {
+      ...typography.chip,
       color: PRIORITY_COLORS[selectedPriority],
-      fontWeight: "700",
+      fontFamily: FONT.bodyBold,
     },
     // For display mode (non-editable)
     displayContainer: {
@@ -155,10 +155,8 @@ const PrioritySelector: React.FC<PrioritySelectorProps> = ({
       shadowRadius: 4,
     },
     priorityText: {
+      ...typography.bodySmallBold,
       color: colors.onPrimary,
-      fontSize: SIZES.font,
-      fontWeight: "700",
-      letterSpacing: 0.5,
     },
     editIcon: {
       marginLeft: SIZES.small,

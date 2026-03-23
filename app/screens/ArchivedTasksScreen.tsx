@@ -421,12 +421,10 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   emptyText: {
-    fontSize: 16,
     marginTop: 16,
     textAlign: "center",
   },
   emptySubtext: {
-    fontSize: 14,
     marginTop: 8,
     textAlign: "center",
     opacity: 0.7,

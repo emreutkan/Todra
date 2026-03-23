@@ -9,6 +9,7 @@ import {
   View,
 } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
+import { typography } from "../../typography";
 import CustomDatePicker from "./CustomDatePicker";
 
 interface DateTimeModalProps {
@@ -156,8 +157,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   modalTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
+    ...typography.headlineBold,
+    textAlign: "center",
   },
   pickerContainer: {
     padding: 20,
@@ -183,12 +184,10 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   cancelButtonText: {
-    fontSize: 16,
-    fontWeight: "600",
+    ...typography.button,
   },
   confirmButtonText: {
-    fontSize: 16,
-    fontWeight: "600",
+    ...typography.button,
   },
 });
 
