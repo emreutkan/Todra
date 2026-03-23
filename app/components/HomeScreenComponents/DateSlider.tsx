@@ -225,6 +225,17 @@ const DateSlider: React.FC<DateSliderProps> = ({
           backgroundColor: colors.card,
           borderBottomColor: colors.border,
         },
+        Platform.select({
+          ios: {
+            shadowColor: colors.shadowColor,
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.1,
+            shadowRadius: 1,
+          },
+          android: {
+            elevation: 3,
+          },
+        }),
       ]}>
       <View style={styles.header}>
         <TouchableOpacity
@@ -298,17 +309,6 @@ const styles = StyleSheet.create({
   container: {
     paddingVertical: 10,
     borderBottomWidth: 1,
-    ...Platform.select({
-      ios: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 1,
-      },
-      android: {
-        elevation: 3,
-      },
-    }),
   },
   header: {
     flexDirection: "row",

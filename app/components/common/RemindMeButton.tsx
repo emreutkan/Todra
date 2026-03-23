@@ -158,7 +158,7 @@ const RemindMeButton: React.FC<RemindMeButtonProps> = ({
     right: { flexDirection: "row", alignItems: "center", gap: 8 },
     modalOverlay: {
       flex: 1,
-      backgroundColor: "rgba(0,0,0,0.5)",
+      backgroundColor: colors.overlayScrim,
       justifyContent: "flex-end",
     },
     sheet: {

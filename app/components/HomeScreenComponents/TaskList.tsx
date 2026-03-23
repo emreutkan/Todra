@@ -150,6 +150,16 @@ const TaskList: React.FC<TaskListProps> = ({
               borderBottomColor: colors.border,
             },
           ]}
+          accessibilityRole="button"
+          accessibilityState={{ expanded: isExpanded }}
+          accessibilityLabel={`${section.title}, ${section.count} task${
+            section.count === 1 ? "" : "s"
+          }, ${isExpanded ? "expanded" : "collapsed"}`}
+          accessibilityHint={
+            isExpanded
+              ? "Double tap to collapse this section"
+              : "Double tap to expand this section"
+          }
           onPress={() =>
             setExpandedSections((prev) => ({
               ...prev,
@@ -225,7 +235,9 @@ const TaskList: React.FC<TaskListProps> = ({
               {completed}
             </Text>
           </View>
-          <View style={styles.statDivider} />
+          <View
+            style={[styles.statDivider, { backgroundColor: colors.hairline }]}
+          />
           <View style={styles.statItem}>
             <Text
               style={[
@@ -244,7 +256,9 @@ const TaskList: React.FC<TaskListProps> = ({
               {remaining}
             </Text>
           </View>
-          <View style={styles.statDivider} />
+          <View
+            style={[styles.statDivider, { backgroundColor: colors.hairline }]}
+          />
           <View style={styles.statItem}>
             <Text
               style={[
@@ -317,7 +331,6 @@ const TaskList: React.FC<TaskListProps> = ({
             arePrereqsMet={prereqsMet}
             priority={section.priority}
             mode="home"
-            showSwipeActions={false}
             showAnimations={true}
           />
         );
@@ -357,8 +370,7 @@ const styles = StyleSheet.create({
   },
   statDivider: {
     width: 1,
-    opacity: 0.2,
-    backgroundColor: "rgba(0,0,0,0.2)",
+    alignSelf: "stretch",
   },
 
   sectionHeader: {

@@ -78,7 +78,7 @@ const PrioritySelector: React.FC<PrioritySelectorProps> = ({
       opacity: disabled ? 0.6 : 1,
       ...Platform.select({
         ios: {
-          shadowColor: "rgba(0,0,0,0.08)",
+          shadowColor: colors.shadowColor,
           shadowOffset: { width: 0, height: 2 },
           shadowOpacity: 1,
           shadowRadius: 8,
@@ -107,7 +107,7 @@ const PrioritySelector: React.FC<PrioritySelectorProps> = ({
       marginBottom: 8,
       ...Platform.select({
         ios: {
-          shadowColor: "rgba(0,0,0,0.1)",
+          shadowColor: colors.shadowColor,
           shadowOffset: { width: 0, height: 1 },
           shadowOpacity: 0.8,
           shadowRadius: 2,
@@ -149,12 +149,13 @@ const PrioritySelector: React.FC<PrioritySelectorProps> = ({
       borderRadius: 20,
       backgroundColor: PRIORITY_COLORS[selectedPriority],
       elevation: 2,
+      shadowColor: colors.shadowColor,
       shadowOffset: { width: 0, height: 2 },
       shadowOpacity: 0.2,
       shadowRadius: 4,
     },
     priorityText: {
-      color: "white",
+      color: colors.onPrimary,
       fontSize: SIZES.font,
       fontWeight: "700",
       letterSpacing: 0.5,

@@ -1,28 +1,38 @@
 import { useEffect, useRef } from "react";
 import { Animated } from "react-native";
+import { useReducedMotion } from "./useReducedMotion";
 
-export const useTaskDetailsAnimations = (task: any) => {
+export const useTaskDetailsAnimations = (task: unknown) => {
+  const reducedMotion = useReducedMotion();
   const statusOpacity = useRef(new Animated.Value(0)).current;
   const detailsOpacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    if (task) {
-      Animated.sequence([
-        Animated.timing(statusOpacity, {
-          toValue: 1,
-          duration: 400,
-          useNativeDriver: true,
-        }),
-        Animated.timing(detailsOpacity, {
-          toValue: 1,
-          duration: 400,
-          useNativeDriver: true,
-        }),
-      ]).start();
+    if (!task) return;
+    if (reducedMotion) {
+      statusOpacity.setValue(1);
+      detailsOpacity.setValue(1);
+      return;
     }
-  }, [task, statusOpacity, detailsOpacity]);
+    Animated.sequence([
+      Animated.timing(statusOpacity, {
+        toValue: 1,
+        duration: 400,
+        useNativeDriver: true,
+      }),
+      Animated.timing(detailsOpacity, {
+        toValue: 1,
+        duration: 400,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [task, reducedMotion, statusOpacity, detailsOpacity]);
 
   const animateStatusToggle = () => {
+    if (reducedMotion) {
+      statusOpacity.setValue(1);
+      return;
+    }
     Animated.sequence([
       Animated.timing(statusOpacity, {
         toValue: 0,
@@ -43,4 +53,3 @@ export const useTaskDetailsAnimations = (task: any) => {
     animateStatusToggle,
   };
 };
-

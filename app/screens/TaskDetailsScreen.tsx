@@ -19,6 +19,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useTheme } from "../context/ThemeContext";
 import { useAddTask } from "../hooks/useAddTask";
+import { useReducedMotion } from "../hooks/useReducedMotion";
 import {
   deleteTask,
   getActiveTasks,
@@ -54,6 +55,7 @@ const AnimatedActionButton = ({
   backgroundColor,
   borderColor,
   label,
+  reducedMotion,
 }: {
   onPress: () => void;
   iconName: keyof typeof Ionicons.glyphMap;
@@ -61,38 +63,33 @@ const AnimatedActionButton = ({
   backgroundColor: string;
   borderColor?: string;
   label: string;
+  reducedMotion: boolean;
 }) => {
-  const pressAnim = useRef(new Animated.Value(1)).current;
-  const sizeAnim = useRef(new Animated.Value(56)).current;
+  const { colors } = useTheme();
+  const pressScale = useRef(new Animated.Value(1)).current;
 
   const handlePressIn = () => {
-    Animated.parallel([
-      Animated.timing(pressAnim, {
-        toValue: 1.2,
-        duration: 200,
-        useNativeDriver: false,
-      }),
-      Animated.timing(sizeAnim, {
-        toValue: 67, // 56 * 1.2 = 67
-        duration: 200,
-        useNativeDriver: false,
-      }),
-    ]).start();
+    if (reducedMotion) {
+      pressScale.setValue(1.2);
+      return;
+    }
+    Animated.timing(pressScale, {
+      toValue: 1.2,
+      duration: 200,
+      useNativeDriver: true,
+    }).start();
   };
 
   const handlePressOut = () => {
-    Animated.parallel([
-      Animated.timing(pressAnim, {
-        toValue: 1,
-        duration: 200,
-        useNativeDriver: false,
-      }),
-      Animated.timing(sizeAnim, {
-        toValue: 56,
-        duration: 200,
-        useNativeDriver: false,
-      }),
-    ]).start();
+    if (reducedMotion) {
+      pressScale.setValue(1);
+      return;
+    }
+    Animated.timing(pressScale, {
+      toValue: 1,
+      duration: 200,
+      useNativeDriver: true,
+    }).start();
   };
 
   return (
@@ -103,12 +100,10 @@ const AnimatedActionButton = ({
           backgroundColor,
           borderColor,
           borderWidth: borderColor ? 1 : 0,
-          width: sizeAnim,
-          height: sizeAnim,
-          borderRadius: Animated.divide(sizeAnim, 2),
+          transform: [{ scale: pressScale }],
         },
         styles.shadow,
-        { transform: [{ scale: pressAnim }] },
+        { shadowColor: colors.shadowColor },
       ]}>
       <TouchableOpacity
         activeOpacity={1}
@@ -131,55 +126,40 @@ const AnimatedAddStyleButton = ({
   iconColor,
   backgroundColor,
   label,
+  reducedMotion,
 }: {
   onPress: () => void;
   iconName: keyof typeof Ionicons.glyphMap;
   iconColor: string;
   backgroundColor: string;
   label: string;
+  reducedMotion: boolean;
 }) => {
-  const pressAnim = useRef(new Animated.Value(1)).current;
-  const sizeAnim = useRef(new Animated.Value(70)).current; // Base width for AddButton
-  const heightAnim = useRef(new Animated.Value(56)).current; // Base height for AddButton
+  const { colors } = useTheme();
+  const pressScale = useRef(new Animated.Value(1)).current;
 
   const handlePressIn = () => {
-    Animated.parallel([
-      Animated.timing(pressAnim, {
-        toValue: 1.2,
-        duration: 200,
-        useNativeDriver: false,
-      }),
-      Animated.timing(sizeAnim, {
-        toValue: 84, // 70 * 1.2 = 84
-        duration: 200,
-        useNativeDriver: false,
-      }),
-      Animated.timing(heightAnim, {
-        toValue: 67, // 56 * 1.2 = 67
-        duration: 200,
-        useNativeDriver: false,
-      }),
-    ]).start();
+    if (reducedMotion) {
+      pressScale.setValue(1.2);
+      return;
+    }
+    Animated.timing(pressScale, {
+      toValue: 1.2,
+      duration: 200,
+      useNativeDriver: true,
+    }).start();
   };
 
   const handlePressOut = () => {
-    Animated.parallel([
-      Animated.timing(pressAnim, {
-        toValue: 1,
-        duration: 200,
-        useNativeDriver: false,
-      }),
-      Animated.timing(sizeAnim, {
-        toValue: 70,
-        duration: 200,
-        useNativeDriver: false,
-      }),
-      Animated.timing(heightAnim, {
-        toValue: 56,
-        duration: 200,
-        useNativeDriver: false,
-      }),
-    ]).start();
+    if (reducedMotion) {
+      pressScale.setValue(1);
+      return;
+    }
+    Animated.timing(pressScale, {
+      toValue: 1,
+      duration: 200,
+      useNativeDriver: true,
+    }).start();
   };
 
   return (
@@ -188,12 +168,12 @@ const AnimatedAddStyleButton = ({
         styles.addStyleFab,
         {
           backgroundColor,
-          width: sizeAnim,
-          height: heightAnim,
-          borderRadius: Animated.divide(heightAnim, 2),
+          transform: [{ scale: pressScale }],
         },
         styles.addStyleShadow,
-        { transform: [{ scale: pressAnim }] },
+        {
+          shadowColor: colors.shadowColor,
+        },
       ]}>
       <TouchableOpacity
         activeOpacity={1}
@@ -215,6 +195,7 @@ const TaskDetailsScreen = () => {
   const { taskId } = route.params;
   const { colors, isDark } = useTheme();
   const bottomInsets = useSafeAreaInsets();
+  const reducedMotion = useReducedMotion();
 
   const [task, setTask] = useState<Task | null>(null);
   const [relatedTasks, setRelatedTasks] = useState<Task[]>([]);
@@ -223,7 +204,7 @@ const TaskDetailsScreen = () => {
 
   // Animation values
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const [isAnimating, setIsAnimating] = useState(false);
+  const fadeInDoneForTaskId = useRef<string | null>(null);
 
   // Refs for scrolling to sections
   const scrollViewRef = useRef<ScrollView>(null);
@@ -264,21 +245,22 @@ const TaskDetailsScreen = () => {
     loadTask();
   }, [taskId]);
 
-  // Animate elements when task loads
+  // Animate elements when task loads (once per task id)
   useEffect(() => {
-    if (task && !isAnimating) {
-      setIsAnimating(true);
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 300,
-        useNativeDriver: true,
-      }).start(() => {
-        setTimeout(() => {
-          setIsAnimating(false);
-        }, 0);
-      });
+    if (!task) return;
+    if (fadeInDoneForTaskId.current === task.id) return;
+    fadeInDoneForTaskId.current = task.id;
+
+    if (reducedMotion) {
+      fadeAnim.setValue(1);
+      return;
     }
-  }, [task, fadeAnim, isAnimating]);
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
+  }, [task, fadeAnim, reducedMotion]);
 
   // Load task data into form when entering edit mode
   useEffect(() => {
@@ -390,20 +372,21 @@ const TaskDetailsScreen = () => {
       await updateTaskService(updatedTask);
       setTask(updatedTask);
 
-      // Provide visual feedback with a separate animation value
-      const feedbackAnim = new Animated.Value(1);
-      Animated.sequence([
-        Animated.timing(feedbackAnim, {
-          toValue: 0.7,
-          duration: 200,
-          useNativeDriver: true,
-        }),
-        Animated.timing(feedbackAnim, {
-          toValue: 1,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-      ]).start();
+      if (!reducedMotion) {
+        const feedbackAnim = new Animated.Value(1);
+        Animated.sequence([
+          Animated.timing(feedbackAnim, {
+            toValue: 0.7,
+            duration: 200,
+            useNativeDriver: true,
+          }),
+          Animated.timing(feedbackAnim, {
+            toValue: 1,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+        ]).start();
+      }
     } catch (error) {
       console.error("Error updating task:", error);
       Alert.alert("Error", "Failed to update task");
@@ -516,7 +499,9 @@ const TaskDetailsScreen = () => {
                   <Ionicons
                     name={prereqTask.completed ? "checkmark" : "time-outline"}
                     size={14}
-                    color={prereqTask.completed ? "white" : colors.warning}
+                    color={
+                      prereqTask.completed ? colors.onPrimary : colors.warning
+                    }
                   />
                 </View>
                 <View>
@@ -616,10 +601,18 @@ const TaskDetailsScreen = () => {
           {
             backgroundColor: colors.card,
             borderColor: colors.border,
+            shadowColor: colors.shadowColor,
           },
         ]}>
         {/* Status Row */}
-        <View style={styles.statusRow}>
+        <View
+          style={[
+            styles.statusRow,
+            {
+              backgroundColor: colors.surface,
+              borderColor: colors.hairline,
+            },
+          ]}>
           <View
             style={[
               styles.statusIndicator,
@@ -640,7 +633,7 @@ const TaskDetailsScreen = () => {
                   : "time"
               }
               size={16}
-              color="white"
+              color={colors.onPrimary}
             />
           </View>
           <Text
@@ -666,14 +659,17 @@ const TaskDetailsScreen = () => {
                 styles.archivedBadge,
                 { backgroundColor: colors.textSecondary },
               ]}>
-              <Ionicons name="archive" size={12} color="white" />
-              <Text style={styles.archivedText}>Archived</Text>
+              <Ionicons name="archive" size={12} color={colors.onPrimary} />
+              <Text style={[styles.archivedText, { color: colors.onPrimary }]}>
+                Archived
+              </Text>
             </View>
           )}
         </View>
 
         {/* Task Title */}
-        <View style={styles.staticField}>
+        <View
+          style={[styles.staticField, { borderBottomColor: colors.hairline }]}>
           <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>
             Title
           </Text>
@@ -684,7 +680,8 @@ const TaskDetailsScreen = () => {
 
         {/* Description */}
         {task.description && (
-          <View style={styles.staticField}>
+          <View
+            style={[styles.staticField, { borderBottomColor: colors.hairline }]}>
             <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>
               Description
             </Text>
@@ -695,7 +692,8 @@ const TaskDetailsScreen = () => {
         )}
 
         {/* Category */}
-        <View style={styles.staticField}>
+        <View
+          style={[styles.staticField, { borderBottomColor: colors.hairline }]}>
           <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>
             Category
           </Text>
@@ -707,7 +705,8 @@ const TaskDetailsScreen = () => {
         </View>
 
         {/* Priority */}
-        <View style={styles.staticField}>
+        <View
+          style={[styles.staticField, { borderBottomColor: colors.hairline }]}>
           <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>
             Priority
           </Text>
@@ -721,16 +720,18 @@ const TaskDetailsScreen = () => {
                     : task.priority === "low"
                     ? colors.success
                     : colors.warning,
+                shadowColor: colors.shadowColor,
               },
             ]}>
-            <Text style={styles.priorityText}>
+            <Text style={[styles.priorityText, { color: colors.onPrimary }]}>
               {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
             </Text>
           </View>
         </View>
 
         {/* Due Date */}
-        <View style={styles.staticField}>
+        <View
+          style={[styles.staticField, { borderBottomColor: colors.hairline }]}>
           <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>
             Due Date
           </Text>
@@ -741,7 +742,8 @@ const TaskDetailsScreen = () => {
 
         {/* Archived Date */}
         {task.archived && archivedDateTime && (
-          <View style={styles.staticField}>
+          <View
+            style={[styles.staticField, { borderBottomColor: colors.hairline }]}>
             <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>
               Archived
             </Text>
@@ -752,7 +754,8 @@ const TaskDetailsScreen = () => {
         )}
 
         {/* Reminder */}
-        <View style={styles.staticField}>
+        <View
+          style={[styles.staticField, { borderBottomColor: colors.hairline }]}>
           <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>
             Reminder
           </Text>
@@ -762,7 +765,8 @@ const TaskDetailsScreen = () => {
         </View>
 
         {/* Repetition */}
-        <View style={styles.staticField}>
+        <View
+          style={[styles.staticField, { borderBottomColor: colors.hairline }]}>
           <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>
             Repetition
           </Text>
@@ -773,7 +777,8 @@ const TaskDetailsScreen = () => {
 
         {/* Recurring Task Info */}
         {task.isRecurring && (
-          <View style={styles.staticField}>
+          <View
+            style={[styles.staticField, { borderBottomColor: colors.hairline }]}>
             <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>
               Recurring Task
             </Text>
@@ -938,20 +943,23 @@ const TaskDetailsScreen = () => {
                 backgroundColor={colors.card}
                 borderColor={colors.border}
                 label="Delete Task"
+                reducedMotion={reducedMotion}
               />
               <AnimatedAddStyleButton
                 onPress={handleToggleComplete}
                 iconName={task.completed ? "close-circle" : "checkmark-circle"}
-                iconColor="white"
+                iconColor={colors.onPrimary}
                 backgroundColor={colors.success}
                 label={task.completed ? "Mark Incomplete" : "Mark Complete"}
+                reducedMotion={reducedMotion}
               />
               <AnimatedActionButton
                 onPress={handleEdit}
                 iconName="create-outline"
-                iconColor="white"
+                iconColor={colors.onPrimary}
                 backgroundColor={colors.primary}
                 label="Edit Task"
+                reducedMotion={reducedMotion}
               />
             </BlurView>
           </View>
@@ -993,7 +1001,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginBottom: SIZES.small,
     borderWidth: 1,
-    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
@@ -1008,9 +1015,7 @@ const styles = StyleSheet.create({
     paddingVertical: SIZES.small,
     paddingHorizontal: SIZES.small,
     borderRadius: 8,
-    backgroundColor: "rgba(0,0,0,0.03)",
     borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.05)",
   },
   statusIndicator: {
     width: 28,
@@ -1031,7 +1036,6 @@ const styles = StyleSheet.create({
     marginBottom: SIZES.small,
     paddingVertical: SIZES.small / 2,
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(0,0,0,0.05)",
   },
   fieldLabel: {
     fontSize: SIZES.font - 2,
@@ -1059,7 +1063,6 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
   },
   priorityText: {
-    color: "white",
     fontSize: SIZES.font,
     fontWeight: "700",
     letterSpacing: 0.5,
@@ -1075,7 +1078,6 @@ const styles = StyleSheet.create({
     marginLeft: SIZES.small,
   },
   archivedText: {
-    color: "white",
     fontSize: 12,
     fontWeight: "600",
     marginLeft: 4,
@@ -1109,7 +1111,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "rgba(255, 255, 255, 0.05)",
     borderRadius: 8,
     borderWidth: 1,
     padding: SIZES.small,
@@ -1176,7 +1177,6 @@ const styles = StyleSheet.create({
   shadow: {
     ...Platform.select({
       ios: {
-        shadowColor: "#000",
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.1,
         shadowRadius: 6,

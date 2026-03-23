@@ -37,7 +37,6 @@ const AllTasksScreen: React.FC = () => {
         handleTaskPress(task);
       }}
       mode="all-tasks"
-      showSwipeActions={false}
       showAnimations={false}
     />
   );

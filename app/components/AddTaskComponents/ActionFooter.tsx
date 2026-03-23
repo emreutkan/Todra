@@ -36,9 +36,7 @@ const ActionFooter: React.FC<ActionFooterProps> = ({
           styles.cancelButton,
           {
             borderColor: colors.border,
-            backgroundColor: isDark
-              ? "rgba(255,255,255,0.05)"
-              : "rgba(0,0,0,0.03)",
+            backgroundColor: isDark ? colors.surface : colors.inputBackground,
           },
         ]}
         onPress={onCancel}
@@ -54,7 +52,10 @@ const ActionFooter: React.FC<ActionFooterProps> = ({
       <TouchableOpacity
         style={[
           styles.saveButton,
-          { backgroundColor: colors.primary },
+          {
+            backgroundColor: colors.primary,
+            shadowColor: colors.shadowColor,
+          },
           !saveEnabled && { opacity: 0.6 },
         ]}
         onPress={onSave}
@@ -98,7 +99,6 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 20,
     borderRadius: 16,
-    shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: 2,

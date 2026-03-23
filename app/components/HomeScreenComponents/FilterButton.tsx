@@ -16,36 +16,22 @@ const FilterButton: React.FC<FilterButtonProps> = ({
   showShadow = true,
 }) => {
   const { colors } = useTheme();
-  const pressAnim = useRef(new Animated.Value(1)).current;
-  const sizeAnim = useRef(new Animated.Value(56)).current; // Add this for actual size
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+
   const handlePressIn = () => {
-    Animated.parallel([
-      Animated.timing(pressAnim, {
-        toValue: 1.2,
-        duration: 200,
-        useNativeDriver: false,
-      }),
-      Animated.timing(sizeAnim, {
-        toValue: 67, // 56 * 1.2 = 67
-        duration: 200,
-        useNativeDriver: false, // Can't use native driver for layout properties
-      }),
-    ]).start();
+    Animated.timing(scaleAnim, {
+      toValue: 1.2,
+      duration: 200,
+      useNativeDriver: true,
+    }).start();
   };
 
   const handlePressOut = () => {
-    Animated.parallel([
-      Animated.timing(pressAnim, {
-        toValue: 1,
-        duration: 200,
-        useNativeDriver: false,
-      }),
-      Animated.timing(sizeAnim, {
-        toValue: 56,
-        duration: 200,
-        useNativeDriver: false,
-      }),
-    ]).start();
+    Animated.timing(scaleAnim, {
+      toValue: 1,
+      duration: 200,
+      useNativeDriver: true,
+    }).start();
   };
 
   return (
@@ -55,12 +41,9 @@ const FilterButton: React.FC<FilterButtonProps> = ({
         {
           backgroundColor: colors.card,
           borderColor: colors.border,
-          width: sizeAnim, // Use animated width
-          height: sizeAnim, // Use animated height
-          borderRadius: Animated.divide(sizeAnim, 2), // Keep it circular
         },
-        showShadow && [styles.shadow],
-        { transform: [{ scale: pressAnim }] },
+        showShadow && [styles.shadow, { shadowColor: colors.shadowColor }],
+        { transform: [{ scale: scaleAnim }] },
       ]}>
       <TouchableOpacity
         activeOpacity={1}
@@ -98,7 +81,6 @@ const styles = StyleSheet.create({
   shadow: {
     ...Platform.select({
       ios: {
-        shadowColor: "#000",
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.1,
         shadowRadius: 6,

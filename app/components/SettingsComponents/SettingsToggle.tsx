@@ -37,10 +37,10 @@ const SettingsToggle: React.FC<SettingsToggleProps> = ({
         trackColor={{ false: colors.border, true: colors.primary }}
         thumbColor={
           Platform.OS === "ios"
-            ? "#FFFFFF"
-            : value
             ? colors.card
-            : colors.textSecondary
+            : value
+              ? colors.card
+              : colors.textSecondary
         }
         ios_backgroundColor={colors.border}
       />

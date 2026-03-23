@@ -250,7 +250,7 @@ const RepetitionSelector: React.FC<RepetitionSelectorProps> = ({
     // Modal styles
     modalOverlay: {
       flex: 1,
-      backgroundColor: "rgba(0, 0, 0, 0.5)",
+      backgroundColor: colors.overlayScrim,
       justifyContent: "flex-end",
     },
     modalContainer: {
@@ -260,7 +260,7 @@ const RepetitionSelector: React.FC<RepetitionSelectorProps> = ({
       maxHeight: "80%",
       ...Platform.select({
         ios: {
-          shadowColor: "rgba(0,0,0,0.3)",
+          shadowColor: colors.shadowColor,
           shadowOffset: { width: 0, height: -2 },
           shadowOpacity: 1,
           shadowRadius: 10,

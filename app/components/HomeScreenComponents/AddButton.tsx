@@ -16,48 +16,22 @@ const AddButton: React.FC<AddButtonProps> = ({
   showShadow = true,
 }) => {
   const { colors } = useTheme();
-  const pressAnim = useRef(new Animated.Value(1)).current;
-  const sizeAnim = useRef(new Animated.Value(70)).current; // Base width for AddButton
-  const heightAnim = useRef(new Animated.Value(56)).current; // Base height for AddButton
+  const scaleAnim = useRef(new Animated.Value(1)).current;
 
   const handlePressIn = () => {
-    Animated.parallel([
-      Animated.timing(pressAnim, {
-        toValue: 1.2,
-        duration: 200,
-        useNativeDriver: false,
-      }),
-      Animated.timing(sizeAnim, {
-        toValue: 84, // 70 * 1.2 = 84
-        duration: 200,
-        useNativeDriver: false,
-      }),
-      Animated.timing(heightAnim, {
-        toValue: 67, // 56 * 1.2 = 67
-        duration: 200,
-        useNativeDriver: false,
-      }),
-    ]).start();
+    Animated.timing(scaleAnim, {
+      toValue: 1.2,
+      duration: 200,
+      useNativeDriver: true,
+    }).start();
   };
 
   const handlePressOut = () => {
-    Animated.parallel([
-      Animated.timing(pressAnim, {
-        toValue: 1,
-        duration: 200,
-        useNativeDriver: false,
-      }),
-      Animated.timing(sizeAnim, {
-        toValue: 70,
-        duration: 200,
-        useNativeDriver: false,
-      }),
-      Animated.timing(heightAnim, {
-        toValue: 56,
-        duration: 200,
-        useNativeDriver: false,
-      }),
-    ]).start();
+    Animated.timing(scaleAnim, {
+      toValue: 1,
+      duration: 200,
+      useNativeDriver: true,
+    }).start();
   };
 
   return (
@@ -66,12 +40,9 @@ const AddButton: React.FC<AddButtonProps> = ({
         styles.fab,
         {
           backgroundColor: colors.primary,
-          width: sizeAnim,
-          height: heightAnim,
-          borderRadius: Animated.divide(heightAnim, 2),
         },
         showShadow && [styles.shadow, { shadowColor: colors.primary }],
-        { transform: [{ scale: pressAnim }] },
+        { transform: [{ scale: scaleAnim }] },
       ]}>
       <TouchableOpacity
         activeOpacity={1}

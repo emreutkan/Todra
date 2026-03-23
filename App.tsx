@@ -18,6 +18,8 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { useFonts } from "expo-font";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect } from "react";
+import { ActivityIndicator, View } from "react-native";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import { applyGlobalTypography } from "./app/bootstrapTypography";
 import { SettingsProvider } from "./app/context/SettingsContext";
 import { ThemeProvider, useTheme } from "./app/context/ThemeContext";
@@ -34,6 +36,9 @@ import * as Notifications from "expo-notifications";
 import ArchivedTasksScreen from "./app/screens/ArchivedTasksScreen";
 import { notificationService } from "./app/services/notificationService";
 import { RootStackParamList } from "./app/types";
+
+const FONT_LOADING_BACKGROUND = "#F7F3EE";
+const FONT_LOADING_SPINNER = "#8B7355";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -57,7 +62,9 @@ function AppContent() {
       try {
         await notificationService.init();
         await notificationService.requestPermissions();
-      } catch {}
+      } catch (error) {
+        console.warn("Notification init failed", error);
+      }
     })();
   }, []);
 
@@ -124,16 +131,28 @@ export default function App() {
   }, [fontsLoaded]);
 
   if (!fontsLoaded) {
-    return null;
+    return (
+      <View
+        style={{
+          flex: 1,
+          justifyContent: "center",
+          alignItems: "center",
+          backgroundColor: FONT_LOADING_BACKGROUND,
+        }}>
+        <ActivityIndicator size="large" color={FONT_LOADING_SPINNER} />
+      </View>
+    );
   }
 
   return (
-    <SettingsProvider>
-      <ThemeProvider>
-        <ToastProvider>
-          <AppContent />
-        </ToastProvider>
-      </ThemeProvider>
-    </SettingsProvider>
+    <SafeAreaProvider>
+      <SettingsProvider>
+        <ThemeProvider>
+          <ToastProvider>
+            <AppContent />
+          </ToastProvider>
+        </ThemeProvider>
+      </SettingsProvider>
+    </SafeAreaProvider>
   );
 }

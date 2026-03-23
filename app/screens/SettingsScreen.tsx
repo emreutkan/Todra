@@ -58,7 +58,12 @@ const SettingsScreen: React.FC = () => {
           styles.header,
           { backgroundColor: colors.card, borderColor: colors.border },
         ]}>
-        <TouchableOpacity style={styles.backButton} onPress={handleBackPress}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={handleBackPress}
+          accessibilityRole="button"
+          accessibilityLabel="Back"
+          accessibilityHint="Navigate to the previous screen">
           <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text

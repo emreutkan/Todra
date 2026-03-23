@@ -21,6 +21,7 @@ import { useHomeDateRange } from "../hooks/useHomeDateRange";
 import { useHomeFilters } from "../hooks/useHomeFilters";
 import { useHomeStats } from "../hooks/useHomeStats";
 import { useHomeTasks } from "../hooks/useHomeTasks";
+import { useReducedMotion } from "../hooks/useReducedMotion";
 import { RootStackParamList } from "../types";
 
 type HomeScreenNavigationProp = NativeStackNavigationProp<
@@ -64,6 +65,7 @@ const HomeScreen: React.FC = () => {
 
   const { categories, loadCategories } = useHomeCategories();
   const [isFilterVisible, setIsFilterVisible] = useState(false);
+  const reducedMotion = useReducedMotion();
 
   // Animation values
   const taskOpacity = useState(new Animated.Value(0))[0];
@@ -73,12 +75,18 @@ const HomeScreen: React.FC = () => {
 
   // Start entrance animations when component mounts
   useEffect(() => {
-    Animated.timing(taskOpacity, {
+    if (reducedMotion) {
+      taskOpacity.setValue(1);
+      return;
+    }
+    const anim = Animated.timing(taskOpacity, {
       toValue: 1,
       duration: 500,
       useNativeDriver: true,
-    }).start();
-  }, []);
+    });
+    anim.start();
+    return () => anim.stop();
+  }, [reducedMotion, taskOpacity]);
 
   // Load categories when component mounts and when screen is focused
   useEffect(() => {
@@ -116,7 +124,13 @@ const HomeScreen: React.FC = () => {
       return () => {
         // Clean up any subscriptions if needed
       };
-    }, [route.params?.timestamp, loadTasks, showToast, navigation])
+    }, [
+      route.params?.timestamp,
+      route.params?.showSuccessMessage,
+      loadTasks,
+      showToast,
+      navigation,
+    ])
   );
 
   // Calculate stats when filtered tasks change

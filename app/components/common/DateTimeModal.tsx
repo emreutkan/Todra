@@ -65,7 +65,8 @@ const DateTimeModal: React.FC<DateTimeModalProps> = ({
       transparent
       animationType="fade"
       onRequestClose={handleCancel}>
-      <View style={styles.modalOverlay}>
+      <View
+        style={[styles.modalOverlay, { backgroundColor: colors.overlayScrim }]}>
         <View
           style={[
             styles.modalContainer,
@@ -138,7 +139,6 @@ const DateTimeModal: React.FC<DateTimeModalProps> = ({
 const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
     justifyContent: "center",
     alignItems: "center",
     padding: 16,

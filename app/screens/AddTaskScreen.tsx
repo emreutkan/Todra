@@ -28,9 +28,10 @@ import RemindMeButton from "../components/common/RemindMeButton";
 import GlassBar from "../components/common/GlassBar";
 import ScreenHeader from "../components/common/ScreenHeader";
 import { useAddTask } from "../hooks/useAddTask";
+import { useReducedMotion } from "../hooks/useReducedMotion";
 
 // Styles for the floating buttons
-const createButtonStyles = () =>
+const createButtonStyles = (shadowColor: string) =>
   StyleSheet.create({
     fab: {
       width: 56,
@@ -58,7 +59,7 @@ const createButtonStyles = () =>
     shadow: {
       ...Platform.select({
         ios: {
-          shadowColor: "#000",
+          shadowColor,
           shadowOffset: { width: 0, height: 4 },
           shadowOpacity: 0.1,
           shadowRadius: 6,
@@ -90,6 +91,7 @@ const AnimatedActionButton = ({
   backgroundColor,
   borderColor,
   label,
+  reducedMotion,
 }: {
   onPress: () => void;
   iconName: keyof typeof Ionicons.glyphMap;
@@ -97,39 +99,34 @@ const AnimatedActionButton = ({
   backgroundColor: string;
   borderColor?: string;
   label: string;
+  reducedMotion: boolean;
 }) => {
-  const pressAnim = useRef(new Animated.Value(1)).current;
-  const sizeAnim = useRef(new Animated.Value(56)).current;
-  const styles = createButtonStyles();
+  const { colors } = useTheme();
+  const pressScale = useRef(new Animated.Value(1)).current;
+  const styles = createButtonStyles(colors.shadowColor);
 
   const handlePressIn = () => {
-    Animated.parallel([
-      Animated.timing(pressAnim, {
-        toValue: 1.2,
-        duration: 200,
-        useNativeDriver: false,
-      }),
-      Animated.timing(sizeAnim, {
-        toValue: 67, // 56 * 1.2 = 67
-        duration: 200,
-        useNativeDriver: false,
-      }),
-    ]).start();
+    if (reducedMotion) {
+      pressScale.setValue(1.2);
+      return;
+    }
+    Animated.timing(pressScale, {
+      toValue: 1.2,
+      duration: 200,
+      useNativeDriver: true,
+    }).start();
   };
 
   const handlePressOut = () => {
-    Animated.parallel([
-      Animated.timing(pressAnim, {
-        toValue: 1,
-        duration: 200,
-        useNativeDriver: false,
-      }),
-      Animated.timing(sizeAnim, {
-        toValue: 56,
-        duration: 200,
-        useNativeDriver: false,
-      }),
-    ]).start();
+    if (reducedMotion) {
+      pressScale.setValue(1);
+      return;
+    }
+    Animated.timing(pressScale, {
+      toValue: 1,
+      duration: 200,
+      useNativeDriver: true,
+    }).start();
   };
 
   return (
@@ -140,12 +137,9 @@ const AnimatedActionButton = ({
           backgroundColor,
           borderColor,
           borderWidth: borderColor ? 1 : 0,
-          width: sizeAnim,
-          height: sizeAnim,
-          borderRadius: Animated.divide(sizeAnim, 2),
+          transform: [{ scale: pressScale }],
         },
         styles.shadow,
-        { transform: [{ scale: pressAnim }] },
       ]}>
       <TouchableOpacity
         activeOpacity={1}
@@ -169,6 +163,7 @@ const AnimatedLargeSaveButton = ({
   backgroundColor,
   label,
   enabled,
+  reducedMotion,
 }: {
   onPress: () => void;
   iconName: keyof typeof Ionicons.glyphMap;
@@ -176,52 +171,36 @@ const AnimatedLargeSaveButton = ({
   backgroundColor: string;
   label: string;
   enabled: boolean;
+  reducedMotion: boolean;
 }) => {
-  const pressAnim = useRef(new Animated.Value(1)).current;
-  const sizeAnim = useRef(new Animated.Value(126)).current; // 70 + 56 = 126 (AddButton + FilterButton width)
-  const heightAnim = useRef(new Animated.Value(56)).current;
-  const styles = createButtonStyles();
+  const { colors } = useTheme();
+  const pressScale = useRef(new Animated.Value(1)).current;
+  const styles = createButtonStyles(colors.shadowColor);
 
   const handlePressIn = () => {
     if (!enabled) return;
-    Animated.parallel([
-      Animated.timing(pressAnim, {
-        toValue: 1.2,
-        duration: 200,
-        useNativeDriver: false,
-      }),
-      Animated.timing(sizeAnim, {
-        toValue: 151, // 126 * 1.2 = 151
-        duration: 200,
-        useNativeDriver: false,
-      }),
-      Animated.timing(heightAnim, {
-        toValue: 67, // 56 * 1.2 = 67
-        duration: 200,
-        useNativeDriver: false,
-      }),
-    ]).start();
+    if (reducedMotion) {
+      pressScale.setValue(1.2);
+      return;
+    }
+    Animated.timing(pressScale, {
+      toValue: 1.2,
+      duration: 200,
+      useNativeDriver: true,
+    }).start();
   };
 
   const handlePressOut = () => {
     if (!enabled) return;
-    Animated.parallel([
-      Animated.timing(pressAnim, {
-        toValue: 1,
-        duration: 200,
-        useNativeDriver: false,
-      }),
-      Animated.timing(sizeAnim, {
-        toValue: 126,
-        duration: 200,
-        useNativeDriver: false,
-      }),
-      Animated.timing(heightAnim, {
-        toValue: 56,
-        duration: 200,
-        useNativeDriver: false,
-      }),
-    ]).start();
+    if (reducedMotion) {
+      pressScale.setValue(1);
+      return;
+    }
+    Animated.timing(pressScale, {
+      toValue: 1,
+      duration: 200,
+      useNativeDriver: true,
+    }).start();
   };
 
   return (
@@ -230,12 +209,9 @@ const AnimatedLargeSaveButton = ({
         styles.largeFab,
         {
           backgroundColor: enabled ? backgroundColor : backgroundColor + "40",
-          width: sizeAnim,
-          height: heightAnim,
-          borderRadius: Animated.divide(heightAnim, 2),
+          transform: [{ scale: pressScale }],
         },
         styles.largeShadow,
-        { transform: [{ scale: pressAnim }] },
       ]}>
       <TouchableOpacity
         activeOpacity={enabled ? 1 : 0.5}
@@ -258,6 +234,7 @@ const AnimatedLargeSaveButton = ({
 const AddTaskScreen: React.FC = () => {
   const { colors, isDark } = useTheme();
   const bottomInsets = useSafeAreaInsets();
+  const reducedMotion = useReducedMotion();
 
   // Animation values for sliding header
   const scrollY = useRef(new Animated.Value(0)).current;
@@ -426,6 +403,7 @@ const AddTaskScreen: React.FC = () => {
             backgroundColor={colors.card}
             borderColor={colors.border}
             label="Cancel"
+            reducedMotion={reducedMotion}
           />
           <AnimatedLargeSaveButton
             onPress={handleSave}
@@ -434,6 +412,7 @@ const AddTaskScreen: React.FC = () => {
             backgroundColor={colors.primary}
             label="Save Task"
             enabled={isFormValid}
+            reducedMotion={reducedMotion}
           />
         </GlassBar>
       </View>

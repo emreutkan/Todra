@@ -5,27 +5,22 @@ import {
   differenceInMinutes,
   format,
 } from "date-fns";
-import React, { useEffect, useMemo, useRef } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import * as Haptics from "expo-haptics";
 import {
+  AccessibilityInfo,
   Alert,
   Animated,
-  Dimensions,
   Easing,
-  PanResponder,
   StyleSheet,
   Text,
   TouchableOpacity,
-  Vibration,
   View,
 } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
 import { Task, TaskPriority } from "../../types";
 import { typography } from "../../typography";
 import { formatDate } from "../../utils/taskUtils";
-
-const { width } = Dimensions.get("window");
-const SWIPE_THRESHOLD = -100;
 
 interface TaskItemProps {
   item: Task;
@@ -36,35 +31,54 @@ interface TaskItemProps {
   isOverdue?: boolean;
   arePrereqsMet?: boolean;
   priority?: TaskPriority;
-  // Mode configuration
-  mode?: "home" | "all-tasks"; // Different modes for different screens
-  showSwipeActions?: boolean; // Whether to show swipe-to-delete
-  showAnimations?: boolean; // Whether to show entrance animations
+  /** Different layouts/labels for home vs all-tasks. */
+  mode?: "home" | "all-tasks";
+  /** Entrance opacity/scale animation (still skipped when reduce motion is on). */
+  showAnimations?: boolean;
 }
 
 const TaskItem: React.FC<TaskItemProps> = ({
   item,
   index = 0,
-  onDelete,
+  onDelete: _onDelete,
   onToggleComplete,
   onPress,
   isOverdue = false,
   arePrereqsMet = true,
   priority: _priority,
   mode = "home",
-  showSwipeActions = false,
   showAnimations = true,
 }) => {
   const { colors } = useTheme();
-  const translateX = useRef(new Animated.Value(0)).current;
+  const [reduceMotionEnabled, setReduceMotionEnabled] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    void AccessibilityInfo.isReduceMotionEnabled().then((enabled) => {
+      if (!cancelled) setReduceMotionEnabled(enabled);
+    });
+    const subscription = AccessibilityInfo.addEventListener(
+      "reduceMotionChanged",
+      (enabled: boolean) => {
+        setReduceMotionEnabled(enabled);
+      }
+    );
+    return () => {
+      cancelled = true;
+      subscription.remove();
+    };
+  }, []);
+
   const opacity = useRef(new Animated.Value(0)).current;
   const scale = useRef(new Animated.Value(0.95)).current;
   const pressAnim = useRef(new Animated.Value(1)).current;
-  const sizeAnim = useRef(new Animated.Value(28)).current;
 
-  // Animation for entrance
+  const shouldAnimateEntrance =
+    showAnimations && !reduceMotionEnabled;
+
+  // Entrance animation (skipped when showAnimations is false or reduce motion is on)
   useEffect(() => {
-    if (showAnimations) {
+    if (shouldAnimateEntrance) {
       Animated.parallel([
         Animated.timing(opacity, {
           toValue: 1,
@@ -84,46 +98,7 @@ const TaskItem: React.FC<TaskItemProps> = ({
       opacity.setValue(1);
       scale.setValue(1);
     }
-  }, [index, showAnimations, opacity, scale]);
-
-  // Pan responder for swipe gestures (only in home mode with swipe actions)
-  const panResponder = useMemo(
-    () =>
-      showSwipeActions && mode === "home"
-        ? PanResponder.create({
-            onMoveShouldSetPanResponder: (_, gestureState) => {
-              return Math.abs(gestureState.dx) > 10;
-            },
-            onPanResponderMove: (_, gestureState) => {
-              if (gestureState.dx < 0) {
-                translateX.setValue(gestureState.dx);
-              }
-            },
-            onPanResponderRelease: (_, gestureState) => {
-              if (gestureState.dx < SWIPE_THRESHOLD) {
-                // Swipe left to delete
-                Animated.timing(translateX, {
-                  toValue: -width,
-                  duration: 200,
-                  useNativeDriver: true,
-                }).start(() => {
-                  if (onDelete) {
-                    onDelete(item.id);
-                  }
-                });
-                Vibration.vibrate(50);
-              } else {
-                // Return to original position
-                Animated.spring(translateX, {
-                  toValue: 0,
-                  useNativeDriver: true,
-                }).start();
-              }
-            },
-          })
-        : null,
-    [showSwipeActions, mode, translateX, onDelete, item.id]
-  );
+  }, [index, shouldAnimateEntrance, opacity, scale]);
 
   // Format due date based on mode
   const formatDueDate = (dueDate: number) => {
@@ -182,6 +157,19 @@ const TaskItem: React.FC<TaskItemProps> = ({
   const taskIsOverdue =
     isOverdue || (!item.completed && item.dueDate < Date.now());
 
+  const mainAccessibilityLabel = useMemo(() => {
+    const completion = item.completed ? "Completed" : "Not completed";
+    const overdue = taskIsOverdue ? "Overdue. " : "";
+    const due = formatDueDate(item.dueDate);
+    return `${item.title}. ${completion}. ${overdue}${due}`;
+  }, [
+    item.title,
+    item.completed,
+    taskIsOverdue,
+    item.dueDate,
+    mode,
+  ]);
+
   // Handle task press
   const handlePress = () => {
     // Always allow navigation to task details - users should be able to see what prerequisites are needed
@@ -206,35 +194,28 @@ const TaskItem: React.FC<TaskItemProps> = ({
     }
   };
 
-  // Handle press animations for completion button
   const handlePressIn = () => {
-    Animated.parallel([
+    if (reduceMotionEnabled) {
+      pressAnim.setValue(1.2);
+    } else {
       Animated.timing(pressAnim, {
         toValue: 1.2,
         duration: 200,
-        useNativeDriver: false,
-      }),
-      Animated.timing(sizeAnim, {
-        toValue: 34, // 28 * 1.2 = 34
-        duration: 200,
-        useNativeDriver: false,
-      }),
-    ]).start();
+        useNativeDriver: true,
+      }).start();
+    }
   };
 
   const handlePressOut = () => {
-    Animated.parallel([
+    if (reduceMotionEnabled) {
+      pressAnim.setValue(1);
+    } else {
       Animated.timing(pressAnim, {
         toValue: 1,
         duration: 200,
-        useNativeDriver: false,
-      }),
-      Animated.timing(sizeAnim, {
-        toValue: 28,
-        duration: 200,
-        useNativeDriver: false,
-      }),
-    ]).start();
+        useNativeDriver: true,
+      }).start();
+    }
   };
 
   return (
@@ -244,16 +225,9 @@ const TaskItem: React.FC<TaskItemProps> = ({
           opacity,
           transform: [{ scale }],
         },
-      ]}
-      {...(panResponder?.panHandlers || {})}>
-      <Animated.View
-        style={[
-          styles.container,
-          {
-            transform: [{ translateX }],
-          },
-        ]}>
-        <TouchableOpacity
+      ]}>
+      <View style={styles.container}>
+        <View
           style={[
             styles.taskItem,
             {
@@ -265,52 +239,62 @@ const TaskItem: React.FC<TaskItemProps> = ({
               borderColor: colors.error,
               backgroundColor: colors.error + "08",
             },
-          ]}
-          onPress={handlePress}
-          activeOpacity={0.7}>
+          ]}>
           <View style={styles.taskContent}>
             <View style={styles.mainRow}>
-              <View style={styles.leftContent}>
-                {mode === "home" && onToggleComplete && (
-                  <Animated.View
-                    style={[
-                      styles.completeButton,
-                      {
-                        backgroundColor: item.completed
-                          ? colors.success
-                          : !arePrereqsMet && !item.completed
-                          ? colors.disabled
-                          : colors.surface,
-                        borderColor: item.completed
-                          ? colors.success
-                          : !arePrereqsMet && !item.completed
-                          ? colors.disabled
-                          : colors.border,
-                        width: sizeAnim,
-                        height: sizeAnim,
-                        borderRadius: Animated.divide(sizeAnim, 2),
-                        transform: [{ scale: pressAnim }],
-                        opacity: !arePrereqsMet && !item.completed ? 0.5 : 1,
-                      },
-                    ]}>
-                    {item.completed && (
-                      <Ionicons
-                        name="checkmark"
-                        size={16}
-                        color="white"
-                        style={styles.checkmarkIcon}
-                      />
-                    )}
-                    <TouchableOpacity
-                      activeOpacity={1}
-                      onPress={handleToggleComplete}
-                      onPressIn={handlePressIn}
-                      onPressOut={handlePressOut}
-                      style={styles.completeButtonTouchable}
+              {mode === "home" && onToggleComplete && (
+                <Animated.View
+                  style={[
+                    styles.completeButton,
+                    styles.completeButtonAlign,
+                    {
+                      backgroundColor: item.completed
+                        ? colors.success
+                        : !arePrereqsMet && !item.completed
+                        ? colors.disabled
+                        : colors.surface,
+                      borderColor: item.completed
+                        ? colors.success
+                        : !arePrereqsMet && !item.completed
+                        ? colors.disabled
+                        : colors.border,
+                      transform: [{ scale: pressAnim }],
+                      opacity: !arePrereqsMet && !item.completed ? 0.5 : 1,
+                    },
+                  ]}>
+                  {item.completed && (
+                    <Ionicons
+                      name="checkmark"
+                      size={16}
+                      color={colors.onPrimary}
+                      style={styles.checkmarkIcon}
                     />
-                  </Animated.View>
-                )}
+                  )}
+                  <TouchableOpacity
+                    activeOpacity={1}
+                    onPress={handleToggleComplete}
+                    onPressIn={handlePressIn}
+                    onPressOut={handlePressOut}
+                    style={styles.completeButtonTouchable}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    accessibilityRole="checkbox"
+                    accessibilityLabel={
+                      item.completed ? "Mark incomplete" : "Mark complete"
+                    }
+                    accessibilityState={{
+                      checked: item.completed,
+                      disabled: !arePrereqsMet && !item.completed,
+                    }}
+                  />
+                </Animated.View>
+              )}
 
+              <TouchableOpacity
+                style={styles.mainTaskPressable}
+                onPress={handlePress}
+                activeOpacity={0.7}
+                accessibilityRole="button"
+                accessibilityLabel={mainAccessibilityLabel}>
                 <View style={styles.taskInfo}>
                   <View style={styles.titleRow}>
                     <Text
@@ -372,34 +356,34 @@ const TaskItem: React.FC<TaskItemProps> = ({
                     {formatDueDate(item.dueDate)}
                   </Text>
                 </View>
-              </View>
 
-              <View style={styles.rightContent}>
-                {mode === "all-tasks" && (
-                  <View style={styles.statusContainer}>
-                    <Ionicons
-                      name={
-                        item.completed ? "checkmark-circle" : "time-outline"
-                      }
-                      size={16}
-                      color={item.completed ? colors.success : colors.warning}
-                      style={styles.statusIcon}
-                    />
-                    <Text
-                      style={[
-                        typography.captionMedium,
-                        styles.statusText,
-                        { color: colors.textSecondary },
-                      ]}>
-                      {item.completed ? "Completed" : "Pending"}
-                    </Text>
-                  </View>
-                )}
-              </View>
+                <View style={styles.rightContent}>
+                  {mode === "all-tasks" && (
+                    <View style={styles.statusContainer}>
+                      <Ionicons
+                        name={
+                          item.completed ? "checkmark-circle" : "time-outline"
+                        }
+                        size={16}
+                        color={item.completed ? colors.success : colors.warning}
+                        style={styles.statusIcon}
+                      />
+                      <Text
+                        style={[
+                          typography.captionMedium,
+                          styles.statusText,
+                          { color: colors.textSecondary },
+                        ]}>
+                        {item.completed ? "Completed" : "Pending"}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+              </TouchableOpacity>
             </View>
           </View>
-        </TouchableOpacity>
-      </Animated.View>
+        </View>
+      </View>
     </Animated.View>
   );
 };
@@ -421,10 +405,11 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "flex-start",
   },
-  leftContent: {
+  mainTaskPressable: {
     flex: 1,
     flexDirection: "row",
-    alignItems: "center",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
     marginRight: 12,
   },
   rightContent: {
@@ -466,6 +451,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     alignItems: "center",
     justifyContent: "center",
+  },
+  completeButtonAlign: {
+    alignSelf: "center",
   },
   completeButtonTouchable: {
     width: "100%",

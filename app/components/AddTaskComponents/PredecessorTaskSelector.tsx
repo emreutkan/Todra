@@ -88,7 +88,7 @@ const PredecessorTaskSelector: React.FC<PredecessorTaskSelectorProps> = ({
     },
     modalOverlay: {
       flex: 1,
-      backgroundColor: "rgba(0, 0, 0, 0.5)",
+      backgroundColor: colors.overlayScrim,
       justifyContent: "center",
       alignItems: "center",
       padding: 16,

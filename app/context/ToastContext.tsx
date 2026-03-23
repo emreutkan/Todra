@@ -108,7 +108,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({
                 borderColor: colors.border,
                 ...Platform.select({
                   ios: {
-                    shadowColor: "#000",
+                    shadowColor: colors.shadowColor,
                     shadowOffset: { width: 0, height: 8 },
                     shadowOpacity: 0.12,
                     shadowRadius: 20,

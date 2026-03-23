@@ -23,6 +23,16 @@ export type ThemeColors = {
   glassOverlay: string;
   /** Subtle wash on primary controls */
   primaryMuted: string;
+  /** Modal / sheet backdrop */
+  overlayScrim: string;
+  /** Neutral elevation shadow (iOS shadowColor; pair with shadowOpacity as needed) */
+  shadowColor: string;
+  /** Thin dividers and subtle separators */
+  hairline: string;
+  /** Settings / list row background for destructive actions */
+  destructiveSurface: string;
+  /** Icon and label color for destructive rows (readable on surface and normal bg) */
+  destructiveText: string;
 };
 
 export const lightWarmTheme: ThemeColors = {
@@ -46,6 +56,11 @@ export const lightWarmTheme: ThemeColors = {
   onPrimary: "#FFFCF9",
   glassOverlay: "rgba(255, 252, 249, 0.82)",
   primaryMuted: "rgba(139, 115, 85, 0.14)",
+  overlayScrim: "rgba(0, 0, 0, 0.5)",
+  shadowColor: "rgba(61, 56, 53, 0.22)",
+  hairline: "rgba(0, 0, 0, 0.12)",
+  destructiveSurface: "#ffebeb",
+  destructiveText: "#d63031",
 };
 
 export const darkPremiumTheme: ThemeColors = {
@@ -69,6 +84,11 @@ export const darkPremiumTheme: ThemeColors = {
   onPrimary: "#1A1816",
   glassOverlay: "rgba(26, 24, 22, 0.78)",
   primaryMuted: "rgba(212, 196, 176, 0.12)",
+  overlayScrim: "rgba(0, 0, 0, 0.42)",
+  shadowColor: "rgba(0, 0, 0, 0.35)",
+  hairline: "rgba(242, 237, 232, 0.12)",
+  destructiveSurface: "#421b1b",
+  destructiveText: "#ff6b6b",
 };
 
 export const darkOledTheme: ThemeColors = {
@@ -92,6 +112,11 @@ export const darkOledTheme: ThemeColors = {
   onPrimary: "#000000",
   glassOverlay: "rgba(0, 0, 0, 0.76)",
   primaryMuted: "rgba(212, 196, 176, 0.1)",
+  overlayScrim: "rgba(0, 0, 0, 0.58)",
+  shadowColor: "rgba(0, 0, 0, 0.5)",
+  hairline: "rgba(236, 234, 232, 0.14)",
+  destructiveSurface: "#421b1b",
+  destructiveText: "#ff6b6b",
 };
 
 export const PRIORITY_COLORS = {

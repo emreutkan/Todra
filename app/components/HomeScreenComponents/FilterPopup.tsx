@@ -10,6 +10,7 @@ import {
   View,
 } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
+import { useReducedMotion } from "../../hooks/useReducedMotion";
 import { SIZES } from "../../theme";
 import { typography } from "../../typography";
 import { TaskPriority } from "../../types";
@@ -36,9 +37,14 @@ const FilterPopup: React.FC<FilterPopupProps> = ({
   onClear,
 }) => {
   const { colors, isDark } = useTheme();
+  const reducedMotion = useReducedMotion();
   const scaleAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
+    if (reducedMotion) {
+      scaleAnim.setValue(visible ? 1 : 0);
+      return;
+    }
     if (visible) {
       Animated.timing(scaleAnim, {
         toValue: 1,
@@ -52,14 +58,18 @@ const FilterPopup: React.FC<FilterPopupProps> = ({
         useNativeDriver: true,
       }).start();
     }
-  }, [visible]);
+  }, [visible, reducedMotion, scaleAnim]);
 
   if (!visible) return null;
 
   const bottomOffset = (Platform.OS === "ios" ? 34 : 20) + 56 + 12;
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
-      <Pressable style={styles.backdrop} onPress={onClose}>
+      <Pressable
+        style={styles.backdrop}
+        onPress={onClose}
+        accessibilityRole="button"
+        accessibilityLabel="Dismiss filters">
         <BlurView
           intensity={isDark ? 36 : 44}
           tint={isDark ? "dark" : "light"}
@@ -241,7 +251,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     marginRight: SIZES.small,
     minWidth: 62,
+    minHeight: 44,
     alignItems: "center",
+    justifyContent: "center",
   },
   chipText: {
     fontSize: SIZES.small,
@@ -258,11 +270,15 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
     marginRight: SIZES.small,
+    minHeight: 44,
+    justifyContent: "center",
   },
   footerButtonPrimary: {
     paddingHorizontal: SIZES.medium,
     paddingVertical: SIZES.small,
     borderRadius: 8,
+    minHeight: 44,
+    justifyContent: "center",
   },
   footerButtonText: {
     fontSize: SIZES.small,
