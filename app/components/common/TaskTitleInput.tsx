@@ -101,6 +101,7 @@ const TaskTitleInput: React.FC<TaskTitleInputProps> = ({
       onSubmitEditing={onSubmitEditing}
       multiline={multiline}
       editable={editable}
+      accessibilityLabel="Task title"
     />
   );
 };

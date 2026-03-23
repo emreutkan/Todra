@@ -46,6 +46,7 @@ export const useAddTask = () => {
   const [dueDate, setDueDate] = useState<Date>(defaultDate);
   const [category, setCategory] = useState<string>(DEFAULT_CATEGORIES[0].id);
   const [isFormValid, setIsFormValid] = useState(false);
+  const [saveAttempted, setSaveAttempted] = useState(false);
   const [loading, setLoading] = useState(false);
 
   // Predecessor functionality
@@ -98,13 +99,19 @@ export const useAddTask = () => {
             setPredecessorIds(existingTask.predecessorIds || []);
             setRemindMe(existingTask.remindMe);
           } else {
-            Alert.alert("Error", "Task not found");
+            Alert.alert(
+              "Task unavailable",
+              "We couldn't find this task. It may have been deleted."
+            );
             navigation.goBack();
           }
         }
       } catch (error) {
         console.error("Error loading data:", error);
-        Alert.alert("Error", "Failed to load task data");
+        Alert.alert(
+          "Couldn't load data",
+          "Check your connection and try opening this screen again."
+        );
       }
     };
     loadData();
@@ -112,7 +119,11 @@ export const useAddTask = () => {
 
   // Check form validity whenever title changes
   useEffect(() => {
-    setIsFormValid(title.trim().length > 0);
+    const valid = title.trim().length > 0;
+    setIsFormValid(valid);
+    if (valid) {
+      setSaveAttempted(false);
+    }
   }, [title]);
 
   // Simple circular dependency check
@@ -133,7 +144,7 @@ export const useAddTask = () => {
 
   const handleSave = useCallback(async () => {
     if (!isFormValid) {
-      Alert.alert("Error", "Please enter a task title");
+      setSaveAttempted(true);
       return;
     }
 
@@ -146,8 +157,8 @@ export const useAddTask = () => {
       // Check for circular dependencies
       if (hasCircularDependency(predecessorIds, existingTasks)) {
         Alert.alert(
-          "Error",
-          "Cannot add these predecessors as they would create a circular dependency"
+          "Can't link these tasks",
+          "Tasks can't depend on each other in a loop. Remove a \"must complete first\" task or pick a different one."
         );
         return;
       }
@@ -174,11 +185,14 @@ export const useAddTask = () => {
           // Navigate back with success message
           navigation.navigate("Home", {
             showSuccessMessage: true,
-            message: "Task updated successfully",
+            message: "Changes saved",
             timestamp: Date.now(),
           });
         } else {
-          Alert.alert("Error", "Failed to update task");
+          Alert.alert(
+            "Couldn't save",
+            "Something went wrong while saving. Try again."
+          );
         }
       } else {
         // Create new task
@@ -204,18 +218,21 @@ export const useAddTask = () => {
           // Navigate back with success message
           navigation.navigate("Home", {
             showSuccessMessage: true,
-            message: "Task added successfully",
+            message: "Task saved",
             timestamp: Date.now(),
           });
         } else {
-          Alert.alert("Error", "Failed to save task");
+          Alert.alert(
+            "Couldn't save",
+            "Something went wrong while saving. Try again."
+          );
         }
       }
     } catch (error) {
       console.error("Error saving task:", error);
       Alert.alert(
-        "Error Saving Task",
-        "Failed to save task. Please try again."
+        "Couldn't save",
+        "Something went wrong. Check your connection and try again."
       );
     } finally {
       setLoading(false);
@@ -234,15 +251,16 @@ export const useAddTask = () => {
     isEditing,
     taskId,
     originalTask,
+    remindMe,
   ]);
 
   const handleCancel = useCallback(() => {
     if (title.trim() || description.trim() || predecessorIds.length > 0) {
       Alert.alert(
-        "Discard Changes?",
-        "You have unsaved changes. Are you sure you want to discard them?",
+        "Discard changes?",
+        "You'll lose anything you entered on this screen.",
         [
-          { text: "Cancel", style: "cancel" },
+          { text: "Keep editing", style: "cancel" },
           {
             text: "Discard",
             style: "destructive",
@@ -278,8 +296,8 @@ export const useAddTask = () => {
         // Check for circular dependencies
         if (hasCircularDependency(predecessorIds, existingTasks)) {
           Alert.alert(
-            "Error",
-            "Cannot add these predecessors as they would create a circular dependency"
+            "Can't link these tasks",
+            "Tasks can't depend on each other in a loop. Remove a \"must complete first\" task or pick a different one."
           );
           return false;
         }
@@ -313,7 +331,10 @@ export const useAddTask = () => {
         return success;
       } catch (error) {
         console.error("Error updating task:", error);
-        Alert.alert("Error", "Failed to update task");
+        Alert.alert(
+          "Couldn't save",
+          "Something went wrong while saving. Try again."
+        );
         return false;
       } finally {
         setLoading(false);
@@ -344,6 +365,7 @@ export const useAddTask = () => {
     category,
     setCategory,
     isFormValid,
+    saveAttempted,
     loading,
 
     // Predecessor state

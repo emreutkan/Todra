@@ -12,7 +12,9 @@ const DateTimePickerComponent: React.FC<DateTimePickerProps> = ({
   onDateChange,
 }) => {
   return (
-    <FormSection title="Due Date & Time">
+    <FormSection
+      title="Due date"
+      subtitle="Can't be in the past — adjust if plans change">
       <DateTimeButton
         value={dueDate}
         onDateChange={onDateChange}

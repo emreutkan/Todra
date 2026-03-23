@@ -11,6 +11,7 @@ import {
 import { useTheme } from "../../context/ThemeContext";
 import { SIZES } from "../../theme";
 import { Task } from "../../types";
+import { typography } from "../../typography";
 import FormSection from "./FormSection";
 
 interface PredecessorTaskSelectorProps {
@@ -49,12 +50,12 @@ const PredecessorTaskSelector: React.FC<PredecessorTaskSelectorProps> = ({
   const getSelectedTasksText = () => {
     const count = getSelectedCount();
     if (count === 0) {
-      return "No predecessor tasks selected";
-    } else if (count === 1) {
-      return "1 predecessor task selected";
-    } else {
-      return `${count} predecessor tasks selected`;
+      return "None selected — tap to choose";
     }
+    if (count === 1) {
+      return "1 task must be done first";
+    }
+    return `${count} tasks must be done first`;
   };
 
   const styles = StyleSheet.create({
@@ -63,7 +64,9 @@ const PredecessorTaskSelector: React.FC<PredecessorTaskSelectorProps> = ({
       borderWidth: 1,
       borderColor: colors.border,
       borderRadius: SIZES.base,
-      padding: SIZES.medium,
+      paddingVertical: SIZES.medium,
+      paddingHorizontal: SIZES.medium,
+      minHeight: 48,
       backgroundColor: colors.card,
       flexDirection: "row",
       justifyContent: "space-between",
@@ -112,8 +115,7 @@ const PredecessorTaskSelector: React.FC<PredecessorTaskSelectorProps> = ({
       alignItems: "center",
     },
     modalTitle: {
-      fontSize: 18,
-      fontWeight: "bold",
+      ...typography.headline,
       color: colors.text,
     },
     closeButton: {
@@ -137,7 +139,9 @@ const PredecessorTaskSelector: React.FC<PredecessorTaskSelectorProps> = ({
     taskItem: {
       flexDirection: "row",
       alignItems: "center",
-      padding: 12,
+      paddingVertical: 14,
+      paddingHorizontal: 12,
+      minHeight: 52,
       borderRadius: 8,
       backgroundColor: colors.card,
       marginBottom: 8,
@@ -201,13 +205,18 @@ const PredecessorTaskSelector: React.FC<PredecessorTaskSelectorProps> = ({
 
   return (
     <View style={styles.container}>
-      <FormSection title="Predecessors">
+      <FormSection
+        title="Must complete first"
+        subtitle="This task stays blocked until these are done">
         <TouchableOpacity
           style={styles.button}
           onPress={handleOpenModal}
-          activeOpacity={0.7}>
+          activeOpacity={0.7}
+          accessibilityRole="button"
+          accessibilityLabel="Choose prerequisite tasks"
+          accessibilityHint="Opens a list of tasks that must be finished before this one">
           <View style={styles.buttonText}>
-            <Text style={styles.title}>Select Tasks</Text>
+            <Text style={styles.title}>Choose tasks</Text>
             <Text style={styles.subtitle}>{getSelectedTasksText()}</Text>
           </View>
           <Text style={styles.arrow}>›</Text>
@@ -234,11 +243,14 @@ const PredecessorTaskSelector: React.FC<PredecessorTaskSelectorProps> = ({
                 { borderBottomColor: colors.border },
               ]}>
               <Text style={[styles.modalTitle, { color: colors.text }]}>
-                Select Predecessor Tasks
+                Tasks to finish first
               </Text>
               <TouchableOpacity
                 style={styles.closeButton}
-                onPress={handleCloseModal}>
+                onPress={handleCloseModal}
+                accessibilityLabel="Close"
+                accessibilityRole="button"
+                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
                 <Text style={[styles.closeButtonText, { color: colors.text }]}>
                   ✕
                 </Text>
@@ -248,8 +260,8 @@ const PredecessorTaskSelector: React.FC<PredecessorTaskSelectorProps> = ({
             <View style={styles.modalContent}>
               <Text
                 style={[styles.modalSubtitle, { color: colors.textSecondary }]}>
-                These tasks must be completed before this task can be marked as
-                complete
+                You can check off this task only after everything selected here
+                is complete.
               </Text>
 
               {nonOverdueTasks.length === 0 ? (
@@ -259,7 +271,8 @@ const PredecessorTaskSelector: React.FC<PredecessorTaskSelectorProps> = ({
                       styles.emptyStateText,
                       { color: colors.textSecondary },
                     ]}>
-                    No available tasks to select as predecessors
+                    No open tasks with a future due date. Try adding a task or
+                    changing this one's due date.
                   </Text>
                 </View>
               ) : (
@@ -276,7 +289,15 @@ const PredecessorTaskSelector: React.FC<PredecessorTaskSelectorProps> = ({
                         selectedPredecessors.includes(task.id) &&
                           styles.taskItemSelected,
                       ]}
-                      onPress={() => onSelectPredecessor(task.id)}>
+                      onPress={() => onSelectPredecessor(task.id)}
+                      accessibilityRole="checkbox"
+                      accessibilityState={{
+                        checked: selectedPredecessors.includes(task.id),
+                      }}
+                      accessibilityLabel={`${task.title}, due ${format(
+                        new Date(task.dueDate),
+                        "MMM d"
+                      )}`}>
                       <View style={styles.taskInfo}>
                         <Text
                           style={[styles.taskTitle, { color: colors.text }]}

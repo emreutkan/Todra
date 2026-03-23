@@ -6,16 +6,15 @@ import {
   Animated,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
   StyleSheet,
+  Text,
   TouchableOpacity,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { useTheme } from "../context/ThemeContext";
-import { SIZES } from "../theme";
-
-// Component imports
+import AddTaskMoreOptions from "../components/AddTaskComponents/AddTaskMoreOptions";
 import CategorySelector from "../components/AddTaskComponents/CategorySelector";
 import DateTimePicker from "../components/AddTaskComponents/DateTimePicker";
 import FormSection from "../components/AddTaskComponents/FormSection";
@@ -24,13 +23,18 @@ import PrioritySelector from "../components/AddTaskComponents/PrioritySelector";
 import RepetitionSelector from "../components/AddTaskComponents/RepetitionSelector";
 import TaskDescription from "../components/AddTaskComponents/TaskDescription";
 import TaskTitleInput from "../components/AddTaskComponents/TaskTitleInput";
-import RemindMeButton from "../components/common/RemindMeButton";
 import GlassBar from "../components/common/GlassBar";
+import RemindMeButton from "../components/common/RemindMeButton";
 import ScreenHeader from "../components/common/ScreenHeader";
+import { useTheme } from "../context/ThemeContext";
 import { useAddTask } from "../hooks/useAddTask";
 import { useReducedMotion } from "../hooks/useReducedMotion";
+import { SIZES } from "../theme";
+import { typography } from "../typography";
 
-// Styles for the floating buttons
+const PRESS_SCALE = 1.06;
+const PRESS_SCALE_REDUCED = 1.03;
+
 const createButtonStyles = (shadowColor: string) =>
   StyleSheet.create({
     fab: {
@@ -42,9 +46,10 @@ const createButtonStyles = (shadowColor: string) =>
       zIndex: 1000,
     },
     largeFab: {
-      width: 126,
+      minWidth: 140,
       height: 56,
       borderRadius: 28,
+      paddingHorizontal: 18,
       justifyContent: "center",
       alignItems: "center",
       zIndex: 1000,
@@ -56,6 +61,16 @@ const createButtonStyles = (shadowColor: string) =>
       alignItems: "center",
       borderRadius: 28,
     },
+    largeTouchable: {
+      width: "100%",
+      height: "100%",
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 8,
+      borderRadius: 28,
+      paddingHorizontal: 4,
+    },
     shadow: {
       ...Platform.select({
         ios: {
@@ -64,26 +79,22 @@ const createButtonStyles = (shadowColor: string) =>
           shadowOpacity: 0.1,
           shadowRadius: 6,
         },
-        android: {
-          // elevation: 6,
-        },
+        android: {},
       }),
     },
     largeShadow: {
       ...Platform.select({
         ios: {
+          shadowColor,
           shadowOffset: { width: 0, height: 4 },
           shadowOpacity: 0.3,
           shadowRadius: 8,
         },
-        android: {
-          // elevation: 20,
-        },
+        android: {},
       }),
     },
   });
 
-// Animated Button Component (matching HomeScreen style)
 const AnimatedActionButton = ({
   onPress,
   iconName,
@@ -104,14 +115,15 @@ const AnimatedActionButton = ({
   const { colors } = useTheme();
   const pressScale = useRef(new Animated.Value(1)).current;
   const styles = createButtonStyles(colors.shadowColor);
+  const toScale = reducedMotion ? PRESS_SCALE_REDUCED : PRESS_SCALE;
 
   const handlePressIn = () => {
     if (reducedMotion) {
-      pressScale.setValue(1.2);
+      pressScale.setValue(toScale);
       return;
     }
     Animated.timing(pressScale, {
-      toValue: 1.2,
+      toValue: PRESS_SCALE,
       duration: 200,
       useNativeDriver: true,
     }).start();
@@ -155,13 +167,13 @@ const AnimatedActionButton = ({
   );
 };
 
-// Special large button for save (size of + and filter combined)
 const AnimatedLargeSaveButton = ({
   onPress,
   iconName,
   iconColor,
   backgroundColor,
   label,
+  saveLabel,
   enabled,
   reducedMotion,
 }: {
@@ -170,28 +182,28 @@ const AnimatedLargeSaveButton = ({
   iconColor: string;
   backgroundColor: string;
   label: string;
+  saveLabel: string;
   enabled: boolean;
   reducedMotion: boolean;
 }) => {
   const { colors } = useTheme();
   const pressScale = useRef(new Animated.Value(1)).current;
   const styles = createButtonStyles(colors.shadowColor);
+  const toScale = reducedMotion ? PRESS_SCALE_REDUCED : PRESS_SCALE;
 
   const handlePressIn = () => {
-    if (!enabled) return;
     if (reducedMotion) {
-      pressScale.setValue(1.2);
+      pressScale.setValue(toScale);
       return;
     }
     Animated.timing(pressScale, {
-      toValue: 1.2,
+      toValue: PRESS_SCALE,
       duration: 200,
       useNativeDriver: true,
     }).start();
   };
 
   const handlePressOut = () => {
-    if (!enabled) return;
     if (reducedMotion) {
       pressScale.setValue(1);
       return;
@@ -214,18 +226,30 @@ const AnimatedLargeSaveButton = ({
         styles.largeShadow,
       ]}>
       <TouchableOpacity
-        activeOpacity={enabled ? 1 : 0.5}
-        onPress={enabled ? onPress : undefined}
+        activeOpacity={0.85}
+        onPress={onPress}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
         accessibilityLabel={label}
+        accessibilityHint={
+          enabled ? undefined : "Add a title above to enable saving."
+        }
         accessibilityRole="button"
-        style={styles.touchable}>
+        style={styles.largeTouchable}>
         <Ionicons
           name={iconName}
-          size={24}
+          size={22}
           color={enabled ? iconColor : iconColor + "80"}
         />
+        <Text
+          style={[
+            typography.bodySemiBold,
+            {
+              color: enabled ? iconColor : iconColor + "80",
+            },
+          ]}>
+          {saveLabel}
+        </Text>
       </TouchableOpacity>
     </Animated.View>
   );
@@ -236,22 +260,7 @@ const AddTaskScreen: React.FC = () => {
   const bottomInsets = useSafeAreaInsets();
   const reducedMotion = useReducedMotion();
 
-  // Animation values for sliding header
-  const scrollY = useRef(new Animated.Value(0)).current;
-  const headerHeight = 80; // Approximate header height
-  const headerTranslateY = scrollY.interpolate({
-    inputRange: [0, headerHeight],
-    outputRange: [0, -headerHeight],
-    extrapolate: "clamp",
-  });
-  const headerOpacity = scrollY.interpolate({
-    inputRange: [0, headerHeight * 0.5],
-    outputRange: [1, 0],
-    extrapolate: "clamp",
-  });
-
   const {
-    // Form state
     title,
     setTitle,
     description,
@@ -263,48 +272,32 @@ const AddTaskScreen: React.FC = () => {
     category,
     setCategory,
     isFormValid,
+    saveAttempted,
     loading,
-
-    // Predecessor state
     predecessorIds,
     availableTasks,
-
-    // Repetition state
     repetition,
     setRepetition,
-
-    // Reminder state
     remindMe,
     setRemindMe,
-
-    // Actions
     handleSave,
     handleCancel,
     handlePredecessorSelect,
-
-    // Meta
     isEditing,
   } = useAddTask();
+
+  const showTitleError = saveAttempted && !title.trim();
 
   const styles = StyleSheet.create({
     container: {
       flex: 1,
       backgroundColor: colors.background,
     },
-    headerContainer: {
-      position: "absolute",
-      top: 0,
-      left: 0,
-      right: 0,
-      zIndex: 1000,
-    },
-    content: {
+    body: {
       flex: 1,
     },
     scrollContent: {
       padding: SIZES.medium,
-      paddingTop: 120, // Add more top padding for better spacing after header slides up
-      paddingBottom: 100, // Add extra padding to prevent content from being hidden behind floating buttons
     },
     loadingContainer: {
       flex: 1,
@@ -316,8 +309,18 @@ const AddTaskScreen: React.FC = () => {
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
+      <View
+        style={styles.loadingContainer}
+        accessibilityLabel="Loading task"
+        accessibilityLiveRegion="polite">
         <ActivityIndicator size="large" color={colors.primary} />
+        <Text
+          style={[
+            typography.bodySmall,
+            { color: colors.textSecondary, marginTop: SIZES.medium },
+          ]}>
+          Loading…
+        </Text>
       </View>
     );
   }
@@ -328,68 +331,66 @@ const AddTaskScreen: React.FC = () => {
       style={styles.container}>
       <StatusBar style={isDark ? "light" : "dark"} />
 
-      <Animated.View
-        style={[
-          styles.headerContainer,
-          {
-            transform: [{ translateY: headerTranslateY }],
-            opacity: headerOpacity,
-          },
-        ]}>
-        <ScreenHeader
-          title={isEditing ? "Edit Task" : "Create New Task"}
-          showBackButton
-          onBackPress={handleCancel}
-        />
-      </Animated.View>
+      <ScreenHeader
+        title={isEditing ? "Edit task" : "New task"}
+        showBackButton
+        onBackPress={handleCancel}
+      />
 
-      <Animated.ScrollView
-        style={styles.content}
-        contentContainerStyle={styles.scrollContent}
+      <ScrollView
+        style={styles.body}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: bottomInsets.bottom + SIZES.extraLarge * 4 },
+        ]}
         keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-        scrollEventThrottle={16}
-        onScroll={Animated.event(
-          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-          { useNativeDriver: true }
-        )}>
-        <TaskTitleInput value={title} onChangeText={setTitle} />
-
-        <CategorySelector
-          selectedCategory={category}
-          onSelectCategory={setCategory}
+        showsVerticalScrollIndicator={false}>
+        <TaskTitleInput
+          value={title}
+          onChangeText={setTitle}
+          showTitleError={showTitleError}
         />
 
-        <PrioritySelector
-          selectedPriority={priority}
-          onSelectPriority={setPriority}
-        />
+        <TaskDescription value={description} onChangeText={setDescription} />
 
         <DateTimePicker dueDate={dueDate} onDateChange={setDueDate} />
 
-        <FormSection title="Set Reminder">
-          <RemindMeButton
-            value={remindMe}
-            onChange={setRemindMe}
-            maxOffsetMs={Math.max(dueDate.getTime() - Date.now(), 0)}
+        <AddTaskMoreOptions initiallyExpanded={isEditing}>
+          <CategorySelector
+            selectedCategory={category}
+            onSelectCategory={setCategory}
           />
-        </FormSection>
 
-        <RepetitionSelector
-          repetition={repetition}
-          onRepetitionChange={(newRepetition) => setRepetition(newRepetition)}
-        />
-
-        {!repetition.enabled && (
-          <PredecessorTaskSelector
-            availableTasks={availableTasks}
-            selectedPredecessors={predecessorIds}
-            onSelectPredecessor={handlePredecessorSelect}
+          <PrioritySelector
+            selectedPriority={priority}
+            onSelectPriority={setPriority}
           />
-        )}
 
-        <TaskDescription value={description} onChangeText={setDescription} />
-      </Animated.ScrollView>
+          <FormSection
+            title="Reminders"
+            optional
+            subtitle="Optional nudge before the due time">
+            <RemindMeButton
+              value={remindMe}
+              onChange={setRemindMe}
+              maxOffsetMs={Math.max(dueDate.getTime() - Date.now(), 0)}
+            />
+          </FormSection>
+
+          <RepetitionSelector
+            repetition={repetition}
+            onRepetitionChange={(newRepetition) => setRepetition(newRepetition)}
+          />
+
+          {!repetition.enabled && (
+            <PredecessorTaskSelector
+              availableTasks={availableTasks}
+              selectedPredecessors={predecessorIds}
+              onSelectPredecessor={handlePredecessorSelect}
+            />
+          )}
+        </AddTaskMoreOptions>
+      </ScrollView>
 
       <View style={{ position: "absolute", bottom: 0, left: 0, right: 0 }}>
         <GlassBar
@@ -402,7 +403,7 @@ const AddTaskScreen: React.FC = () => {
             iconColor={colors.error}
             backgroundColor={colors.card}
             borderColor={colors.border}
-            label="Cancel"
+            label="Close without saving"
             reducedMotion={reducedMotion}
           />
           <AnimatedLargeSaveButton
@@ -410,7 +411,8 @@ const AddTaskScreen: React.FC = () => {
             iconName="checkmark"
             iconColor={colors.onPrimary}
             backgroundColor={colors.primary}
-            label="Save Task"
+            label="Save"
+            saveLabel="Save"
             enabled={isFormValid}
             reducedMotion={reducedMotion}
           />

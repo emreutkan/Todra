@@ -128,19 +128,19 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
 
     if (options.length > 0) {
       Alert.alert(
-        "Category Options",
-        `What would you like to do with "${category.name}"?`,
-        [{ text: "Cancel", style: "cancel" }, ...options]
+        `"${category.name}"`,
+        "Choose an action for this category.",
+        [{ text: "Not now", style: "cancel" }, ...options]
       );
     }
   };
 
   if (loading) {
     return (
-      <FormSection title="Category">
+      <FormSection title="Category" subtitle="Choose a label for this task">
         <View style={styles.loadingContainer}>
           <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
-            Loading categories...
+            Loading categories…
           </Text>
         </View>
       </FormSection>
@@ -148,7 +148,7 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
   }
 
   return (
-    <FormSection title="Category">
+    <FormSection title="Category" subtitle="Tap a chip to select — long-press to edit">
       <FlatList
         horizontal
         data={categories}

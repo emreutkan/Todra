@@ -1,6 +1,9 @@
 import React from "react";
-import { View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
+import { useTheme } from "../../context/ThemeContext";
 import { ReminderSettings } from "../../types";
+import { SIZES } from "../../theme";
+import { typography } from "../../typography";
 import RemindMeButton from "../common/RemindMeButton";
 import TaskTitleInput from "../common/TaskTitleInput";
 import FormSection from "./FormSection";
@@ -8,6 +11,7 @@ import FormSection from "./FormSection";
 interface TaskTitleInputProps {
   value: string;
   onChangeText: (text: string) => void;
+  showTitleError?: boolean;
   remindMe?: ReminderSettings;
   onChangeRemindMe?: (r: ReminderSettings) => void;
 }
@@ -15,18 +19,30 @@ interface TaskTitleInputProps {
 const TaskTitleInputComponent: React.FC<TaskTitleInputProps> = ({
   value,
   onChangeText,
+  showTitleError = false,
   remindMe,
   onChangeRemindMe,
 }) => {
+  const { colors } = useTheme();
+
   return (
-    <FormSection title="Task Name">
+    <FormSection
+      title="Title"
+      subtitle={
+        showTitleError ? undefined : "Required — pick something you'll recognize"
+      }>
       <TaskTitleInput
         value={value}
         onChangeText={onChangeText}
-        placeholder="What do you need to do?"
+        placeholder="e.g. Call the dentist"
         autoFocus
         returnKeyType="next"
       />
+      {showTitleError ? (
+        <Text style={[styles.error, { color: colors.error }]}>
+          Add a title to save this task.
+        </Text>
+      ) : null}
       {onChangeRemindMe && (
         <View style={{ marginTop: 12 }}>
           <RemindMeButton value={remindMe} onChange={onChangeRemindMe} />
@@ -35,5 +51,12 @@ const TaskTitleInputComponent: React.FC<TaskTitleInputProps> = ({
     </FormSection>
   );
 };
+
+const styles = StyleSheet.create({
+  error: {
+    marginTop: SIZES.small,
+    ...typography.bodySmall,
+  },
+});
 
 export default TaskTitleInputComponent;

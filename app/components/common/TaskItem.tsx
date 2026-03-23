@@ -5,10 +5,9 @@ import {
   differenceInMinutes,
   format,
 } from "date-fns";
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef } from "react";
 import * as Haptics from "expo-haptics";
 import {
-  AccessibilityInfo,
   Alert,
   Animated,
   Easing,
@@ -17,6 +16,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useReducedMotion } from "../../hooks/useReducedMotion";
 import { useTheme } from "../../context/ThemeContext";
 import { Task, TaskPriority } from "../../types";
 import { typography } from "../../typography";
@@ -50,24 +50,7 @@ const TaskItem: React.FC<TaskItemProps> = ({
   showAnimations = true,
 }) => {
   const { colors } = useTheme();
-  const [reduceMotionEnabled, setReduceMotionEnabled] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-    void AccessibilityInfo.isReduceMotionEnabled().then((enabled) => {
-      if (!cancelled) setReduceMotionEnabled(enabled);
-    });
-    const subscription = AccessibilityInfo.addEventListener(
-      "reduceMotionChanged",
-      (enabled: boolean) => {
-        setReduceMotionEnabled(enabled);
-      }
-    );
-    return () => {
-      cancelled = true;
-      subscription.remove();
-    };
-  }, []);
+  const reduceMotionEnabled = useReducedMotion();
 
   const opacity = useRef(new Animated.Value(0)).current;
   const scale = useRef(new Animated.Value(0.95)).current;

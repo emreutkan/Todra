@@ -3,6 +3,8 @@ import { FONT } from "./typography";
 
 /**
  * Apply Nunito Sans as the default for unstyled Text / TextInput after fonts load.
+ * Uses RN core `defaultProps`; if React/RN deprecates this path, migrate to shared
+ * `Text`/`TextInput` wrappers and explicit `typography` styles.
  */
 export function applyGlobalTypography(): void {
   const body = { fontFamily: FONT.body };
