@@ -15,6 +15,7 @@ import { Category } from "../../constants/CategoryConstants";
 import { useTheme } from "../../context/ThemeContext";
 import { useCategories } from "../../hooks/useCategories";
 import { useCategoryModal } from "../../hooks/useCategoryModal";
+import { typography } from "../../typography";
 import FormSection from "./FormSection";
 
 interface CategorySelectorProps {
@@ -128,9 +129,9 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
 
     if (options.length > 0) {
       Alert.alert(
-        "Category Options",
-        `What would you like to do with "${category.name}"?`,
-        [{ text: "Cancel", style: "cancel" }, ...options]
+        `"${category.name}"`,
+        "Choose an action for this category.",
+        [{ text: "Not now", style: "cancel" }, ...options]
       );
     }
   };
@@ -140,7 +141,7 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
       <FormSection title="Category">
         <View style={styles.loadingContainer}>
           <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
-            Loading categories...
+            Loading categories…
           </Text>
         </View>
       </FormSection>
@@ -220,7 +221,8 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
         transparent
         animationType="fade"
         onRequestClose={closeModal}>
-        <View style={styles.modalOverlay}>
+        <View
+          style={[styles.modalOverlay, { backgroundColor: colors.overlayScrim }]}>
           <View
             style={[
               styles.modalContainer,
@@ -309,11 +311,21 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
                     style={[
                       styles.colorOption,
                       { backgroundColor: color },
-                      selectedColor === color && styles.selectedColorOption,
+                      selectedColor === color && [
+                        styles.selectedColorOption,
+                        {
+                          borderColor: colors.card,
+                          shadowColor: colors.shadowColor,
+                        },
+                      ],
                     ]}
                     onPress={() => setSelectedColor(color)}>
                     {selectedColor === color && (
-                      <Ionicons name="checkmark" size={16} color="#FFFFFF" />
+                      <Ionicons
+                        name="checkmark"
+                        size={16}
+                        color={colors.onPrimary}
+                      />
                     )}
                   </TouchableOpacity>
                 ))}
@@ -360,12 +372,16 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
               <TouchableOpacity
                 style={[
                   styles.actionButton,
-                  { backgroundColor: colors.primary },
+                  {
+                    backgroundColor: colors.primary,
+                    shadowColor: colors.shadowColor,
+                  },
                   !newCategoryName.trim() && { opacity: 0.6 },
                 ]}
                 onPress={isEditMode ? handleUpdateCategory : handleAddCategory}
                 disabled={!newCategoryName.trim()}>
-                <Text style={styles.actionButtonText}>
+                <Text
+                  style={[styles.actionButtonText, { color: colors.onPrimary }]}>
                   {isEditMode ? "Update Category" : "Add Category"}
                 </Text>
               </TouchableOpacity>
@@ -380,7 +396,8 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
         transparent
         animationType="fade"
         onRequestClose={closeDeleteConfirmation}>
-        <View style={styles.modalOverlay}>
+        <View
+          style={[styles.modalOverlay, { backgroundColor: colors.overlayScrim }]}>
           <View
             style={[
               styles.confirmContainer,
@@ -426,10 +443,15 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
                 style={[
                   styles.confirmButton,
                   styles.deleteButton,
-                  { backgroundColor: colors.error },
+                  {
+                    backgroundColor: colors.error,
+                    shadowColor: colors.shadowColor,
+                  },
                 ]}
                 onPress={handleDeleteCategory}>
-                <Text style={styles.deleteText}>Delete</Text>
+                <Text style={[styles.deleteText, { color: colors.onPrimary }]}>
+                  Delete
+                </Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -445,7 +467,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   loadingText: {
-    fontSize: 16,
+    ...typography.body,
   },
   categoryList: {
     paddingVertical: 8,
@@ -470,8 +492,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   categoryName: {
-    fontSize: 14,
-    fontWeight: "500",
+    ...typography.bodySmallMedium,
     textAlign: "center",
   },
   addCategoryButton: {
@@ -491,12 +512,10 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   addCategoryText: {
-    fontSize: 14,
-    fontWeight: "500",
+    ...typography.bodySmallMedium,
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
     justifyContent: "center",
     alignItems: "center",
     padding: 20,
@@ -517,8 +536,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   modalTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
+    ...typography.headlineBold,
   },
   closeButton: {
     padding: 4,
@@ -527,16 +545,15 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   inputLabel: {
-    fontSize: 16,
-    fontWeight: "600",
+    ...typography.bodySemiBold,
     marginBottom: 8,
   },
   input: {
+    ...typography.body,
     borderWidth: 1,
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 12,
-    fontSize: 16,
     marginBottom: 20,
   },
   iconList: {
@@ -568,8 +585,6 @@ const styles = StyleSheet.create({
   },
   selectedColorOption: {
     borderWidth: 2,
-    borderColor: "#FFFFFF",
-    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 3,
@@ -598,8 +613,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   previewName: {
-    fontSize: 14,
-    fontWeight: "500",
+    ...typography.bodySmallMedium,
     textAlign: "center",
   },
   actionButton: {
@@ -607,16 +621,13 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 3,
     elevation: 4,
   },
   actionButtonText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "600",
+    ...typography.button,
   },
   confirmContainer: {
     width: "90%",
@@ -630,17 +641,17 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   confirmTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
+    ...typography.titleMedium,
     marginTop: 8,
+    textAlign: "center",
   },
   confirmText: {
-    fontSize: 16,
+    ...typography.body,
     textAlign: "center",
     marginBottom: 12,
   },
   confirmSubtext: {
-    fontSize: 14,
+    ...typography.bodySmall,
     textAlign: "center",
     marginBottom: 24,
   },
@@ -659,20 +670,16 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   deleteButton: {
-    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 3,
     elevation: 4,
   },
   cancelText: {
-    fontWeight: "600",
-    fontSize: 16,
+    ...typography.button,
   },
   deleteText: {
-    color: "#FFFFFF",
-    fontWeight: "600",
-    fontSize: 16,
+    ...typography.button,
   },
 });
 

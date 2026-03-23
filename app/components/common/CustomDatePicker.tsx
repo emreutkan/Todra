@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { FlatList, StyleSheet, Text, View } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
+import { typography } from "../../typography";
 
 interface CustomDatePickerProps {
   value: Date;
@@ -328,12 +329,12 @@ const styles = StyleSheet.create({
     height: 250,
   },
   separatorText: {
+    ...typography.headlineBold,
     fontSize: 24,
-    fontWeight: "bold",
+    lineHeight: 28,
   },
   itemText: {
-    fontSize: 18,
-    fontWeight: "500",
+    ...typography.headline,
   },
 });
 

@@ -2,7 +2,9 @@ import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { StyleSheet, Text, TextInput, TouchableOpacity } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
+import { TASK_DESCRIPTION_MAX_LENGTH } from "../../constants/taskInputLimits";
 import { SIZES } from "../../theme";
+import { typography } from "../../typography";
 
 interface TaskDescriptionProps {
   value: string;
@@ -38,11 +40,11 @@ const TaskDescription: React.FC<TaskDescriptionProps> = ({
       ...style,
     },
     textArea: {
+      ...typography.body,
       backgroundColor: colors.card,
       borderRadius: SIZES.base,
       padding: SIZES.medium,
       color: colors.text,
-      fontSize: SIZES.font,
       minHeight: 120,
       borderWidth: 1,
       borderColor: colors.border,
@@ -60,11 +62,10 @@ const TaskDescription: React.FC<TaskDescriptionProps> = ({
       justifyContent: "space-between",
     },
     clickableText: {
+      ...typography.body,
       flex: 1,
       color: value ? colors.text : colors.textSecondary,
-      fontSize: SIZES.font,
       fontStyle: value ? "normal" : "italic",
-      lineHeight: 24,
     },
     editIcon: {
       marginLeft: SIZES.small,
@@ -105,6 +106,10 @@ const TaskDescription: React.FC<TaskDescriptionProps> = ({
       returnKeyType={returnKeyType}
       onSubmitEditing={onSubmitEditing}
       editable={editable}
+      maxLength={TASK_DESCRIPTION_MAX_LENGTH}
+      maxFontSizeMultiplier={1.45}
+      accessibilityLabel="Task notes"
+      accessibilityHint={`Optional. Up to ${TASK_DESCRIPTION_MAX_LENGTH} characters.`}
     />
   );
 };

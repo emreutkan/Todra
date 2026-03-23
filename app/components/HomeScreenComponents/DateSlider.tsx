@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
 import { SIZES } from "../../theme";
+import { typography } from "../../typography";
 import AnimatedTodayButton from "../common/AnimatedTodayButton";
 import DateTimeModal from "../common/DateTimeModal";
 
@@ -186,7 +187,7 @@ const DateSlider: React.FC<DateSliderProps> = ({
             <Text
               style={[
                 styles.monthBadgeText,
-                { color: _isSelected ? colors.background : colors.primary },
+                { color: _isSelected ? colors.onPrimary : colors.primary },
               ]}>
               {monthAbbr}
             </Text>
@@ -196,7 +197,9 @@ const DateSlider: React.FC<DateSliderProps> = ({
         <Text
           style={[
             styles.dayName,
-            { color: _isSelected ? colors.background : colors.text + "CC" },
+            {
+              color: _isSelected ? colors.onPrimary : colors.textSecondary,
+            },
           ]}>
           {date
             .toLocaleDateString(undefined, { weekday: "short" })
@@ -206,10 +209,13 @@ const DateSlider: React.FC<DateSliderProps> = ({
         <Text
           style={[
             styles.dateNumber,
-            { color: _isSelected ? colors.background : colors.text },
+            {
+              color: _isSelected ? colors.onPrimary : colors.text,
+            },
             _isToday &&
               !_isSelected && [styles.todayText, { color: colors.primary }],
-          ]}>
+          ]}
+          maxFontSizeMultiplier={1.35}>
           {date.getDate()}
         </Text>
       </TouchableOpacity>
@@ -224,6 +230,17 @@ const DateSlider: React.FC<DateSliderProps> = ({
           backgroundColor: colors.card,
           borderBottomColor: colors.border,
         },
+        Platform.select({
+          ios: {
+            shadowColor: colors.shadowColor,
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.1,
+            shadowRadius: 1,
+          },
+          android: {
+            elevation: 3,
+          },
+        }),
       ]}>
       <View style={styles.header}>
         <TouchableOpacity
@@ -234,7 +251,8 @@ const DateSlider: React.FC<DateSliderProps> = ({
           accessibilityRole="button"
           accessibilityLabel={`Select date for ${selectedMonth}`}
           accessibilityHint="Opens date picker to select a different month and year">
-          <Text style={[styles.monthText, { color: colors.text }]}>
+          <Text
+            style={[typography.titleMedium, { color: colors.primary }]}>
             {selectedMonth}
           </Text>
         </TouchableOpacity>
@@ -290,35 +308,20 @@ const DateSlider: React.FC<DateSliderProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    ...Platform.select({
-      ios: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 1,
-      },
-      android: {
-        elevation: 3,
-      },
-    }),
+    paddingVertical: SIZES.medium,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginHorizontal: 20,
-    marginBottom: 6,
+    alignItems: "center",
+    marginHorizontal: SIZES.medium,
+    marginBottom: SIZES.small,
   },
   monthDisplay: {
     flexDirection: "row",
     alignItems: "center",
   },
-  monthText: {
-    fontSize: SIZES.small + 1,
-    fontWeight: "600",
-  },
-
   dateItem: {
     height: 70,
     marginHorizontal: ITEM_SPACING / 2,
@@ -329,16 +332,14 @@ const styles = StyleSheet.create({
   },
 
   dayName: {
-    fontSize: 16,
+    ...typography.bodyMedium,
     marginBottom: 12,
-    fontWeight: "500",
   },
   dateNumber: {
-    fontSize: 18,
-    fontWeight: "600",
+    ...typography.headline,
   },
   todayText: {
-    fontWeight: "700",
+    ...typography.headlineBold,
   },
 
   monthBadge: {
@@ -351,8 +352,7 @@ const styles = StyleSheet.create({
     borderTopRightRadius: SIZES.base,
   },
   monthBadgeText: {
-    fontSize: 9,
-    fontWeight: "600",
+    ...typography.overline,
   },
 });
 

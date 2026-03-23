@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
 import React, { useRef } from "react";
 import { Animated, Platform, StyleSheet, TouchableOpacity } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
@@ -15,37 +16,22 @@ const SettingsButton: React.FC<SettingsButtonProps> = ({
   showShadow = true,
 }) => {
   const { colors } = useTheme();
-  const pressAnim = useRef(new Animated.Value(1)).current;
-  const sizeAnim = useRef(new Animated.Value(56)).current; // Base size for SettingsButton
+  const scaleAnim = useRef(new Animated.Value(1)).current;
 
   const handlePressIn = () => {
-    Animated.parallel([
-      Animated.timing(pressAnim, {
-        toValue: 1.2,
-        duration: 200,
-        useNativeDriver: false,
-      }),
-      Animated.timing(sizeAnim, {
-        toValue: 67, // 56 * 1.2 = 67
-        duration: 200,
-        useNativeDriver: false,
-      }),
-    ]).start();
+    Animated.timing(scaleAnim, {
+      toValue: 1.2,
+      duration: 200,
+      useNativeDriver: true,
+    }).start();
   };
 
   const handlePressOut = () => {
-    Animated.parallel([
-      Animated.timing(pressAnim, {
-        toValue: 1,
-        duration: 200,
-        useNativeDriver: false,
-      }),
-      Animated.timing(sizeAnim, {
-        toValue: 56,
-        duration: 200,
-        useNativeDriver: false,
-      }),
-    ]).start();
+    Animated.timing(scaleAnim, {
+      toValue: 1,
+      duration: 200,
+      useNativeDriver: true,
+    }).start();
   };
 
   return (
@@ -54,16 +40,16 @@ const SettingsButton: React.FC<SettingsButtonProps> = ({
         styles.fab,
         {
           backgroundColor: colors.surface,
-          width: sizeAnim,
-          height: sizeAnim,
-          borderRadius: Animated.divide(sizeAnim, 2),
         },
         showShadow && [styles.shadow, { shadowColor: colors.primary }],
-        { transform: [{ scale: pressAnim }] },
+        { transform: [{ scale: scaleAnim }] },
       ]}>
       <TouchableOpacity
         activeOpacity={1}
-        onPress={onPress}
+        onPress={() => {
+          void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          onPress();
+        }}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
         accessibilityLabel={label}

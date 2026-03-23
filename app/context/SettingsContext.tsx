@@ -16,10 +16,11 @@ type Settings = {
   autoArchiveEnabled: boolean;
   showCompletedTasks: boolean;
   darkModeEnabled: boolean;
+  /** When dark mode is on: use OLED true-black palette */
+  darkUseOledBlack: boolean;
   lastBackupDate: string | null;
 };
 
-// Default settings
 const defaultSettings: Settings = {
   notificationsEnabled: true,
   soundEnabled: true,
@@ -27,6 +28,7 @@ const defaultSettings: Settings = {
   autoArchiveEnabled: false,
   showCompletedTasks: false,
   darkModeEnabled: false,
+  darkUseOledBlack: false,
   lastBackupDate: null,
 };
 
@@ -61,7 +63,10 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({
       try {
         const savedSettings = await AsyncStorage.getItem(STORAGE_KEYS.SETTINGS);
         if (savedSettings) {
-          setSettings(JSON.parse(savedSettings));
+          setSettings({
+            ...defaultSettings,
+            ...JSON.parse(savedSettings),
+          });
         }
         setIsLoaded(true);
       } catch (error) {

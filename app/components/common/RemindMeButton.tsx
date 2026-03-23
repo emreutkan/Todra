@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
 import { ReminderPreset, ReminderSettings } from "../../types";
+import { typography } from "../../typography";
 import CustomDatePicker from "./CustomDatePicker";
 
 interface RemindMeButtonProps {
@@ -153,12 +154,12 @@ const RemindMeButton: React.FC<RemindMeButtonProps> = ({
       alignItems: "center",
       justifyContent: "space-between",
     },
-    title: { color: colors.text, fontWeight: "700" },
-    desc: { color: colors.textSecondary, marginTop: 2 },
+    title: { ...typography.bodySemiBold, color: colors.text },
+    desc: { ...typography.caption, color: colors.textSecondary, marginTop: 2 },
     right: { flexDirection: "row", alignItems: "center", gap: 8 },
     modalOverlay: {
       flex: 1,
-      backgroundColor: "rgba(0,0,0,0.5)",
+      backgroundColor: colors.overlayScrim,
       justifyContent: "flex-end",
     },
     sheet: {
@@ -176,8 +177,8 @@ const RemindMeButton: React.FC<RemindMeButtonProps> = ({
       marginBottom: 16,
     },
     timeInfoText: {
+      ...typography.bodySmall,
       color: colors.textSecondary,
-      fontSize: 14,
       textAlign: "center",
     },
     pickerContainer: {
@@ -204,10 +205,10 @@ const RemindMeButton: React.FC<RemindMeButtonProps> = ({
       backgroundColor: colors.primary,
       borderColor: colors.primary,
     },
-    btnTextPrimary: { color: colors.onPrimary, fontWeight: "700" },
+    btnTextPrimary: { ...typography.button, color: colors.onPrimary },
     errorText: {
+      ...typography.caption,
       color: colors.error,
-      fontSize: 12,
       textAlign: "center",
       marginTop: 8,
     },
@@ -286,7 +287,7 @@ const RemindMeButton: React.FC<RemindMeButtonProps> = ({
           <Text style={styles.title}>Remind me</Text>
           <Text style={styles.desc}>
             {summary}
-            {settings.spamMode ? " • Spam mode" : ""}
+            {settings.spamMode ? " • Extra reminders" : ""}
           </Text>
         </View>
         <View style={styles.right}>
@@ -311,7 +312,7 @@ const RemindMeButton: React.FC<RemindMeButtonProps> = ({
         <View style={styles.modalOverlay}>
           <View style={styles.sheet}>
             <Text style={[styles.title, { marginBottom: 8 }]}>
-              Remind me before
+              When to remind you
             </Text>
 
             {/* Time remaining info */}
@@ -319,8 +320,9 @@ const RemindMeButton: React.FC<RemindMeButtonProps> = ({
               <Text style={styles.timeInfoText}>{formatTimeRemaining()}</Text>
               <Text
                 style={[
-                  styles.timeInfoText,
-                  { marginTop: 4, fontWeight: "600" },
+                  typography.bodySmall,
+                  typography.bodySmallSemiBold,
+                  { color: colors.textSecondary, textAlign: "center", marginTop: 4 },
                 ]}>
                 {formatSelectedTime()}
               </Text>
@@ -349,8 +351,8 @@ const RemindMeButton: React.FC<RemindMeButtonProps> = ({
             {isInvalid && (
               <Text style={styles.errorText}>
                 {currentOffsetMs <= 0
-                  ? "Please select a time in the future"
-                  : "Selected time exceeds task deadline"}
+                  ? "Pick a time at least one minute from now."
+                  : "That time is after your due date — choose something earlier."}
               </Text>
             )}
 
@@ -372,7 +374,9 @@ const RemindMeButton: React.FC<RemindMeButtonProps> = ({
                   settings.spamMode ? colors.primary : colors.textSecondary
                 }
               />
-              <Text style={{ color: colors.text }}>Spam me mode</Text>
+              <Text style={[typography.body, { color: colors.text }]}>
+                Extra reminders until I'm done
+              </Text>
             </TouchableOpacity>
 
             {/* Action buttons */}
@@ -383,7 +387,9 @@ const RemindMeButton: React.FC<RemindMeButtonProps> = ({
                   setShow(false);
                 }}
                 activeOpacity={0.7}>
-                <Text style={{ color: colors.text }}>Cancel</Text>
+                <Text style={[typography.button, { color: colors.text }]}>
+                  Not now
+                </Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[
@@ -393,7 +399,7 @@ const RemindMeButton: React.FC<RemindMeButtonProps> = ({
                 ]}
                 onPress={handleConfirm}
                 activeOpacity={0.7}>
-                <Text style={styles.btnTextPrimary}>Confirm</Text>
+                <Text style={styles.btnTextPrimary}>Save reminder</Text>
               </TouchableOpacity>
             </View>
           </View>

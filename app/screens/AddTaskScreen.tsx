@@ -1,22 +1,22 @@
+import { format } from "date-fns";
 import { Ionicons } from "@expo/vector-icons";
-import { BlurView } from "expo-blur";
+import * as Haptics from "expo-haptics";
+import { LinearGradient } from "expo-linear-gradient";
 import { StatusBar } from "expo-status-bar";
-import React, { useRef } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Animated,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
   StyleSheet,
+  Text,
   TouchableOpacity,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { useTheme } from "../context/ThemeContext";
-import { SIZES } from "../theme";
-
-// Component imports
 import CategorySelector from "../components/AddTaskComponents/CategorySelector";
 import DateTimePicker from "../components/AddTaskComponents/DateTimePicker";
 import FormSection from "../components/AddTaskComponents/FormSection";
@@ -27,27 +27,34 @@ import TaskDescription from "../components/AddTaskComponents/TaskDescription";
 import TaskTitleInput from "../components/AddTaskComponents/TaskTitleInput";
 import RemindMeButton from "../components/common/RemindMeButton";
 import ScreenHeader from "../components/common/ScreenHeader";
+import { useTheme } from "../context/ThemeContext";
 import { useAddTask } from "../hooks/useAddTask";
+import { useReducedMotion } from "../hooks/useReducedMotion";
+import { SIZES } from "../theme";
+import { typography } from "../typography";
 
-// Styles for the floating buttons
-const createButtonStyles = () =>
+const PRESS_SCALE = 1.04;
+const PRESS_SCALE_SAVE = 1.06;
+const PRESS_SCALE_REDUCED = 1.02;
+const PRESS_SCALE_SAVE_REDUCED = 1.03;
+
+const LOADING_COPY_EDIT = [
+  "Opening this task…",
+  "Pulling in what you saved…",
+] as const;
+const LOADING_COPY_NEW = [
+  "Setting up something new…",
+  "Almost there…",
+] as const;
+
+const runHaptic = (fn: () => Promise<void>) => {
+  void fn().catch(() => {
+    /* Web / unsupported Taptic Engine */
+  });
+};
+
+const createButtonStyles = (shadowColor: string) =>
   StyleSheet.create({
-    wrapper: {
-      borderRadius: 100,
-      overflow: "hidden",
-      alignSelf: "flex-end",
-      marginRight: 10,
-    },
-    buttonContainer: {
-      flexDirection: "row",
-      gap: 16,
-
-      paddingHorizontal: 10,
-      paddingVertical: 12,
-      zIndex: 1000,
-      backgroundColor: "transparent",
-      flexShrink: 0,
-    },
     fab: {
       width: 56,
       height: 56,
@@ -57,9 +64,10 @@ const createButtonStyles = () =>
       zIndex: 1000,
     },
     largeFab: {
-      width: 126,
+      minWidth: 152,
       height: 56,
       borderRadius: 28,
+      paddingHorizontal: 18,
       justifyContent: "center",
       alignItems: "center",
       zIndex: 1000,
@@ -71,34 +79,40 @@ const createButtonStyles = () =>
       alignItems: "center",
       borderRadius: 28,
     },
+    largeTouchable: {
+      width: "100%",
+      height: "100%",
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 8,
+      borderRadius: 28,
+      paddingHorizontal: 4,
+    },
     shadow: {
       ...Platform.select({
         ios: {
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.1,
-          shadowRadius: 6,
+          shadowColor,
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.05,
+          shadowRadius: 4,
         },
-        android: {
-          // elevation: 6,
-        },
+        android: {},
       }),
     },
     largeShadow: {
       ...Platform.select({
         ios: {
-          shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.3,
-          shadowRadius: 8,
+          shadowColor,
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.1,
+          shadowRadius: 5,
         },
-        android: {
-          // elevation: 20,
-        },
+        android: {},
       }),
     },
   });
 
-// Animated Button Component (matching HomeScreen style)
 const AnimatedActionButton = ({
   onPress,
   iconName,
@@ -106,6 +120,7 @@ const AnimatedActionButton = ({
   backgroundColor,
   borderColor,
   label,
+  reducedMotion,
 }: {
   onPress: () => void;
   iconName: keyof typeof Ionicons.glyphMap;
@@ -113,39 +128,35 @@ const AnimatedActionButton = ({
   backgroundColor: string;
   borderColor?: string;
   label: string;
+  reducedMotion: boolean;
 }) => {
-  const pressAnim = useRef(new Animated.Value(1)).current;
-  const sizeAnim = useRef(new Animated.Value(56)).current;
-  const styles = createButtonStyles();
+  const { colors } = useTheme();
+  const pressScale = useRef(new Animated.Value(1)).current;
+  const styles = createButtonStyles(colors.shadowColor);
+  const toScale = reducedMotion ? PRESS_SCALE_REDUCED : PRESS_SCALE;
 
   const handlePressIn = () => {
-    Animated.parallel([
-      Animated.timing(pressAnim, {
-        toValue: 1.2,
-        duration: 200,
-        useNativeDriver: false,
-      }),
-      Animated.timing(sizeAnim, {
-        toValue: 67, // 56 * 1.2 = 67
-        duration: 200,
-        useNativeDriver: false,
-      }),
-    ]).start();
+    if (reducedMotion) {
+      pressScale.setValue(toScale);
+      return;
+    }
+    Animated.timing(pressScale, {
+      toValue: PRESS_SCALE,
+      duration: 140,
+      useNativeDriver: true,
+    }).start();
   };
 
   const handlePressOut = () => {
-    Animated.parallel([
-      Animated.timing(pressAnim, {
-        toValue: 1,
-        duration: 200,
-        useNativeDriver: false,
-      }),
-      Animated.timing(sizeAnim, {
-        toValue: 56,
-        duration: 200,
-        useNativeDriver: false,
-      }),
-    ]).start();
+    if (reducedMotion) {
+      pressScale.setValue(1);
+      return;
+    }
+    Animated.timing(pressScale, {
+      toValue: 1,
+      duration: 140,
+      useNativeDriver: true,
+    }).start();
   };
 
   return (
@@ -156,12 +167,9 @@ const AnimatedActionButton = ({
           backgroundColor,
           borderColor,
           borderWidth: borderColor ? 1 : 0,
-          width: sizeAnim,
-          height: sizeAnim,
-          borderRadius: Animated.divide(sizeAnim, 2),
+          transform: [{ scale: pressScale }],
         },
         styles.shadow,
-        { transform: [{ scale: pressAnim }] },
       ]}>
       <TouchableOpacity
         activeOpacity={1}
@@ -177,68 +185,65 @@ const AnimatedActionButton = ({
   );
 };
 
-// Special large button for save (size of + and filter combined)
 const AnimatedLargeSaveButton = ({
   onPress,
   iconName,
   iconColor,
   backgroundColor,
   label,
+  saveLabel,
   enabled,
+  reducedMotion,
+  disabledHint = "Add a title above to enable saving.",
 }: {
   onPress: () => void;
   iconName: keyof typeof Ionicons.glyphMap;
   iconColor: string;
   backgroundColor: string;
   label: string;
+  saveLabel: string;
   enabled: boolean;
+  reducedMotion: boolean;
+  disabledHint?: string;
 }) => {
-  const pressAnim = useRef(new Animated.Value(1)).current;
-  const sizeAnim = useRef(new Animated.Value(126)).current; // 70 + 56 = 126 (AddButton + FilterButton width)
-  const heightAnim = useRef(new Animated.Value(56)).current;
-  const styles = createButtonStyles();
+  const { colors } = useTheme();
+  const pressScale = useRef(new Animated.Value(1)).current;
+  const styles = createButtonStyles(colors.shadowColor);
+  const targetScale = reducedMotion ? PRESS_SCALE_SAVE_REDUCED : PRESS_SCALE_SAVE;
 
   const handlePressIn = () => {
-    if (!enabled) return;
-    Animated.parallel([
-      Animated.timing(pressAnim, {
-        toValue: 1.2,
-        duration: 200,
-        useNativeDriver: false,
-      }),
-      Animated.timing(sizeAnim, {
-        toValue: 151, // 126 * 1.2 = 151
-        duration: 200,
-        useNativeDriver: false,
-      }),
-      Animated.timing(heightAnim, {
-        toValue: 67, // 56 * 1.2 = 67
-        duration: 200,
-        useNativeDriver: false,
-      }),
-    ]).start();
+    if (reducedMotion) {
+      pressScale.setValue(targetScale);
+      return;
+    }
+    Animated.timing(pressScale, {
+      toValue: PRESS_SCALE_SAVE,
+      duration: 160,
+      useNativeDriver: true,
+    }).start();
   };
 
   const handlePressOut = () => {
-    if (!enabled) return;
-    Animated.parallel([
-      Animated.timing(pressAnim, {
-        toValue: 1,
-        duration: 200,
-        useNativeDriver: false,
-      }),
-      Animated.timing(sizeAnim, {
-        toValue: 126,
-        duration: 200,
-        useNativeDriver: false,
-      }),
-      Animated.timing(heightAnim, {
-        toValue: 56,
-        duration: 200,
-        useNativeDriver: false,
-      }),
-    ]).start();
+    if (reducedMotion) {
+      pressScale.setValue(1);
+      return;
+    }
+    Animated.timing(pressScale, {
+      toValue: 1,
+      duration: 160,
+      useNativeDriver: true,
+    }).start();
   };
+
+  const primaryShadow =
+    Platform.OS === "ios"
+      ? {
+          shadowColor: colors.primary,
+          shadowOffset: { width: 0, height: 6 },
+          shadowOpacity: enabled ? 0.28 : 0.1,
+          shadowRadius: 14,
+        }
+      : { elevation: enabled ? 5 : 1 };
 
   return (
     <Animated.View
@@ -246,51 +251,50 @@ const AnimatedLargeSaveButton = ({
         styles.largeFab,
         {
           backgroundColor: enabled ? backgroundColor : backgroundColor + "40",
-          width: sizeAnim,
-          height: heightAnim,
-          borderRadius: Animated.divide(heightAnim, 2),
+          transform: [{ scale: pressScale }],
         },
-        styles.largeShadow,
-        { transform: [{ scale: pressAnim }] },
+        primaryShadow,
       ]}>
       <TouchableOpacity
-        activeOpacity={enabled ? 1 : 0.5}
-        onPress={enabled ? onPress : undefined}
+        activeOpacity={0.85}
+        onPress={onPress}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
+        disabled={!enabled}
         accessibilityLabel={label}
+        accessibilityHint={enabled ? undefined : disabledHint}
         accessibilityRole="button"
-        style={styles.touchable}>
+        accessibilityState={{ disabled: !enabled }}
+        style={styles.largeTouchable}>
         <Ionicons
           name={iconName}
-          size={24}
+          size={22}
           color={enabled ? iconColor : iconColor + "80"}
         />
+        <Text
+          style={[
+            typography.bodySemiBold,
+            {
+              color: enabled ? iconColor : iconColor + "80",
+              flexShrink: 1,
+            },
+          ]}
+          numberOfLines={1}
+          ellipsizeMode="tail"
+          maxFontSizeMultiplier={1.35}>
+          {saveLabel}
+        </Text>
       </TouchableOpacity>
     </Animated.View>
   );
 };
 
 const AddTaskScreen: React.FC = () => {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const bottomInsets = useSafeAreaInsets();
-
-  // Animation values for sliding header
-  const scrollY = useRef(new Animated.Value(0)).current;
-  const headerHeight = 80; // Approximate header height
-  const headerTranslateY = scrollY.interpolate({
-    inputRange: [0, headerHeight],
-    outputRange: [0, -headerHeight],
-    extrapolate: "clamp",
-  });
-  const headerOpacity = scrollY.interpolate({
-    inputRange: [0, headerHeight * 0.5],
-    outputRange: [1, 0],
-    extrapolate: "clamp",
-  });
+  const reducedMotion = useReducedMotion();
 
   const {
-    // Form state
     title,
     setTitle,
     description,
@@ -302,48 +306,92 @@ const AddTaskScreen: React.FC = () => {
     category,
     setCategory,
     isFormValid,
+    saveAttempted,
     loading,
-
-    // Predecessor state
     predecessorIds,
     availableTasks,
-
-    // Repetition state
     repetition,
     setRepetition,
-
-    // Reminder state
     remindMe,
     setRemindMe,
-
-    // Actions
     handleSave,
     handleCancel,
     handlePredecessorSelect,
-
-    // Meta
     isEditing,
   } = useAddTask();
+
+  const [step, setStep] = useState<1 | 2>(() => (isEditing ? 2 : 1));
+  const [step1ContinueAttempted, setStep1ContinueAttempted] = useState(false);
+  const scrollRef = useRef<ScrollView>(null);
+
+  const showTitleErrorStep1 = step1ContinueAttempted && !title.trim() && step === 1;
+  const showTitleErrorStep2 = saveAttempted && !title.trim() && step === 2;
+  const showTitleError = showTitleErrorStep1 || showTitleErrorStep2;
+
+  const [loadingLine, setLoadingLine] = useState(0);
+  const loadingLines = isEditing ? LOADING_COPY_EDIT : LOADING_COPY_NEW;
+  useEffect(() => {
+    if (!loading) return;
+    setLoadingLine(0);
+    const id = setInterval(() => {
+      setLoadingLine((i) => (i + 1) % loadingLines.length);
+    }, 2600);
+    return () => clearInterval(id);
+  }, [loading, isEditing, loadingLines.length]);
+
+  const titleReadyPulse = useRef(false);
+  useEffect(() => {
+    if (loading || reducedMotion) return;
+    if (isFormValid && !titleReadyPulse.current) {
+      runHaptic(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light));
+      titleReadyPulse.current = true;
+    }
+    if (!isFormValid) {
+      titleReadyPulse.current = false;
+    }
+  }, [isFormValid, loading, reducedMotion]);
+
+  const handleSaveWithFeedback = useCallback(() => {
+    if (loading) return;
+    runHaptic(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium));
+    handleSave();
+  }, [handleSave, loading]);
+
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ y: 0, animated: !reducedMotion });
+  }, [step, reducedMotion]);
+
+  const trimmedTitle = title.trim();
+  const step2SummaryA11yLabel =
+    trimmedTitle.length > 180
+      ? `${trimmedTitle.slice(0, 180)}…`
+      : trimmedTitle;
+
+  const goToStep2 = useCallback(() => {
+    if (!title.trim()) {
+      setStep1ContinueAttempted(true);
+      return;
+    }
+    setStep1ContinueAttempted(false);
+    setStep(2);
+    runHaptic(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light));
+  }, [title]);
+
+  const goToStep1 = useCallback(() => {
+    setStep(1);
+    runHaptic(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light));
+  }, []);
 
   const styles = StyleSheet.create({
     container: {
       flex: 1,
       backgroundColor: colors.background,
     },
-    headerContainer: {
-      position: "absolute",
-      top: 0,
-      left: 0,
-      right: 0,
-      zIndex: 1000,
-    },
-    content: {
+    body: {
       flex: 1,
     },
     scrollContent: {
       padding: SIZES.medium,
-      paddingTop: 120, // Add more top padding for better spacing after header slides up
-      paddingBottom: 100, // Add extra padding to prevent content from being hidden behind floating buttons
     },
     loadingContainer: {
       flex: 1,
@@ -351,115 +399,274 @@ const AddTaskScreen: React.FC = () => {
       alignItems: "center",
       backgroundColor: colors.background,
     },
+    footer: {
+      borderTopWidth: StyleSheet.hairlineWidth,
+    },
+    footerInner: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "flex-end",
+      gap: 12,
+      paddingHorizontal: SIZES.medium,
+      paddingTop: SIZES.small,
+      paddingBottom: SIZES.small,
+    },
+    footerInnerSpread: {
+      justifyContent: "space-between",
+      width: "100%",
+    },
+    stepper: {
+      paddingHorizontal: SIZES.medium,
+      paddingBottom: SIZES.small,
+    },
+    stepperRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      marginBottom: 6,
+    },
+    stepSegment: {
+      flex: 1,
+      height: 3,
+      borderRadius: 2,
+    },
+    stepperCaption: {
+      ...typography.caption,
+      color: colors.textSecondary,
+    },
+    stepSummaryWrap: {
+      width: "100%",
+      maxWidth: "100%",
+      marginBottom: SIZES.medium,
+    },
   });
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
+      <View
+        style={styles.loadingContainer}
+        accessibilityLabel="Loading task"
+        accessibilityLiveRegion="polite">
+        <LinearGradient
+          colors={[colors.background, colors.surface]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 0.9, y: 1 }}
+          style={StyleSheet.absoluteFill}
+        />
         <ActivityIndicator size="large" color={colors.primary} />
+        <Text
+          style={[
+            typography.bodySmall,
+            {
+              color: colors.textSecondary,
+              marginTop: SIZES.large,
+              textAlign: "center",
+              paddingHorizontal: SIZES.extraLarge,
+            },
+          ]}>
+          {loadingLines[loadingLine]}
+        </Text>
       </View>
     );
   }
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={styles.container}>
-      <StatusBar style="dark" />
+    <View style={styles.container}>
+      <LinearGradient
+        colors={[colors.background, colors.surface]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0.9, y: 1 }}
+        style={StyleSheet.absoluteFill}
+        pointerEvents="none"
+      />
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ flex: 1 }}>
+        <StatusBar style={isDark ? "light" : "dark"} />
 
-      <Animated.View
-        style={[
-          styles.headerContainer,
-          {
-            transform: [{ translateY: headerTranslateY }],
-            opacity: headerOpacity,
-          },
-        ]}>
         <ScreenHeader
-          title={isEditing ? "Edit Task" : "Create New Task"}
+          title={isEditing ? "Edit task" : "New task"}
+          titleEmphasis="hero"
           showBackButton
           onBackPress={handleCancel}
         />
-      </Animated.View>
 
-      <Animated.ScrollView
-        style={styles.content}
-        contentContainerStyle={styles.scrollContent}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-        scrollEventThrottle={16}
-        onScroll={Animated.event(
-          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-          { useNativeDriver: true }
-        )}>
-        <TaskTitleInput value={title} onChangeText={setTitle} />
+        <View style={styles.stepper} accessibilityRole="none">
+          <View style={styles.stepperRow}>
+            <View
+              style={[
+                styles.stepSegment,
+                {
+                  backgroundColor:
+                    step >= 1 ? colors.primary : colors.border,
+                  opacity: step === 1 ? 1 : 0.45,
+                },
+              ]}
+            />
+            <View
+              style={[
+                styles.stepSegment,
+                {
+                  backgroundColor:
+                    step >= 2 ? colors.primary : colors.border,
+                  opacity: step === 2 ? 1 : 0.45,
+                },
+              ]}
+            />
+          </View>
+          <Text style={styles.stepperCaption}>
+            {step === 1
+              ? "Step 1 of 2 — Title & due date"
+              : "Step 2 of 2 — Notes, category, and more (all optional)"}
+          </Text>
+        </View>
 
-        <CategorySelector
-          selectedCategory={category}
-          onSelectCategory={setCategory}
-        />
+        <ScrollView
+          ref={scrollRef}
+          style={styles.body}
+          contentContainerStyle={[
+            styles.scrollContent,
+            { paddingTop: SIZES.small },
+            { paddingBottom: bottomInsets.bottom + SIZES.extraLarge * 4 },
+          ]}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
+          showsVerticalScrollIndicator={false}>
+          {step === 1 ? (
+            <>
+              <TaskTitleInput
+                value={title}
+                onChangeText={setTitle}
+                showTitleError={showTitleError}
+              />
+              <DateTimePicker dueDate={dueDate} onDateChange={setDueDate} />
+            </>
+          ) : (
+            <>
+              <View style={styles.stepSummaryWrap}>
+                <Text
+                  style={[
+                    typography.caption,
+                    {
+                      color: colors.textSecondary,
+                    },
+                  ]}
+                  numberOfLines={2}
+                  ellipsizeMode="tail"
+                  maxFontSizeMultiplier={1.35}
+                  accessibilityLabel={`Task summary: ${step2SummaryA11yLabel}, due ${format(
+                    dueDate,
+                    "MMMM d, h:mm a"
+                  )}`}>
+                  {trimmedTitle}
+                  {" · Due "}
+                  {format(dueDate, "MMM d, h:mm a")}
+                </Text>
+              </View>
+              <TaskDescription
+                value={description}
+                onChangeText={setDescription}
+              />
+              <CategorySelector
+                selectedCategory={category}
+                onSelectCategory={setCategory}
+              />
+              <PrioritySelector
+                selectedPriority={priority}
+                onSelectPriority={setPriority}
+              />
+              <FormSection title="Reminders" optional>
+                <RemindMeButton
+                  value={remindMe}
+                  onChange={setRemindMe}
+                  maxOffsetMs={Math.max(dueDate.getTime() - Date.now(), 0)}
+                />
+              </FormSection>
+              <RepetitionSelector
+                repetition={repetition}
+                onRepetitionChange={(newRepetition) =>
+                  setRepetition(newRepetition)
+                }
+              />
+              {!repetition.enabled && (
+                <PredecessorTaskSelector
+                  availableTasks={availableTasks}
+                  selectedPredecessors={predecessorIds}
+                  onSelectPredecessor={handlePredecessorSelect}
+                />
+              )}
+            </>
+          )}
+        </ScrollView>
 
-        <PrioritySelector
-          selectedPriority={priority}
-          onSelectPriority={setPriority}
-        />
-
-        <DateTimePicker dueDate={dueDate} onDateChange={setDueDate} />
-
-        <FormSection title="Set Reminder">
-          <RemindMeButton
-            value={remindMe}
-            onChange={setRemindMe}
-            maxOffsetMs={Math.max(dueDate.getTime() - Date.now(), 0)}
-          />
-        </FormSection>
-
-        <RepetitionSelector
-          repetition={repetition}
-          onRepetitionChange={(newRepetition) => setRepetition(newRepetition)}
-        />
-
-        {!repetition.enabled && (
-          <PredecessorTaskSelector
-            availableTasks={availableTasks}
-            selectedPredecessors={predecessorIds}
-            onSelectPredecessor={handlePredecessorSelect}
-          />
-        )}
-
-        <TaskDescription value={description} onChangeText={setDescription} />
-      </Animated.ScrollView>
-
-      <View style={{ position: "absolute", bottom: 0, left: 0, right: 0 }}>
+      <View
+        style={[
+          styles.footer,
+          {
+            position: "absolute",
+            bottom: 0,
+            left: 0,
+            right: 0,
+            backgroundColor: colors.card,
+            borderTopColor: colors.border,
+            paddingBottom: bottomInsets.bottom,
+          },
+        ]}>
         <View
           style={[
-            createButtonStyles().wrapper,
-            { marginBottom: bottomInsets.bottom },
+            styles.footerInner,
+            step === 2 ? styles.footerInnerSpread : null,
           ]}>
-          <BlurView
-            style={createButtonStyles().buttonContainer}
-            intensity={100}
-            tint="systemUltraThinMaterialLight">
-            <AnimatedActionButton
-              onPress={handleCancel}
-              iconName="close"
-              iconColor={colors.error}
-              backgroundColor={colors.card}
-              borderColor={colors.border}
-              label="Cancel"
-            />
-            <AnimatedLargeSaveButton
-              onPress={handleSave}
-              iconName="checkmark"
-              iconColor="white"
-              backgroundColor={colors.primary}
-              label="Save Task"
-              enabled={isFormValid}
-            />
-          </BlurView>
+          {step === 1 ? (
+            <>
+              <AnimatedActionButton
+                onPress={handleCancel}
+                iconName="close"
+                iconColor={colors.textSecondary}
+                backgroundColor={colors.surface}
+                borderColor={colors.border}
+                label="Close without saving"
+                reducedMotion={reducedMotion}
+              />
+              <AnimatedLargeSaveButton
+                onPress={goToStep2}
+                iconName="arrow-forward"
+                iconColor={colors.onPrimary}
+                backgroundColor={colors.primary}
+                label="Continue to optional details"
+                saveLabel="Continue"
+                enabled={isFormValid}
+                reducedMotion={reducedMotion}
+                disabledHint="Add a title above to continue."
+              />
+            </>
+          ) : (
+            <>
+              <AnimatedActionButton
+                onPress={goToStep1}
+                iconName="chevron-back"
+                iconColor={colors.textSecondary}
+                backgroundColor={colors.surface}
+                borderColor={colors.border}
+                label="Back to title and due date"
+                reducedMotion={reducedMotion}
+              />
+              <AnimatedLargeSaveButton
+                onPress={handleSaveWithFeedback}
+                iconName="checkmark"
+                iconColor={colors.onPrimary}
+                backgroundColor={colors.primary}
+                label="Save"
+                saveLabel="Save"
+                enabled={isFormValid}
+                reducedMotion={reducedMotion}
+              />
+            </>
+          )}
         </View>
       </View>
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
+    </View>
   );
 };
 

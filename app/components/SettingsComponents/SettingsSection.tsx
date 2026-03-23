@@ -1,6 +1,7 @@
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
+import { typography } from "../../typography";
 
 interface SettingsSectionProps {
   title: string;
@@ -19,7 +20,14 @@ const SettingsSection: React.FC<SettingsSectionProps> = ({
         styles.section,
         { backgroundColor: colors.card, borderColor: colors.border },
       ]}>
-      <Text style={[styles.sectionTitle, { color: colors.text }]}>{title}</Text>
+      <Text
+        style={[
+          typography.headline,
+          styles.sectionTitle,
+          { color: colors.textSecondary },
+        ]}>
+        {title}
+      </Text>
       {children}
     </View>
   );
@@ -34,8 +42,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: "600",
     marginBottom: 16,
   },
 });

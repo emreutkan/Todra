@@ -10,7 +10,9 @@ import {
   View,
 } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
+import { useReducedMotion } from "../../hooks/useReducedMotion";
 import { SIZES } from "../../theme";
+import { typography } from "../../typography";
 import { TaskPriority } from "../../types";
 
 interface FilterPopupProps {
@@ -34,10 +36,15 @@ const FilterPopup: React.FC<FilterPopupProps> = ({
   onPriorityChange,
   onClear,
 }) => {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
+  const reducedMotion = useReducedMotion();
   const scaleAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
+    if (reducedMotion) {
+      scaleAnim.setValue(visible ? 1 : 0);
+      return;
+    }
     if (visible) {
       Animated.timing(scaleAnim, {
         toValue: 1,
@@ -51,17 +58,21 @@ const FilterPopup: React.FC<FilterPopupProps> = ({
         useNativeDriver: true,
       }).start();
     }
-  }, [visible]);
+  }, [visible, reducedMotion, scaleAnim]);
 
   if (!visible) return null;
 
   const bottomOffset = (Platform.OS === "ios" ? 34 : 20) + 56 + 12;
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
-      <Pressable style={styles.backdrop} onPress={onClose}>
+      <Pressable
+        style={styles.backdrop}
+        onPress={onClose}
+        accessibilityRole="button"
+        accessibilityLabel="Dismiss filters">
         <BlurView
-          intensity={40}
-          tint={"default"}
+          intensity={isDark ? 36 : 44}
+          tint={isDark ? "dark" : "light"}
           style={StyleSheet.absoluteFill}
         />
       </Pressable>
@@ -76,9 +87,12 @@ const FilterPopup: React.FC<FilterPopupProps> = ({
             transform: [{ scale: scaleAnim }],
           },
         ]}>
-        <Text style={[styles.title, { color: colors.text }]}>Filters</Text>
+        <Text style={[typography.title, styles.popupTitle, { color: colors.text }]}>
+          Filters
+        </Text>
 
-        <Text style={[styles.sectionLabel, { color: colors.text }]}>
+        <Text
+          style={[typography.subbodySemiBold, styles.sectionLabel, { color: colors.text }]}>
           Category
         </Text>
         <ScrollView
@@ -98,7 +112,7 @@ const FilterPopup: React.FC<FilterPopupProps> = ({
             ]}>
             <Text
               style={[
-                styles.chipText,
+                typography.captionMedium,
                 {
                   color:
                     activeCategory === null ? colors.onPrimary : colors.text,
@@ -126,7 +140,7 @@ const FilterPopup: React.FC<FilterPopupProps> = ({
               ]}>
               <Text
                 style={[
-                  styles.chipText,
+                  typography.captionMedium,
                   {
                     color:
                       activeCategory === category
@@ -140,7 +154,8 @@ const FilterPopup: React.FC<FilterPopupProps> = ({
           ))}
         </ScrollView>
 
-        <Text style={[styles.sectionLabel, { color: colors.text }]}>
+        <Text
+          style={[typography.subbodySemiBold, styles.sectionLabel, { color: colors.text }]}>
           Priority
         </Text>
         <View style={styles.row}>
@@ -159,7 +174,7 @@ const FilterPopup: React.FC<FilterPopupProps> = ({
               ]}>
               <Text
                 style={[
-                  styles.chipText,
+                  typography.captionMedium,
                   {
                     color:
                       selectedPriority === prio
@@ -179,7 +194,8 @@ const FilterPopup: React.FC<FilterPopupProps> = ({
           <Pressable
             onPress={onClear}
             style={[styles.footerButton, { borderColor: colors.border }]}>
-            <Text style={[styles.footerButtonText, { color: colors.text }]}>
+            <Text
+              style={[typography.captionSemiBold, { color: colors.text }]}>
               Reset
             </Text>
           </Pressable>
@@ -190,10 +206,7 @@ const FilterPopup: React.FC<FilterPopupProps> = ({
               { backgroundColor: colors.primary },
             ]}>
             <Text
-              style={[
-                styles.footerButtonTextPrimary,
-                { color: colors.onPrimary },
-              ]}>
+              style={[typography.captionBold, { color: colors.onPrimary }]}>
               Done
             </Text>
           </Pressable>
@@ -216,14 +229,10 @@ const styles = StyleSheet.create({
     width: "90%",
     transformOrigin: "bottom right",
   },
-  title: {
-    fontSize: SIZES.large,
-    fontWeight: "700",
+  popupTitle: {
     marginBottom: SIZES.small,
   },
   sectionLabel: {
-    fontSize: SIZES.medium,
-    fontWeight: "600",
     marginTop: SIZES.small,
     marginBottom: SIZES.small,
   },
@@ -238,11 +247,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     marginRight: SIZES.small,
     minWidth: 62,
+    minHeight: 44,
     alignItems: "center",
-  },
-  chipText: {
-    fontSize: SIZES.small,
-    fontWeight: "500",
+    justifyContent: "center",
   },
   footerRow: {
     flexDirection: "row",
@@ -255,19 +262,15 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
     marginRight: SIZES.small,
+    minHeight: 44,
+    justifyContent: "center",
   },
   footerButtonPrimary: {
     paddingHorizontal: SIZES.medium,
     paddingVertical: SIZES.small,
     borderRadius: 8,
-  },
-  footerButtonText: {
-    fontSize: SIZES.small,
-    fontWeight: "600",
-  },
-  footerButtonTextPrimary: {
-    fontSize: SIZES.small,
-    fontWeight: "700",
+    minHeight: 44,
+    justifyContent: "center",
   },
 });
 

@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
+import { typography } from "../../typography";
 
 interface SettingsButtonProps {
   icon: keyof typeof Ionicons.glyphMap;
@@ -18,12 +19,12 @@ const SettingsButton: React.FC<SettingsButtonProps> = ({
   isDestructive = false,
   marginTop = 0,
 }) => {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
 
   const getButtonStyle = () => {
     if (isDestructive) {
       return {
-        backgroundColor: isDark ? "#421b1b" : "#ffebeb",
+        backgroundColor: colors.destructiveSurface,
         marginTop: marginTop || 8,
       };
     }
@@ -35,21 +36,21 @@ const SettingsButton: React.FC<SettingsButtonProps> = ({
 
   const getIconColor = () => {
     if (isDestructive) {
-      return isDark ? "#ff6b6b" : "#d63031";
+      return colors.destructiveText;
     }
     return colors.primary;
   };
 
   const getTextColor = () => {
     if (isDestructive) {
-      return isDark ? "#ff6b6b" : "#d63031";
+      return colors.destructiveText;
     }
     return colors.text;
   };
 
   const getChevronColor = () => {
     if (isDestructive) {
-      return isDark ? "#ff6b6b" : "#d63031";
+      return colors.destructiveText;
     }
     return colors.text;
   };
@@ -85,7 +86,7 @@ const styles = StyleSheet.create({
   },
   settingButtonText: {
     flex: 1,
-    fontSize: 16,
+    ...typography.body,
   },
 });
 
