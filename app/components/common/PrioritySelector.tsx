@@ -8,7 +8,8 @@ import {
   View,
 } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
-import { PRIORITY_COLORS, SIZES } from "../../theme";
+import { PRIORITY_COLORS, RADII, SIZES } from "../../theme";
+import { FONT, typography } from "../../typography";
 import { TaskPriority } from "../../types";
 
 interface PrioritySelectorProps {
@@ -78,7 +79,7 @@ const PrioritySelector: React.FC<PrioritySelectorProps> = ({
       opacity: disabled ? 0.6 : 1,
       ...Platform.select({
         ios: {
-          shadowColor: "rgba(0,0,0,0.08)",
+          shadowColor: colors.shadowColor,
           shadowOffset: { width: 0, height: 2 },
           shadowOpacity: 1,
           shadowRadius: 8,
@@ -107,7 +108,7 @@ const PrioritySelector: React.FC<PrioritySelectorProps> = ({
       marginBottom: 8,
       ...Platform.select({
         ios: {
-          shadowColor: "rgba(0,0,0,0.1)",
+          shadowColor: colors.shadowColor,
           shadowOffset: { width: 0, height: 1 },
           shadowOpacity: 0.8,
           shadowRadius: 2,
@@ -118,15 +119,14 @@ const PrioritySelector: React.FC<PrioritySelectorProps> = ({
       backgroundColor: PRIORITY_COLORS[selectedPriority] + "20",
     },
     priorityButtonText: {
+      ...typography.chip,
       color: colors.text,
-      fontSize: 13,
-      fontWeight: "600",
       textAlign: "center",
-      letterSpacing: 0.3,
     },
     selectedText: {
+      ...typography.chip,
       color: PRIORITY_COLORS[selectedPriority],
-      fontWeight: "700",
+      fontFamily: FONT.bodyBold,
     },
     // For display mode (non-editable)
     displayContainer: {
@@ -134,7 +134,7 @@ const PrioritySelector: React.FC<PrioritySelectorProps> = ({
       alignItems: "center",
       justifyContent: "space-between",
       backgroundColor: colors.card,
-      borderRadius: 12,
+      borderRadius: RADII.md,
       padding: SIZES.medium,
       borderWidth: 1,
       borderColor: colors.border,
@@ -149,15 +149,14 @@ const PrioritySelector: React.FC<PrioritySelectorProps> = ({
       borderRadius: 20,
       backgroundColor: PRIORITY_COLORS[selectedPriority],
       elevation: 2,
+      shadowColor: colors.shadowColor,
       shadowOffset: { width: 0, height: 2 },
       shadowOpacity: 0.2,
       shadowRadius: 4,
     },
     priorityText: {
-      color: "white",
-      fontSize: SIZES.font,
-      fontWeight: "700",
-      letterSpacing: 0.5,
+      ...typography.bodySmallBold,
+      color: colors.onPrimary,
     },
     editIcon: {
       marginLeft: SIZES.small,

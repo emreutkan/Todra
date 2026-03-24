@@ -9,7 +9,9 @@ import {
   View,
 } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
+import { RADII } from "../../theme";
 import { RepetitionRule } from "../../types";
+import { typography } from "../../typography";
 import FormSection from "./FormSection";
 
 interface RepetitionSelectorProps {
@@ -94,7 +96,7 @@ const RepetitionSelector: React.FC<RepetitionSelectorProps> = ({
   };
 
   const getRepetitionDescription = () => {
-    if (!repetition.enabled) return "No repetition";
+    if (!repetition.enabled) return "Does not repeat";
 
     const { type, interval, daysOfWeek: selectedDays } = repetition;
 
@@ -121,7 +123,7 @@ const RepetitionSelector: React.FC<RepetitionSelectorProps> = ({
       return interval === 1 ? "Every month" : `Every ${interval} months`;
     }
 
-    return "Custom repetition";
+    return "Custom schedule";
   };
 
   const styles = StyleSheet.create({
@@ -131,26 +133,29 @@ const RepetitionSelector: React.FC<RepetitionSelectorProps> = ({
       justifyContent: "space-between",
       paddingVertical: 12,
       paddingHorizontal: 16,
-      backgroundColor: colors.card,
-      borderRadius: 12,
-      borderWidth: 1,
+      backgroundColor: colors.surface,
+      borderRadius: 10,
+      borderWidth: StyleSheet.hairlineWidth,
       borderColor: colors.border,
     },
     repetitionInfo: {
       flex: 1,
     },
     repetitionTitle: {
-      fontSize: 16,
-      fontWeight: "600",
+      ...typography.bodyMedium,
       color: colors.text,
       marginBottom: 2,
     },
     repetitionDescription: {
-      fontSize: 14,
+      ...typography.bodySmall,
       color: colors.textSecondary,
     },
     toggleButton: {
       padding: 8,
+      minWidth: 44,
+      minHeight: 44,
+      justifyContent: "center",
+      alignItems: "center",
     },
     typeSelector: {
       flexDirection: "row",
@@ -164,7 +169,7 @@ const RepetitionSelector: React.FC<RepetitionSelectorProps> = ({
       justifyContent: "center",
       paddingVertical: 10,
       paddingHorizontal: 12,
-      borderRadius: 8,
+      borderRadius: RADII.sm,
       borderWidth: 1.5,
       borderColor: colors.border,
       backgroundColor: colors.card,
@@ -174,8 +179,7 @@ const RepetitionSelector: React.FC<RepetitionSelectorProps> = ({
       backgroundColor: colors.primary + "10",
     },
     typeButtonText: {
-      fontSize: 13,
-      fontWeight: "600",
+      ...typography.chip,
       color: colors.text,
       marginLeft: 6,
     },
@@ -189,9 +193,8 @@ const RepetitionSelector: React.FC<RepetitionSelectorProps> = ({
       gap: 8,
     },
     intervalLabel: {
-      fontSize: 14,
+      ...typography.bodySmallMedium,
       color: colors.text,
-      fontWeight: "500",
     },
     intervalButton: {
       paddingVertical: 6,
@@ -206,8 +209,7 @@ const RepetitionSelector: React.FC<RepetitionSelectorProps> = ({
       backgroundColor: colors.primary,
     },
     intervalButtonText: {
-      fontSize: 14,
-      fontWeight: "600",
+      ...typography.bodySmallSemiBold,
       color: colors.text,
     },
     selectedIntervalButtonText: {
@@ -217,9 +219,8 @@ const RepetitionSelector: React.FC<RepetitionSelectorProps> = ({
       marginTop: 12,
     },
     daySelectorLabel: {
-      fontSize: 14,
+      ...typography.bodySmallMedium,
       color: colors.text,
-      fontWeight: "500",
       marginBottom: 8,
     },
     dayButtons: {
@@ -229,7 +230,7 @@ const RepetitionSelector: React.FC<RepetitionSelectorProps> = ({
     dayButton: {
       flex: 1,
       paddingVertical: 10,
-      borderRadius: 8,
+      borderRadius: RADII.sm,
       borderWidth: 1.5,
       borderColor: colors.border,
       backgroundColor: colors.card,
@@ -240,8 +241,7 @@ const RepetitionSelector: React.FC<RepetitionSelectorProps> = ({
       backgroundColor: colors.primary + "15",
     },
     dayButtonText: {
-      fontSize: 12,
-      fontWeight: "600",
+      ...typography.captionSemiBold,
       color: colors.text,
     },
     selectedDayButtonText: {
@@ -250,7 +250,7 @@ const RepetitionSelector: React.FC<RepetitionSelectorProps> = ({
     // Modal styles
     modalOverlay: {
       flex: 1,
-      backgroundColor: "rgba(0, 0, 0, 0.5)",
+      backgroundColor: colors.overlayScrim,
       justifyContent: "flex-end",
     },
     modalContainer: {
@@ -260,7 +260,7 @@ const RepetitionSelector: React.FC<RepetitionSelectorProps> = ({
       maxHeight: "80%",
       ...Platform.select({
         ios: {
-          shadowColor: "rgba(0,0,0,0.3)",
+          shadowColor: colors.shadowColor,
           shadowOffset: { width: 0, height: -2 },
           shadowOpacity: 1,
           shadowRadius: 10,
@@ -280,8 +280,7 @@ const RepetitionSelector: React.FC<RepetitionSelectorProps> = ({
       borderBottomColor: colors.border,
     },
     modalTitle: {
-      fontSize: 18,
-      fontWeight: "600",
+      ...typography.headline,
       color: colors.text,
     },
     closeButton: {
@@ -303,45 +302,49 @@ const RepetitionSelector: React.FC<RepetitionSelectorProps> = ({
       flex: 1,
       paddingVertical: 12,
       paddingHorizontal: 20,
-      borderRadius: 8,
+      borderRadius: RADII.sm,
       borderWidth: 1,
       borderColor: colors.border,
       backgroundColor: colors.card,
       alignItems: "center",
     },
     cancelButtonText: {
-      fontSize: 16,
-      fontWeight: "600",
+      ...typography.button,
       color: colors.text,
     },
     confirmButton: {
       flex: 1,
       paddingVertical: 12,
       paddingHorizontal: 20,
-      borderRadius: 8,
+      borderRadius: RADII.sm,
       backgroundColor: colors.primary,
       alignItems: "center",
     },
     confirmButtonText: {
-      fontSize: 16,
-      fontWeight: "600",
+      ...typography.button,
       color: colors.onPrimary,
     },
   });
 
   return (
-    <FormSection title="Repetition">
+    <FormSection title="Repeat" optional>
       <TouchableOpacity
         style={styles.repetitionContainer}
         onPress={handleToggleRepetition}
-        activeOpacity={0.7}>
+        activeOpacity={0.7}
+        accessibilityRole="button"
+        accessibilityLabel={
+          repetition.enabled
+            ? "Repeat on, tap to turn off"
+            : "Repeat off, tap to set schedule"
+        }>
         <View style={styles.repetitionInfo}>
-          <Text style={styles.repetitionTitle}>Repeat Task</Text>
+          <Text style={styles.repetitionTitle}>Repeat this task</Text>
           <Text style={styles.repetitionDescription}>
             {getRepetitionDescription()}
           </Text>
         </View>
-        <View style={styles.toggleButton}>
+        <View style={styles.toggleButton} pointerEvents="none">
           <Ionicons
             name={repetition.enabled ? "checkmark-circle" : "ellipse-outline"}
             size={24}
@@ -360,11 +363,13 @@ const RepetitionSelector: React.FC<RepetitionSelectorProps> = ({
           <View style={styles.modalContainer}>
             {/* Modal Header */}
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Repeat Task</Text>
+              <Text style={styles.modalTitle}>Repeat schedule</Text>
               <TouchableOpacity
                 style={styles.closeButton}
                 onPress={handleCancelRepetition}
-                activeOpacity={0.7}>
+                activeOpacity={0.7}
+                accessibilityLabel="Close"
+                accessibilityRole="button">
                 <Ionicons name="close" size={24} color={colors.text} />
               </TouchableOpacity>
             </View>
@@ -405,7 +410,7 @@ const RepetitionSelector: React.FC<RepetitionSelectorProps> = ({
 
               {/* Interval Selector */}
               <View style={styles.intervalSelector}>
-                <Text style={styles.intervalLabel}>Every:</Text>
+                <Text style={styles.intervalLabel}>Every</Text>
                 {[1, 2, 3, 4].map((interval) => (
                   <TouchableOpacity
                     key={interval}
@@ -438,7 +443,7 @@ const RepetitionSelector: React.FC<RepetitionSelectorProps> = ({
               {/* Day Selector for Weekly Repetition */}
               {repetition.type === "weekly" && (
                 <View style={styles.daySelector}>
-                  <Text style={styles.daySelectorLabel}>On days:</Text>
+                  <Text style={styles.daySelectorLabel}>On these days</Text>
                   <View style={styles.dayButtons}>
                     {daysOfWeek.map((day) => (
                       <TouchableOpacity
@@ -471,13 +476,13 @@ const RepetitionSelector: React.FC<RepetitionSelectorProps> = ({
                 style={styles.cancelButton}
                 onPress={handleCancelRepetition}
                 activeOpacity={0.7}>
-                <Text style={styles.cancelButtonText}>Cancel</Text>
+                <Text style={styles.cancelButtonText}>Not now</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.confirmButton}
                 onPress={handleConfirmRepetition}
                 activeOpacity={0.7}>
-                <Text style={styles.confirmButtonText}>Confirm</Text>
+                <Text style={styles.confirmButtonText}>Turn on repeat</Text>
               </TouchableOpacity>
             </View>
           </View>

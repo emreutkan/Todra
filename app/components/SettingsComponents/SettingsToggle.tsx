@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { Platform, StyleSheet, Switch, Text, View } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
+import { typography } from "../../typography";
 
 interface SettingsToggleProps {
   icon: keyof typeof Ionicons.glyphMap;
@@ -37,10 +38,10 @@ const SettingsToggle: React.FC<SettingsToggleProps> = ({
         trackColor={{ false: colors.border, true: colors.primary }}
         thumbColor={
           Platform.OS === "ios"
-            ? "#FFFFFF"
-            : value
             ? colors.card
-            : colors.textSecondary
+            : value
+              ? colors.card
+              : colors.textSecondary
         }
         ios_backgroundColor={colors.border}
       />
@@ -64,7 +65,7 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   settingLabel: {
-    fontSize: 16,
+    ...typography.body,
   },
 });
 

@@ -11,9 +11,9 @@
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/icon.png",
+      "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#383838"
+      "backgroundColor": "#F9FAFB"
     },
     "ios": {
       "supportsTablet": true,
@@ -23,14 +23,15 @@
       }
     },
     "android": {
+      "softwareKeyboardLayoutMode": "resize",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#383838"
+        "backgroundColor": "#F9FAFB"
       },
       "package": "irfanemreutkan.app.todra"
     },
     "web": {
-      "favicon": "./assets/icon.png"
+      "favicon": "./assets/favicon.png"
     },
     "scheme": "todra",
     "assetBundlePatterns": [
@@ -42,7 +43,9 @@
       "checkAutomatically": "ON_LOAD"
     },
     "plugins": [
-      "expo-notifications"
+      "expo-notifications",
+      "expo-font",
+      "expo-secure-store"
     ],
     "extra": {
       "eas": {

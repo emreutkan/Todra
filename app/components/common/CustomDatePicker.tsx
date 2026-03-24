@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { FlatList, StyleSheet, Text, View } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
+import { RADII } from "../../theme";
+import { typography } from "../../typography";
 
 interface CustomDatePickerProps {
   value: Date;
@@ -289,7 +291,7 @@ const CustomDatePicker: React.FC<CustomDatePickerProps> = ({
 const styles = StyleSheet.create({
   container: {
     height: 250,
-    borderRadius: 12,
+    borderRadius: RADII.md,
   },
   row: {
     flexDirection: "row",
@@ -313,7 +315,7 @@ const styles = StyleSheet.create({
     height: 44,
     marginTop: -18, // DO NOT CHANGE THIS
     borderWidth: 1,
-    borderRadius: 8,
+    borderRadius: RADII.sm,
     zIndex: 100,
   },
   wheelItem: {
@@ -328,12 +330,12 @@ const styles = StyleSheet.create({
     height: 250,
   },
   separatorText: {
+    ...typography.headlineBold,
     fontSize: 24,
-    fontWeight: "bold",
+    lineHeight: 28,
   },
   itemText: {
-    fontSize: 18,
-    fontWeight: "500",
+    ...typography.headline,
   },
 });
 

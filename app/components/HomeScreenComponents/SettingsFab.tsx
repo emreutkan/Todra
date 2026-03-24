@@ -1,51 +1,38 @@
 import { Ionicons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
 import React, { useRef } from "react";
 import { Animated, Platform, StyleSheet, TouchableOpacity } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
+import { RADII } from "../../theme";
 
-interface SettingsButtonProps {
+interface SettingsFabProps {
   onPress: () => void;
   label?: string;
   showShadow?: boolean;
 }
 
-const SettingsButton: React.FC<SettingsButtonProps> = ({
+const SettingsFab: React.FC<SettingsFabProps> = ({
   onPress,
   label = "Settings",
   showShadow = true,
 }) => {
   const { colors } = useTheme();
-  const pressAnim = useRef(new Animated.Value(1)).current;
-  const sizeAnim = useRef(new Animated.Value(56)).current; // Base size for SettingsButton
+  const scaleAnim = useRef(new Animated.Value(1)).current;
 
   const handlePressIn = () => {
-    Animated.parallel([
-      Animated.timing(pressAnim, {
-        toValue: 1.2,
-        duration: 200,
-        useNativeDriver: false,
-      }),
-      Animated.timing(sizeAnim, {
-        toValue: 67, // 56 * 1.2 = 67
-        duration: 200,
-        useNativeDriver: false,
-      }),
-    ]).start();
+    Animated.timing(scaleAnim, {
+      toValue: 1.06,
+      duration: 140,
+      useNativeDriver: true,
+    }).start();
   };
 
   const handlePressOut = () => {
-    Animated.parallel([
-      Animated.timing(pressAnim, {
-        toValue: 1,
-        duration: 200,
-        useNativeDriver: false,
-      }),
-      Animated.timing(sizeAnim, {
-        toValue: 56,
-        duration: 200,
-        useNativeDriver: false,
-      }),
-    ]).start();
+    Animated.timing(scaleAnim, {
+      toValue: 1,
+      duration: 180,
+      useNativeDriver: true,
+    }).start();
   };
 
   return (
@@ -53,17 +40,19 @@ const SettingsButton: React.FC<SettingsButtonProps> = ({
       style={[
         styles.fab,
         {
-          backgroundColor: colors.surface,
-          width: sizeAnim,
-          height: sizeAnim,
-          borderRadius: Animated.divide(sizeAnim, 2),
+          backgroundColor: colors.card,
+          borderColor: colors.border,
+          borderWidth: 1,
         },
-        showShadow && [styles.shadow, { shadowColor: colors.primary }],
-        { transform: [{ scale: pressAnim }] },
+        showShadow && [styles.shadow, { shadowColor: colors.shadowColor }],
+        { transform: [{ scale: scaleAnim }] },
       ]}>
       <TouchableOpacity
         activeOpacity={1}
-        onPress={onPress}
+        onPress={() => {
+          void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          onPress();
+        }}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
         accessibilityLabel={label}
@@ -79,7 +68,7 @@ const styles = StyleSheet.create({
   fab: {
     width: 56,
     height: 56,
-    borderRadius: 28,
+    borderRadius: RADII.fab,
     justifyContent: "center",
     alignItems: "center",
     zIndex: 1000,
@@ -89,7 +78,7 @@ const styles = StyleSheet.create({
     height: "100%",
     justifyContent: "center",
     alignItems: "center",
-    borderRadius: 28,
+    borderRadius: RADII.fab,
   },
   shadow: {
     ...Platform.select({
@@ -105,4 +94,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default SettingsButton;
+export default SettingsFab;

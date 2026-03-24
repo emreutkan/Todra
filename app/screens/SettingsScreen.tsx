@@ -4,20 +4,21 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { StatusBar } from "expo-status-bar";
 import React from "react";
 import {
-  Platform,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
-import SettingsButton from "../components/SettingsComponents/SettingsButton";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import SettingsListRow from "../components/SettingsComponents/SettingsListRow";
 import SettingsSection from "../components/SettingsComponents/SettingsSection";
 import SettingsToggle from "../components/SettingsComponents/SettingsToggle";
 import { useSettings } from "../context/SettingsContext";
 import { useTheme } from "../context/ThemeContext";
 import { useSettingsActions } from "../hooks/useSettingsActions";
 import { RootStackParamList } from "../types";
+import { typography } from "../typography";
 
 type SettingsScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -27,6 +28,7 @@ type SettingsScreenNavigationProp = NativeStackNavigationProp<
 const SettingsScreen: React.FC = () => {
   const navigation = useNavigation<SettingsScreenNavigationProp>();
   const { colors, isDark } = useTheme();
+  const insets = useSafeAreaInsets();
   const { settings, updateSetting } = useSettings();
   const {
     handleViewAllTasks,
@@ -47,12 +49,22 @@ const SettingsScreen: React.FC = () => {
       <View
         style={[
           styles.header,
-          { backgroundColor: colors.card, borderColor: colors.border },
+          {
+            backgroundColor: colors.card,
+            borderColor: colors.border,
+            paddingTop: Math.max(insets.top, 12),
+          },
         ]}>
-        <TouchableOpacity style={styles.backButton} onPress={handleBackPress}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={handleBackPress}
+          accessibilityRole="button"
+          accessibilityLabel="Back"
+          accessibilityHint="Navigate to the previous screen">
           <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>
+        <Text
+          style={[typography.title, styles.headerTitle, { color: colors.text }]}>
           Settings
         </Text>
         <View style={styles.placeholder} />
@@ -87,6 +99,16 @@ const SettingsScreen: React.FC = () => {
             value={settings.darkModeEnabled}
             onValueChange={(value) => updateSetting("darkModeEnabled", value)}
           />
+          {settings.darkModeEnabled && (
+            <SettingsToggle
+              icon="contrast-outline"
+              label="OLED black"
+              value={settings.darkUseOledBlack}
+              onValueChange={(value) =>
+                updateSetting("darkUseOledBlack", value)
+              }
+            />
+          )}
           <SettingsToggle
             icon="trash-outline"
             label="Confirm Before Delete"
@@ -113,32 +135,41 @@ const SettingsScreen: React.FC = () => {
           />
         </SettingsSection>
 
+        {/* AI */}
+        <SettingsSection title="AI assistant">
+          <SettingsListRow
+            icon="chatbubble-ellipses-outline"
+            label="AI assistant"
+            onPress={() => navigation.navigate("AiAssistant")}
+          />
+        </SettingsSection>
+
         {/* Data Management Section */}
         <SettingsSection title="Data Management">
-          <SettingsButton
+          <SettingsListRow
             icon="list-outline"
             label="View All Tasks"
             onPress={handleViewAllTasks}
           />
-          <SettingsButton
+          <SettingsListRow
             icon="archive-outline"
             label="View Archived Tasks"
             onPress={handleViewArchivedTasks}
             marginTop={8}
           />
-          <SettingsButton
+          <SettingsListRow
             icon="download-outline"
             label="Export Data"
             onPress={handleExportData}
             marginTop={8}
           />
-          <SettingsButton
+          <SettingsListRow
             icon="cloud-upload-outline"
             label="Import Data"
             onPress={handleImportData}
             marginTop={8}
           />
-          <SettingsButton
+          <SettingsListRow
             icon="trash-bin-outline"
             label="Clear All Tasks"
             onPress={handleClearAllTasks}
@@ -154,14 +185,6 @@ const SettingsScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    ...Platform.select({
-      ios: {
-        paddingTop: 50,
-      },
-      android: {
-        paddingTop: 25,
-      },
-    }),
   },
   header: {
     flexDirection: "row",
@@ -175,8 +198,8 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   headerTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
+    flex: 1,
+    textAlign: "center",
   },
   placeholder: {
     width: 40,

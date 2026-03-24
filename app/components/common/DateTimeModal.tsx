@@ -9,6 +9,8 @@ import {
   View,
 } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
+import { RADII } from "../../theme";
+import { typography } from "../../typography";
 import CustomDatePicker from "./CustomDatePicker";
 
 interface DateTimeModalProps {
@@ -65,7 +67,8 @@ const DateTimeModal: React.FC<DateTimeModalProps> = ({
       transparent
       animationType="fade"
       onRequestClose={handleCancel}>
-      <View style={styles.modalOverlay}>
+      <View
+        style={[styles.modalOverlay, { backgroundColor: colors.overlayScrim }]}>
         <View
           style={[
             styles.modalContainer,
@@ -138,7 +141,6 @@ const DateTimeModal: React.FC<DateTimeModalProps> = ({
 const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
     justifyContent: "center",
     alignItems: "center",
     padding: 16,
@@ -156,8 +158,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   modalTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
+    ...typography.headlineBold,
+    textAlign: "center",
   },
   pickerContainer: {
     padding: 20,
@@ -171,7 +173,7 @@ const styles = StyleSheet.create({
   footerButton: {
     flex: 1,
     height: 48,
-    borderRadius: 12,
+    borderRadius: RADII.md,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -183,12 +185,10 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   cancelButtonText: {
-    fontSize: 16,
-    fontWeight: "600",
+    ...typography.button,
   },
   confirmButtonText: {
-    fontSize: 16,
-    fontWeight: "600",
+    ...typography.button,
   },
 });
 

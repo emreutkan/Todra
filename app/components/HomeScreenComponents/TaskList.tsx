@@ -2,18 +2,30 @@ import { MaterialIcons } from "@expo/vector-icons";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Animated,
+  LayoutAnimation,
+  Platform,
   SectionList,
   StyleSheet,
   Text,
   TouchableOpacity,
+  UIManager,
   View,
 } from "react-native";
 import { useSettings } from "../../context/SettingsContext";
 import { useTheme } from "../../context/ThemeContext";
-import { SIZES } from "../../theme";
+import { useReducedMotion } from "../../hooks/useReducedMotion";
+import { typography } from "../../typography";
+import { HOME_LIST, SIZES } from "../../theme";
 import { Task, TaskPriority } from "../../types";
 import EmptyTasksState from "../common/EmptyTasksState";
 import TaskItem from "../common/TaskItem";
+
+if (
+  Platform.OS === "android" &&
+  UIManager.setLayoutAnimationEnabledExperimental
+) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 
 type TaskSection = {
   title: string;
@@ -28,8 +40,8 @@ interface TaskListProps {
   onDeleteTask: (id: string) => void;
   onToggleTaskCompletion: (id: string) => void;
   onTaskPress: (id: string) => void;
-  scrollY?: Animated.Value;
-  taskOpacity?: Animated.Value;
+  listEntranceOpacity: Animated.Value;
+  listEntranceTranslateY: Animated.Value;
   loading?: boolean;
   onRefresh?: () => void;
 }
@@ -40,10 +52,12 @@ const TaskList: React.FC<TaskListProps> = ({
   onDeleteTask,
   onToggleTaskCompletion,
   onTaskPress,
-  scrollY,
+  listEntranceOpacity,
+  listEntranceTranslateY,
 }) => {
   const { colors } = useTheme();
   const { settings } = useSettings();
+  const reducedMotion = useReducedMotion();
   const [expandedSections, setExpandedSections] = useState<{
     [key: string]: boolean;
   }>({});
@@ -145,81 +159,135 @@ const TaskList: React.FC<TaskListProps> = ({
           style={[
             styles.sectionHeader,
             {
-              backgroundColor: colors.background + "F8",
-              borderBottomColor: colors.border,
+              backgroundColor: colors.card,
+              borderColor: colors.border,
             },
           ]}
-          onPress={() =>
+          accessibilityRole="button"
+          accessibilityState={{ expanded: isExpanded }}
+          accessibilityLabel={`${section.title}, ${section.count} task${
+            section.count === 1 ? "" : "s"
+          }, ${isExpanded ? "expanded" : "collapsed"}`}
+          accessibilityHint={
+            isExpanded
+              ? "Double tap to collapse this section"
+              : "Double tap to expand this section"
+          }
+          onPress={() => {
+            if (!reducedMotion) {
+              LayoutAnimation.configureNext(
+                LayoutAnimation.Presets.easeInEaseOut
+              );
+            }
             setExpandedSections((prev) => ({
               ...prev,
               [section.title]: !prev[section.title],
-            }))
-          }
-          activeOpacity={0.7}>
+            }));
+          }}
+          activeOpacity={0.75}>
           <View style={styles.sectionHeaderLeft}>
             <View
               style={[
                 styles.priorityIndicator,
-                { backgroundColor: priorityColor },
+                {
+                  backgroundColor: priorityColor,
+                  borderColor: colors.background,
+                },
               ]}
             />
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>
+            <Text
+              style={[
+                typography.bodySemiBold,
+                styles.sectionTitle,
+                { color: colors.text },
+              ]}>
               {section.title}
             </Text>
           </View>
           {isExpanded ? (
-            <Text style={[styles.sectionCount, { color: colors.text }]}>
-              {section.count}
-            </Text>
+            <View
+              style={[
+                styles.countPill,
+                { backgroundColor: priorityColor + "24" },
+              ]}>
+              <Text
+                style={[typography.subbodySemiBold, { color: priorityColor }]}>
+                {section.count}
+              </Text>
+            </View>
           ) : (
             <MaterialIcons
-              name={"keyboard-arrow-up"}
-              size={24}
-              color={colors.text}
+              name="keyboard-arrow-down"
+              size={22}
+              color={colors.textSecondary}
             />
           )}
         </TouchableOpacity>
       );
     },
-    [expandedSections, colors]
+    [expandedSections, colors, reducedMotion]
   );
 
-  // Render a simple progress header
   const renderTasksHeader = () => {
-    const total = tasks.length;
     const completed = tasks.filter((t) => t.completed).length;
-    const remaining = total - completed;
+    const remaining = tasks.length - completed;
+
     return (
-      <View
-        style={[
-          styles.progressSection,
-          { backgroundColor: colors.card, borderBottomColor: colors.border },
-        ]}>
-        <View style={styles.statsContainer}>
-          <View style={styles.statItem}>
-            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
-              Completed
+      <View style={styles.statsHeaderWrap}>
+        <View
+          style={[
+            styles.progressSection,
+            {
+              backgroundColor: colors.card,
+              borderColor: colors.border,
+            },
+          ]}>
+          <View style={styles.progressInline}>
+            <View
+              style={[
+                styles.progressDot,
+                { backgroundColor: colors.primary },
+              ]}
+            />
+            <Text
+              style={[
+                typography.captionMedium,
+                styles.progressCaption,
+                { color: colors.textSecondary },
+              ]}>
+              To do
             </Text>
-            <Text style={[styles.statValue, { color: colors.success }]}>
-              {completed}
-            </Text>
-          </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statItem}>
-            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
-              Remaining
-            </Text>
-            <Text style={[styles.statValue, { color: colors.primary }]}>
+            <Text
+              style={[typography.headline, { color: colors.primary }]}
+              maxFontSizeMultiplier={1.4}>
               {remaining}
             </Text>
           </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statItem}>
-            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
-              Total
+          <View
+            style={[
+              styles.progressDivider,
+              { backgroundColor: colors.hairline },
+            ]}
+          />
+          <View style={styles.progressInline}>
+            <View
+              style={[
+                styles.progressDot,
+                { backgroundColor: colors.success },
+              ]}
+            />
+            <Text
+              style={[
+                typography.captionMedium,
+                styles.progressCaption,
+                { color: colors.textSecondary },
+              ]}>
+              Done
             </Text>
-            <Text style={[styles.statValue, { color: colors.text }]}>
-              {total}
+            <Text
+              style={[typography.headline, { color: colors.success }]}
+              maxFontSizeMultiplier={1.4}>
+              {completed}
             </Text>
           </View>
         </View>
@@ -227,130 +295,139 @@ const TaskList: React.FC<TaskListProps> = ({
     );
   };
 
+  const listEntranceStyle = {
+    flex: 1,
+    opacity: listEntranceOpacity,
+    transform: [{ translateY: listEntranceTranslateY }],
+  };
+
   if (tasks.length === 0) {
     return (
-      <EmptyTasksState
-        title="No tasks"
-        subtitle="Tap the + button to add a new task"
-        icon="calendar-outline"
-      />
+      <Animated.View style={[listEntranceStyle, styles.emptyWrap]}>
+        <EmptyTasksState
+          title="No tasks"
+          subtitle="Tap + to add one for this day."
+          icon="calendar-outline"
+        />
+      </Animated.View>
     );
   }
 
   return (
-    <SectionList
-      contentContainerStyle={styles.taskList}
-      sections={sections}
-      keyExtractor={(item) => item.id}
-      renderSectionHeader={renderSectionHeader}
-      stickySectionHeadersEnabled
-      ListHeaderComponent={renderTasksHeader}
-      scrollEventThrottle={16}
-      onScroll={
-        scrollY
-          ? Animated.event(
-              [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-              { useNativeDriver: false }
-            )
-          : undefined
-      }
-      renderItem={({ item, index, section }) => {
-        if (!expandedSections[section.title]) return null;
-        const isOverdue = Boolean(
-          item.dueDate && item.dueDate < currentDate.getTime()
-        );
-        const prereqsMet =
-          !item.predecessorIds ||
-          item.predecessorIds.length === 0 ||
-          item.predecessorIds.every(
-            (predId) => tasks.find((t) => t.id === predId)?.completed
+    <Animated.View style={listEntranceStyle}>
+      <SectionList
+        style={{ flex: 1 }}
+        contentContainerStyle={styles.taskList}
+        sections={sections}
+        keyExtractor={(item) => item.id}
+        renderSectionHeader={renderSectionHeader}
+        stickySectionHeadersEnabled
+        ListHeaderComponent={renderTasksHeader}
+        renderItem={({ item, index, section }) => {
+          if (!expandedSections[section.title]) return null;
+          const isOverdue = Boolean(
+            item.dueDate && item.dueDate < currentDate.getTime()
           );
-        return (
-          <TaskItem
-            item={item}
-            index={index}
-            onDelete={onDeleteTask}
-            onToggleComplete={onToggleTaskCompletion}
-            onPress={onTaskPress}
-            isOverdue={isOverdue}
-            arePrereqsMet={prereqsMet}
-            priority={section.priority}
-            mode="home"
-            showSwipeActions={false}
-            showAnimations={true}
-          />
-        );
-      }}
-    />
+          const prereqsMet =
+            !item.predecessorIds ||
+            item.predecessorIds.length === 0 ||
+            item.predecessorIds.every(
+              (predId) => tasks.find((t) => t.id === predId)?.completed
+            );
+          return (
+            <TaskItem
+              item={item}
+              index={index}
+              onDelete={onDeleteTask}
+              onToggleComplete={onToggleTaskCompletion}
+              onPress={onTaskPress}
+              isOverdue={isOverdue}
+              arePrereqsMet={prereqsMet}
+              priority={section.priority}
+              mode="home"
+              showAnimations={true}
+            />
+          );
+        }}
+      />
+    </Animated.View>
   );
 };
 
 const styles = StyleSheet.create({
+  emptyWrap: {
+    flex: 1,
+    paddingBottom: 108,
+  },
   taskList: {
-    marginHorizontal: SIZES.medium,
+    paddingBottom: 108,
+  },
+  statsHeaderWrap: {
+    marginBottom: HOME_LIST.stackGap,
   },
   progressSection: {
-    paddingVertical: SIZES.small,
-    borderBottomWidth: 1,
     flexDirection: "row",
     alignItems: "center",
-    // Remove side spacing for the header by negating list container margins
-    marginHorizontal: -SIZES.medium,
-    paddingHorizontal: SIZES.medium,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: HOME_LIST.cardRadius,
+    paddingVertical: HOME_LIST.sectionPaddingV,
+    paddingHorizontal: HOME_LIST.sectionPaddingH,
   },
-  statsContainer: {
-    flexDirection: "row",
-    // Ensure items stretch edge-to-edge without side gaps
-    justifyContent: "space-around",
+  progressInline: {
     flex: 1,
-  },
-
-  statItem: {
+    flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
+    minWidth: 0,
   },
-  statLabel: {
-    fontSize: SIZES.small,
-    marginBottom: SIZES.small,
+  progressCaption: {
+    marginRight: SIZES.base,
   },
-  statValue: {
-    fontSize: SIZES.medium,
-    fontWeight: "600",
+  progressDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    marginRight: SIZES.base,
   },
-  statDivider: {
-    width: 1,
-    opacity: 0.2,
-    backgroundColor: "rgba(0,0,0,0.2)",
+  progressDivider: {
+    width: StyleSheet.hairlineWidth,
+    alignSelf: "stretch",
+    marginVertical: 2,
+    marginHorizontal: SIZES.base,
   },
 
   sectionHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: SIZES.small,
+    paddingVertical: HOME_LIST.sectionPaddingV,
+    paddingHorizontal: HOME_LIST.sectionPaddingH,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: HOME_LIST.cardRadius,
+    marginBottom: HOME_LIST.stackGap,
   },
   sectionHeaderLeft: {
     flexDirection: "row",
     alignItems: "center",
+    flex: 1,
+    minWidth: 0,
   },
   priorityIndicator: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    marginRight: SIZES.small,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    marginRight: SIZES.medium,
+    borderWidth: 2,
   },
   sectionTitle: {
-    fontSize: SIZES.medium,
-    fontWeight: "600",
+    flexShrink: 1,
   },
-  sectionBadge: {
+  countPill: {
     paddingHorizontal: SIZES.small,
-    paddingVertical: SIZES.small,
-    borderRadius: 10,
-    marginLeft: SIZES.small,
-  },
-  sectionCount: {
-    fontSize: SIZES.small,
-    fontWeight: "600",
+    paddingVertical: 4,
+    borderRadius: HOME_LIST.cardRadius,
+    minWidth: 32,
+    alignItems: "center",
   },
 });
 

@@ -8,17 +8,23 @@ import {
   View,
 } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
+import { typography } from "../../typography";
 
 interface ActionFooterProps {
   onCancel: () => void;
   onSave: () => void;
   saveEnabled: boolean;
+  /** Defaults to "Save Task" for task flows; use e.g. "Save habit" for habits. */
+  saveButtonText?: string;
+  saveAccessibilityLabel?: string;
 }
 
 const ActionFooter: React.FC<ActionFooterProps> = ({
   onCancel,
   onSave,
   saveEnabled,
+  saveButtonText = "Save Task",
+  saveAccessibilityLabel,
 }) => {
   const { colors, isDark } = useTheme();
 
@@ -36,9 +42,7 @@ const ActionFooter: React.FC<ActionFooterProps> = ({
           styles.cancelButton,
           {
             borderColor: colors.border,
-            backgroundColor: isDark
-              ? "rgba(255,255,255,0.05)"
-              : "rgba(0,0,0,0.03)",
+            backgroundColor: isDark ? colors.surface : colors.inputBackground,
           },
         ]}
         onPress={onCancel}
@@ -54,17 +58,20 @@ const ActionFooter: React.FC<ActionFooterProps> = ({
       <TouchableOpacity
         style={[
           styles.saveButton,
-          { backgroundColor: colors.primary },
+          {
+            backgroundColor: colors.primary,
+            shadowColor: colors.shadowColor,
+          },
           !saveEnabled && { opacity: 0.6 },
         ]}
         onPress={onSave}
         disabled={!saveEnabled}
         activeOpacity={0.7}
-        accessibilityLabel="Save task"
+        accessibilityLabel={saveAccessibilityLabel ?? saveButtonText}
         accessibilityRole="button"
         accessibilityState={{ disabled: !saveEnabled }}>
         <Text style={[styles.saveButtonText, { color: colors.onPrimary }]}>
-          Save Task
+          {saveButtonText}
         </Text>
         <Ionicons name="checkmark-outline" size={22} color={colors.onPrimary} />
       </TouchableOpacity>
@@ -98,7 +105,6 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 20,
     borderRadius: 16,
-    shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: 2,
@@ -108,14 +114,12 @@ const styles = StyleSheet.create({
     // elevation: 5,
   },
   cancelButtonText: {
-    fontWeight: "600",
+    ...typography.button,
     marginLeft: 8,
-    fontSize: 16,
   },
   saveButtonText: {
-    fontWeight: "600",
+    ...typography.button,
     marginRight: 8,
-    fontSize: 16,
   },
 });
 

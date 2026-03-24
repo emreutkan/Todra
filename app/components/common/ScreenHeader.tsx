@@ -1,28 +1,35 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SIZES } from '../../theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../context/ThemeContext';
+import { typography } from '../../typography';
 
 interface ScreenHeaderProps {
     title: string;
     showBackButton?: boolean;
     onBackPress?: () => void;
     rightComponent?: React.ReactNode;
+    /** Larger Fraunces title for focal screens (e.g. Add Task) */
+    titleEmphasis?: "default" | "hero";
 }
 
 const ScreenHeader: React.FC<ScreenHeaderProps> = ({
                                                        title,
                                                        showBackButton = false,
                                                        onBackPress,
-                                                       rightComponent
+                                                       rightComponent,
+                                                       titleEmphasis = "default",
                                                    }) => {
     const { colors } = useTheme();
+    const insets = useSafeAreaInsets();
 
     return (
         <View style={[styles.header, {
             backgroundColor: colors.card,
-            borderBottomColor: colors.border
+            borderBottomColor: colors.border,
+            paddingTop: Math.max(insets.top, 12),
         }]}>
             <View style={styles.headerContent}>
                 {showBackButton && (
@@ -39,8 +46,14 @@ const ScreenHeader: React.FC<ScreenHeaderProps> = ({
                 )}
 
                 <Text
-                    style={[styles.headerTitle, { color: colors.text }]}
-                    numberOfLines={1}
+                    style={[
+                        titleEmphasis === "hero"
+                            ? typography.heroTitle
+                            : typography.title,
+                        styles.headerTitle,
+                        { color: colors.text },
+                    ]}
+                    numberOfLines={titleEmphasis === "hero" ? 2 : 1}
                     ellipsizeMode="tail"
                 >
                     {title}
@@ -58,7 +71,6 @@ const ScreenHeader: React.FC<ScreenHeaderProps> = ({
 
 const styles = StyleSheet.create({
     header: {
-        paddingTop: Platform.OS === 'ios' ? 50 : 25,
         padding: SIZES.medium,
         borderBottomWidth: 1,
     },
@@ -71,8 +83,6 @@ const styles = StyleSheet.create({
         padding: SIZES.small / 2,
     },
     headerTitle: {
-        fontSize: SIZES.large,
-        fontWeight: 'bold',
         flex: 1,
     },
     rightComponent: {

@@ -1,6 +1,7 @@
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
+import { typography } from "../../typography";
 
 interface InfoRowProps {
   label: string;
@@ -45,16 +46,16 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   infoLabel: {
-    fontSize: 16,
+    ...typography.body,
   },
   infoValue: {
-    fontSize: 16,
+    ...typography.body,
   },
   infoButton: {
     paddingVertical: 8,
   },
   infoButtonText: {
-    fontSize: 16,
+    ...typography.bodyMedium,
   },
 });
 

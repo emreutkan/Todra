@@ -1,57 +1,42 @@
-import { BlurView } from "expo-blur";
 import React from "react";
-import { StyleSheet, View } from "react-native";
+import { View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useTheme } from "../../context/ThemeContext";
+import GlassBar from "../common/GlassBar";
 import AddButton from "./AddButton";
+import AssistantNavFab from "./AssistantNavFab";
 import FilterButton from "./FilterButton";
-import SettingsButton from "./SettingsButton";
+import SettingsFab from "./SettingsFab";
 
 const BottomNavigator = ({
   onFilterPress,
   onAddTaskPress,
   onSettingsPress,
+  onAssistantPress,
+  activeFilterCount = 0,
 }: {
   onFilterPress: () => void;
   onAddTaskPress: () => void;
   onSettingsPress: () => void;
+  onAssistantPress: () => void;
+  activeFilterCount?: number;
 }) => {
-  useTheme();
   const bottomInsets = useSafeAreaInsets();
+
   return (
-    <View style={[styles.wrapper, { marginBottom: bottomInsets.bottom }]}>
-      <BlurView
-        style={styles.container}
-        intensity={100}
-        tint="systemUltraThinMaterialLight">
-        <SettingsButton onPress={onSettingsPress} showShadow={false} />
+    <GlassBar
+      wrapperStyle={{ marginBottom: Math.max(bottomInsets.bottom, 10) }}>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
+        <SettingsFab onPress={onSettingsPress} showShadow={false} />
+        <FilterButton
+          onPress={onFilterPress}
+          showShadow={false}
+          activeFilterCount={activeFilterCount}
+        />
         <AddButton onPress={onAddTaskPress} showShadow={false} />
-        <FilterButton onPress={onFilterPress} showShadow={false} />
-      </BlurView>
-    </View>
+        <AssistantNavFab onPress={onAssistantPress} showShadow={false} />
+      </View>
+    </GlassBar>
   );
 };
-
-const styles = StyleSheet.create({
-  wrapper: {
-    borderRadius: 100,
-    overflow: "hidden",
-    alignSelf: "flex-end",
-    marginRight: 10,
-  },
-  container: {
-    // borderWidth: 1,
-    // minWidth: 56 * 3 + 16 * 2 + 36,
-    flexDirection: "row",
-    gap: 16,
-    alignItems: "flex-end",
-    justifyContent: "flex-end",
-    paddingHorizontal: 10,
-    paddingVertical: 12,
-    zIndex: 1000,
-    backgroundColor: "transparent",
-    flexShrink: 0,
-  },
-});
 
 export default BottomNavigator;

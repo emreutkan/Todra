@@ -2,8 +2,10 @@ import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
+import { RADII, SIZES } from "../../theme";
+import { typography } from "../../typography";
 
-interface SettingsButtonProps {
+interface SettingsListRowProps {
   icon: keyof typeof Ionicons.glyphMap;
   label: string;
   onPress: () => void;
@@ -11,45 +13,45 @@ interface SettingsButtonProps {
   marginTop?: number;
 }
 
-const SettingsButton: React.FC<SettingsButtonProps> = ({
+const SettingsListRow: React.FC<SettingsListRowProps> = ({
   icon,
   label,
   onPress,
   isDestructive = false,
   marginTop = 0,
 }) => {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
 
   const getButtonStyle = () => {
     if (isDestructive) {
       return {
-        backgroundColor: isDark ? "#421b1b" : "#ffebeb",
-        marginTop: marginTop || 8,
+        backgroundColor: colors.destructiveSurface,
+        marginTop: marginTop || SIZES.base,
       };
     }
     return {
       backgroundColor: colors.surface,
-      marginTop: marginTop || 8,
+      marginTop: marginTop || SIZES.base,
     };
   };
 
   const getIconColor = () => {
     if (isDestructive) {
-      return isDark ? "#ff6b6b" : "#d63031";
+      return colors.destructiveText;
     }
     return colors.primary;
   };
 
   const getTextColor = () => {
     if (isDestructive) {
-      return isDark ? "#ff6b6b" : "#d63031";
+      return colors.destructiveText;
     }
     return colors.text;
   };
 
   const getChevronColor = () => {
     if (isDestructive) {
-      return isDark ? "#ff6b6b" : "#d63031";
+      return colors.destructiveText;
     }
     return colors.text;
   };
@@ -76,17 +78,17 @@ const styles = StyleSheet.create({
   settingButton: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 8,
+    paddingVertical: SIZES.small,
+    paddingHorizontal: SIZES.medium,
+    borderRadius: RADII.sm,
   },
   settingIcon: {
-    marginRight: 12,
+    marginRight: SIZES.small,
   },
   settingButtonText: {
     flex: 1,
-    fontSize: 16,
+    ...typography.body,
   },
 });
 
-export default SettingsButton;
+export default SettingsListRow;

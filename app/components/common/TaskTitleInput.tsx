@@ -1,8 +1,15 @@
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
-import { StyleSheet, Text, TextInput, TouchableOpacity } from "react-native";
+import {
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+} from "react-native";
 import { useTheme } from "../../context/ThemeContext";
+import { TASK_TITLE_MAX_LENGTH } from "../../constants/taskInputLimits";
 import { SIZES } from "../../theme";
+import { typography } from "../../typography";
 
 interface TaskTitleInputProps {
   value: string;
@@ -16,6 +23,8 @@ interface TaskTitleInputProps {
   returnKeyType?: "done" | "next" | "default";
   onSubmitEditing?: () => void;
   style?: any;
+  /** Primary field treatment: accent bar + larger type (Add Task title) */
+  hero?: boolean;
 }
 
 const TaskTitleInput: React.FC<TaskTitleInputProps> = ({
@@ -30,6 +39,7 @@ const TaskTitleInput: React.FC<TaskTitleInputProps> = ({
   returnKeyType = "next",
   onSubmitEditing,
   style,
+  hero = false,
 }) => {
   const { colors } = useTheme();
 
@@ -38,14 +48,25 @@ const TaskTitleInput: React.FC<TaskTitleInputProps> = ({
       ...style,
     },
     input: {
+      ...typography.body,
       backgroundColor: colors.card,
       borderRadius: SIZES.base,
       padding: SIZES.medium,
       color: colors.text,
-      fontSize: SIZES.medium,
-      borderWidth: 1,
+      borderWidth: StyleSheet.hairlineWidth,
       borderColor: colors.border,
       minHeight: multiline ? 60 : 48,
+    },
+    inputHero: {
+      ...typography.headline,
+      borderLeftWidth: 4,
+      borderLeftColor: colors.primary,
+      borderTopLeftRadius: 0,
+      borderBottomLeftRadius: 0,
+      borderTopRightRadius: SIZES.base,
+      borderBottomRightRadius: SIZES.base,
+      paddingVertical: 14,
+      minHeight: multiline ? 60 : 56,
     },
     clickableContainer: {
       flexDirection: "row",
@@ -54,15 +75,14 @@ const TaskTitleInput: React.FC<TaskTitleInputProps> = ({
       backgroundColor: colors.card,
       borderRadius: SIZES.base,
       padding: SIZES.medium,
-      borderWidth: 1,
+      borderWidth: StyleSheet.hairlineWidth,
       borderColor: colors.border,
       minHeight: 48,
     },
     clickableText: {
+      ...typography.bodyMedium,
       flex: 1,
       color: colors.text,
-      fontSize: SIZES.medium,
-      fontWeight: "500",
     },
     editIcon: {
       marginLeft: SIZES.small,
@@ -90,7 +110,7 @@ const TaskTitleInput: React.FC<TaskTitleInputProps> = ({
 
   return (
     <TextInput
-      style={[styles.input, style]}
+      style={[styles.input, hero && styles.inputHero, style]}
       value={value}
       onChangeText={onChangeText}
       placeholder={placeholder}
@@ -101,6 +121,10 @@ const TaskTitleInput: React.FC<TaskTitleInputProps> = ({
       onSubmitEditing={onSubmitEditing}
       multiline={multiline}
       editable={editable}
+      maxLength={TASK_TITLE_MAX_LENGTH}
+      maxFontSizeMultiplier={1.45}
+      accessibilityLabel="Task title"
+      accessibilityHint={`Required. Up to ${TASK_TITLE_MAX_LENGTH} characters.`}
     />
   );
 };

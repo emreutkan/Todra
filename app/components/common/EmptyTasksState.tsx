@@ -1,8 +1,10 @@
 import { Ionicons } from "@expo/vector-icons";
-import React from "react";
-import { StyleSheet, Text, View } from "react-native";
+import React, { useEffect, useRef } from "react";
+import { Animated, Easing, StyleSheet, Text, View } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
+import { useReducedMotion } from "../../hooks/useReducedMotion";
 import { SIZES } from "../../theme";
+import { typography } from "../../typography";
 
 interface EmptyTasksStateProps {
   title?: string;
@@ -11,25 +13,102 @@ interface EmptyTasksStateProps {
 }
 
 const EmptyTasksState: React.FC<EmptyTasksStateProps> = ({
-  title = "No tasks",
-  subtitle = "Tap the + button to add a new task",
+  title = "Nothing here yet",
+  subtitle = "Add a task for this day — tap + when you’re ready.",
   icon = "calendar-outline",
 }) => {
   const { colors } = useTheme();
+  const reducedMotion = useReducedMotion();
+  const entrance = useRef(new Animated.Value(reducedMotion ? 1 : 0)).current;
+  const iconBob = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (reducedMotion) {
+      entrance.setValue(1);
+      return;
+    }
+    entrance.setValue(0);
+    Animated.timing(entrance, {
+      toValue: 1,
+      duration: 420,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    }).start();
+  }, [reducedMotion, entrance]);
+
+  useEffect(() => {
+    if (reducedMotion) return;
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(iconBob, {
+          toValue: 1,
+          duration: 2200,
+          easing: Easing.inOut(Easing.sin),
+          useNativeDriver: true,
+        }),
+        Animated.timing(iconBob, {
+          toValue: 0,
+          duration: 2200,
+          easing: Easing.inOut(Easing.sin),
+          useNativeDriver: true,
+        }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [reducedMotion, iconBob]);
+
+  const cardStyle = {
+    opacity: entrance,
+    transform: [
+      {
+        translateY: entrance.interpolate({
+          inputRange: [0, 1],
+          outputRange: [10, 0],
+        }),
+      },
+    ],
+  };
+
+  const iconStyle = {
+    transform: [
+      {
+        translateY: iconBob.interpolate({
+          inputRange: [0, 1],
+          outputRange: [0, -5],
+        }),
+      },
+    ],
+    opacity: entrance.interpolate({
+      inputRange: [0, 0.5, 1],
+      outputRange: [0, 0.45, 0.38],
+    }),
+  };
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View
+      <Animated.View
         style={[
           styles.content,
           { backgroundColor: colors.card, borderColor: colors.border },
+          cardStyle,
         ]}>
-        <Ionicons name={icon} size={70} color={colors.text + "40"} />
-        <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
-        <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+        <Animated.View style={iconStyle}>
+          <Ionicons name={icon} size={64} color={colors.primary} />
+        </Animated.View>
+        <Text
+          style={[typography.headline, styles.title, { color: colors.text }]}>
+          {title}
+        </Text>
+        <Text
+          style={[
+            typography.bodySmall,
+            styles.subtitle,
+            { color: colors.textSecondary },
+          ]}>
           {subtitle}
         </Text>
-      </View>
+      </Animated.View>
     </View>
   );
 };
@@ -39,24 +118,26 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    padding: 20,
+    paddingHorizontal: SIZES.medium,
+    paddingVertical: SIZES.large,
   },
   content: {
     width: "100%",
-    padding: 30,
-    borderRadius: 12,
+    maxWidth: 340,
+    paddingVertical: SIZES.extraLarge,
+    paddingHorizontal: SIZES.medium,
+    borderRadius: SIZES.base + 6,
     alignItems: "center",
     borderWidth: 1,
   },
   title: {
-    fontSize: SIZES.large,
-    fontWeight: "bold",
-    marginTop: 20,
+    marginTop: SIZES.medium,
+    textAlign: "center",
   },
   subtitle: {
-    fontSize: SIZES.medium,
     textAlign: "center",
-    marginTop: 10,
+    marginTop: SIZES.small,
+    paddingHorizontal: SIZES.small,
   },
 });
 
