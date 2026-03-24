@@ -1,5 +1,6 @@
 import * as Haptics from "expo-haptics";
 import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Ionicons } from "@expo/vector-icons";
 import {
   Animated as RNAnimated,
   Dimensions,
@@ -159,6 +160,8 @@ interface DateSliderProps {
   onDateChange: (date: Date) => void;
   /** Top safe inset from `useSafeAreaInsets().top` — pulls header slightly into the status area when set. */
   safeAreaTopInset?: number;
+  /** Opens the Habits area from the home header (right shortcut). */
+  onHabitsPress?: () => void;
 }
 
 const DateSlider: React.FC<DateSliderProps> = ({
@@ -168,6 +171,7 @@ const DateSlider: React.FC<DateSliderProps> = ({
   selectedMonth,
   onDateChange,
   safeAreaTopInset = 0,
+  onHabitsPress,
 }) => {
   const { colors } = useTheme();
   const reducedMotion = useReducedMotion();
@@ -419,6 +423,20 @@ const DateSlider: React.FC<DateSliderProps> = ({
             />
           ) : null}
         </View>
+        {onHabitsPress ? (
+          <TouchableOpacity
+            style={styles.habitsShortcut}
+            onPress={() => {
+              void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              onHabitsPress();
+            }}
+            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            accessibilityLabel="Open habits"
+            accessibilityRole="button"
+            accessibilityHint="View recurring habits and routines">
+            <Ionicons name="repeat-outline" size={24} color={colors.text} />
+          </TouchableOpacity>
+        ) : null}
       </View>
 
       <FlatList
@@ -476,6 +494,12 @@ const styles = StyleSheet.create({
     marginLeft: SIZES.small,
     alignItems: "stretch",
     justifyContent: "center",
+  },
+  habitsShortcut: {
+    marginLeft: SIZES.small,
+    padding: SIZES.small / 2,
+    justifyContent: "center",
+    alignItems: "center",
   },
   dateListContent: {
     paddingBottom: 0,

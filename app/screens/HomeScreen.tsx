@@ -198,6 +198,7 @@ const HomeScreen: React.FC = () => {
             selectedMonth={selectedMonth}
             onDateChange={handleDateChange}
             safeAreaTopInset={insets.top}
+            onHabitsPress={() => navigation.navigate("Habits")}
           />
         </Animated.View>
 

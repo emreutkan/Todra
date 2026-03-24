@@ -34,6 +34,42 @@ export interface ReminderSettings {
   spamMode?: boolean; // aggressive reminders pattern
 }
 
+export type HabitScheduleType = "daily" | "interval" | "weekly";
+
+export interface DayPhase {
+  dayOfWeek: number; // 0–6 (for "weekly" schedule — fixed per weekday)
+  name: string; // "Push Day", "Pull Day", etc.
+  description?: string;
+}
+
+export interface HabitCompletion {
+  date: string; // "YYYY-MM-DD"
+  completedAt: number; // unix timestamp
+  phaseName?: string; // snapshot of phase name at time of completion
+}
+
+export interface Habit {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  color: string; // hex accent (left border, checkbox fill)
+  icon: string; // Ionicons name
+  scheduleType: HabitScheduleType;
+  // "daily": shown every day
+  // "interval": every N days, phases cycle by occurrence count
+  intervalDays: number; // for "interval": every N days (default 1)
+  intervalPhases: string[]; // for "interval": ["Push", "Pull", "Legs"]
+  // "weekly": specific weekdays, each with an optional phase name
+  dayPhases: DayPhase[]; // for "weekly": [{dayOfWeek: 1, name: "Push Day"}, ...]
+  startDate: string; // "YYYY-MM-DD"
+  endDate?: string; // "YYYY-MM-DD", optional
+  completions: HabitCompletion[];
+  createdAt: number;
+  isArchived: boolean;
+  archivedAt?: string;
+}
+
 export type RootStackParamList = {
   Splash: undefined;
   Home:
@@ -47,4 +83,7 @@ export type RootStackParamList = {
   ArchivedTasks: undefined; // New screen for viewing archived tasks
   AiAssistant: undefined;
   AiSettings: undefined;
+  Habits: undefined;
+  AddHabit: { habitId?: string } | undefined;
+  HabitDetail: { habitId: string };
 };

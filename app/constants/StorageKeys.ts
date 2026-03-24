@@ -5,4 +5,5 @@ export const STORAGE_KEYS = {
   CATEGORIES: "@taskplanner:categories",
   /** Non-secret AI provider prefs (model, URLs). Key is in SecureStore. */
   AI_CONFIG: "@taskplanner:ai_config",
+  HABITS: "@taskplanner:habits",
 } as const;
