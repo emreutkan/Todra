@@ -29,7 +29,15 @@ const GlassBar: React.FC<GlassBarProps> = ({
   const { colors, isDark } = useTheme();
 
   return (
-    <View style={[styles.wrapper, wrapperStyle]}>
+    <View
+      style={[
+        styles.wrapper,
+        {
+          borderColor: colors.border,
+          shadowColor: colors.shadowColor,
+        },
+        wrapperStyle,
+      ]}>
       <View style={styles.clip}>
         {Platform.OS === "ios" ? (
           <BlurView
@@ -57,6 +65,17 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     alignSelf: "flex-end",
     marginRight: SIZES.medium,
+    borderWidth: StyleSheet.hairlineWidth * 2,
+    ...Platform.select({
+      ios: {
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.14,
+        shadowRadius: 20,
+      },
+      android: {
+        elevation: 10,
+      },
+    }),
   },
   clip: {
     position: "relative",
@@ -65,13 +84,13 @@ const styles = StyleSheet.create({
   },
   row: {
     flexDirection: "row",
-    alignItems: "flex-end",
+    alignItems: "center",
     justifyContent: "flex-end",
-    paddingHorizontal: SIZES.medium,
-    paddingVertical: SIZES.medium,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
     zIndex: 2,
     flexShrink: 0,
-    gap: 16,
+    gap: 10,
   },
 });
 

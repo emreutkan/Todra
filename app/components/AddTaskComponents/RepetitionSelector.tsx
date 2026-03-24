@@ -9,6 +9,7 @@ import {
   View,
 } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
+import { RADII } from "../../theme";
 import { RepetitionRule } from "../../types";
 import { typography } from "../../typography";
 import FormSection from "./FormSection";
@@ -168,7 +169,7 @@ const RepetitionSelector: React.FC<RepetitionSelectorProps> = ({
       justifyContent: "center",
       paddingVertical: 10,
       paddingHorizontal: 12,
-      borderRadius: 8,
+      borderRadius: RADII.sm,
       borderWidth: 1.5,
       borderColor: colors.border,
       backgroundColor: colors.card,
@@ -229,7 +230,7 @@ const RepetitionSelector: React.FC<RepetitionSelectorProps> = ({
     dayButton: {
       flex: 1,
       paddingVertical: 10,
-      borderRadius: 8,
+      borderRadius: RADII.sm,
       borderWidth: 1.5,
       borderColor: colors.border,
       backgroundColor: colors.card,
@@ -301,7 +302,7 @@ const RepetitionSelector: React.FC<RepetitionSelectorProps> = ({
       flex: 1,
       paddingVertical: 12,
       paddingHorizontal: 20,
-      borderRadius: 8,
+      borderRadius: RADII.sm,
       borderWidth: 1,
       borderColor: colors.border,
       backgroundColor: colors.card,
@@ -315,7 +316,7 @@ const RepetitionSelector: React.FC<RepetitionSelectorProps> = ({
       flex: 1,
       paddingVertical: 12,
       paddingHorizontal: 20,
-      borderRadius: 8,
+      borderRadius: RADII.sm,
       backgroundColor: colors.primary,
       alignItems: "center",
     },

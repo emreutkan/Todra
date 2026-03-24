@@ -30,6 +30,7 @@ import {
   DEFAULT_AI_CONFIG,
   PRESET_DEFAULT_MODEL,
 } from "../types/ai";
+import { RADII } from "../theme";
 import { RootStackParamList } from "../types";
 import { typography } from "../typography";
 
@@ -138,17 +139,17 @@ const AiSettingsScreen: React.FC = () => {
   ];
 
   return (
-    <View
-      style={[
-        styles.container,
-        { backgroundColor: colors.background, paddingTop: insets.top },
-      ]}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <StatusBar style={isDark ? "light" : "dark"} />
 
       <View
         style={[
           styles.header,
-          { backgroundColor: colors.card, borderColor: colors.border },
+          {
+            backgroundColor: colors.card,
+            borderColor: colors.border,
+            paddingTop: Math.max(insets.top, 12),
+          },
         ]}>
         <TouchableOpacity
           style={styles.backButton}
@@ -378,7 +379,7 @@ const styles = StyleSheet.create({
   centered: { flex: 1, justifyContent: "center", alignItems: "center" },
   privacyCard: {
     padding: 16,
-    borderRadius: 12,
+    borderRadius: RADII.md,
     borderWidth: 1,
     marginBottom: 20,
     gap: 8,
@@ -387,12 +388,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     padding: 14,
-    borderRadius: 8,
+    borderRadius: RADII.sm,
     borderWidth: 1,
   },
   menu: {
     marginTop: 8,
-    borderRadius: 8,
+    borderRadius: RADII.sm,
     borderWidth: 1,
     overflow: "hidden",
   },
@@ -405,7 +406,7 @@ const styles = StyleSheet.create({
   },
   input: {
     borderWidth: 1,
-    borderRadius: 8,
+    borderRadius: RADII.sm,
     paddingHorizontal: 12,
     paddingVertical: 10,
     ...typography.body,

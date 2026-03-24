@@ -1,6 +1,7 @@
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
+import { RADII } from "../../theme";
 import { typography } from "../../typography";
 
 interface SettingsSectionProps {
@@ -37,7 +38,7 @@ const styles = StyleSheet.create({
   section: {
     marginHorizontal: 16,
     marginVertical: 8,
-    borderRadius: 12,
+    borderRadius: RADII.md,
     padding: 16,
     borderWidth: 1,
   },

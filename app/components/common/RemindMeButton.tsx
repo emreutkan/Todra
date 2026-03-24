@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
 import { ReminderPreset, ReminderSettings } from "../../types";
+import { RADII } from "../../theme";
 import { typography } from "../../typography";
 import CustomDatePicker from "./CustomDatePicker";
 
@@ -147,7 +148,7 @@ const RemindMeButton: React.FC<RemindMeButtonProps> = ({
       borderWidth: 1,
       borderColor: colors.border,
       backgroundColor: colors.card,
-      borderRadius: 12,
+      borderRadius: RADII.md,
       paddingHorizontal: 12,
       paddingVertical: 10,
       flexDirection: "row",
@@ -172,7 +173,7 @@ const RemindMeButton: React.FC<RemindMeButtonProps> = ({
     },
     timeInfo: {
       backgroundColor: colors.card,
-      borderRadius: 8,
+      borderRadius: RADII.sm,
       padding: 12,
       marginBottom: 16,
     },

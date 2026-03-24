@@ -2,6 +2,7 @@ import { format, isToday, isTomorrow } from "date-fns";
 import React, { useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
+import { RADII } from "../../theme";
 import { typography } from "../../typography";
 import DateTimeModal from "./DateTimeModal";
 
@@ -73,7 +74,7 @@ const DateTimeButton: React.FC<DateTimeButtonProps> = ({
       backgroundColor: colors.card,
       borderColor: colors.border,
       borderWidth: 1,
-      borderRadius: 12,
+      borderRadius: RADII.md,
       overflow: "hidden",
       height: 54,
       alignItems: "center",

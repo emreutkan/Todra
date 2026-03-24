@@ -14,11 +14,11 @@ import { typography } from "../../typography";
 import AnimatedTodayButton from "../common/AnimatedTodayButton";
 import DateTimeModal from "../common/DateTimeModal";
 
-const { width } = Dimensions.get("window");
+const WINDOW_WIDTH = Dimensions.get("window").width;
+/** Full-width strip; measured width used once laid out. */
+const FALLBACK_TRACK_W = WINDOW_WIDTH;
 const VISIBLE_ITEMS = 5;
 const ITEM_SPACING = 6;
-const DAY_ITEM_WIDTH =
-  (width - ITEM_SPACING * (VISIBLE_ITEMS + 1)) / VISIBLE_ITEMS;
 
 interface DateSliderProps {
   dateRange: Date[];
@@ -41,6 +41,15 @@ const DateSlider: React.FC<DateSliderProps> = ({
   const flatListRef = useRef<FlatList>(null);
   const [initialized, setInitialized] = useState(false);
   const [isDatePickerVisible, setIsDatePickerVisible] = useState(false);
+  const [trackWidth, setTrackWidth] = useState(0);
+
+  const effectiveTrackW =
+    trackWidth > 0 ? trackWidth : FALLBACK_TRACK_W;
+  const dayItemWidth = useMemo(
+    () =>
+      (effectiveTrackW - ITEM_SPACING * (VISIBLE_ITEMS + 1)) / VISIBLE_ITEMS,
+    [effectiveTrackW]
+  );
 
   // Find current date index in the date range
   const currentDateIndex = useMemo(() => {
@@ -89,7 +98,7 @@ const DateSlider: React.FC<DateSliderProps> = ({
         initialized ? 10 : 300
       );
     }
-  }, [currentDateIndex]);
+  }, [currentDateIndex, dayItemWidth, initialized]);
 
   // Check if a date is today
   const isToday = (date: Date) => {
@@ -126,8 +135,8 @@ const DateSlider: React.FC<DateSliderProps> = ({
       if (flatListRef.current && currentDateIndex >= 0) {
         flatListRef.current.scrollToOffset({
           offset:
-            currentDateIndex * (DAY_ITEM_WIDTH + ITEM_SPACING) -
-            (width - DAY_ITEM_WIDTH) / 2,
+            currentDateIndex * (dayItemWidth + ITEM_SPACING) -
+            (effectiveTrackW - dayItemWidth) / 2,
           animated: true,
         });
       }
@@ -157,6 +166,9 @@ const DateSlider: React.FC<DateSliderProps> = ({
     const monthAbbr = isFirstDayOfMonth
       ? date.toLocaleDateString(undefined, { month: "short" })
       : "";
+    const weekdayShort = date
+      .toLocaleDateString(undefined, { weekday: "short" })
+      .replace(/\.$/, "");
 
     return (
       <TouchableOpacity
@@ -169,61 +181,73 @@ const DateSlider: React.FC<DateSliderProps> = ({
         )} as the current date`}
         style={[
           styles.dateItem,
-          { width: DAY_ITEM_WIDTH },
+          { width: dayItemWidth },
           _isSelected && [{ backgroundColor: colors.primary }],
         ]}
         onPress={() => onDateChange(date)}
         activeOpacity={0.7}>
         {isFirstDayOfMonth && (
-          <View
-            style={[
-              styles.monthBadge,
-              {
-                backgroundColor: _isSelected
-                  ? colors.primary + "70"
-                  : colors.primary + "20",
-              },
-            ]}>
-            <Text
+          <View style={styles.monthBadgeRow} pointerEvents="none">
+            <View
               style={[
-                styles.monthBadgeText,
-                { color: _isSelected ? colors.onPrimary : colors.primary },
+                styles.monthBadge,
+                {
+                  backgroundColor: _isSelected
+                    ? colors.primary + "70"
+                    : colors.primary + "20",
+                },
               ]}>
-              {monthAbbr}
-            </Text>
+              <Text
+                style={[
+                  styles.monthBadgeText,
+                  { color: _isSelected ? colors.onPrimary : colors.primary },
+                ]}>
+                {monthAbbr}
+              </Text>
+            </View>
           </View>
         )}
 
-        <Text
+        <View
           style={[
-            styles.dayName,
-            {
-              color: _isSelected ? colors.onPrimary : colors.textSecondary,
-            },
+            styles.dateCellInner,
+            isFirstDayOfMonth && styles.dateCellInnerWithBadge,
           ]}>
-          {date
-            .toLocaleDateString(undefined, { weekday: "short" })
-            .substring(0, 2)}
-        </Text>
+          <Text
+            style={[
+              styles.dayName,
+              {
+                color: _isSelected ? colors.onPrimary : colors.textSecondary,
+              },
+            ]}>
+            {weekdayShort.slice(0, 3)}
+          </Text>
 
-        <Text
-          style={[
-            styles.dateNumber,
-            {
-              color: _isSelected ? colors.onPrimary : colors.text,
-            },
-            _isToday &&
-              !_isSelected && [styles.todayText, { color: colors.primary }],
-          ]}
-          maxFontSizeMultiplier={1.35}>
-          {date.getDate()}
-        </Text>
+          <Text
+            style={[
+              styles.dateNumber,
+              {
+                color: _isSelected ? colors.onPrimary : colors.text,
+              },
+              _isToday &&
+                !_isSelected && [styles.todayText, { color: colors.primary }],
+            ]}
+            maxFontSizeMultiplier={1.45}>
+            {date.getDate()}
+          </Text>
+        </View>
       </TouchableOpacity>
     );
   };
 
   return (
     <View
+      onLayout={(e) => {
+        const w = e.nativeEvent.layout.width;
+        if (w > 0 && Math.abs(w - trackWidth) > 1) {
+          setTrackWidth(w);
+        }
+      }}
       style={[
         styles.container,
         {
@@ -233,12 +257,12 @@ const DateSlider: React.FC<DateSliderProps> = ({
         Platform.select({
           ios: {
             shadowColor: colors.shadowColor,
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.1,
-            shadowRadius: 1,
+            shadowOffset: { width: 0, height: 1 },
+            shadowOpacity: 0.08,
+            shadowRadius: 2,
           },
           android: {
-            elevation: 3,
+            elevation: 2,
           },
         }),
       ]}>
@@ -282,13 +306,14 @@ const DateSlider: React.FC<DateSliderProps> = ({
         renderItem={renderDateItem}
         horizontal
         showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.dateListContent}
         decelerationRate="fast"
-        snapToInterval={DAY_ITEM_WIDTH + ITEM_SPACING}
+        snapToInterval={dayItemWidth + ITEM_SPACING}
         snapToAlignment="center"
         onScrollToIndexFailed={handleScrollToIndexFailed}
         getItemLayout={(_data, index) => ({
-          length: DAY_ITEM_WIDTH + ITEM_SPACING,
-          offset: (DAY_ITEM_WIDTH + ITEM_SPACING) * index,
+          length: dayItemWidth + ITEM_SPACING,
+          offset: (dayItemWidth + ITEM_SPACING) * index,
           index,
         })}
         initialNumToRender={VISIBLE_ITEMS * 2}
@@ -308,51 +333,76 @@ const DateSlider: React.FC<DateSliderProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    paddingVertical: SIZES.medium,
+    paddingTop: SIZES.medium,
+    paddingBottom: SIZES.small,
+    marginBottom: SIZES.small,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginHorizontal: SIZES.medium,
+    paddingHorizontal: SIZES.medium,
     marginBottom: SIZES.small,
+  },
+  dateListContent: {
+    paddingHorizontal: SIZES.small,
+    paddingBottom: 0,
   },
   monthDisplay: {
     flexDirection: "row",
     alignItems: "center",
   },
   dateItem: {
-    height: 70,
+    minHeight: 60,
+    paddingVertical: 4,
     marginHorizontal: ITEM_SPACING / 2,
     alignItems: "center",
     justifyContent: "center",
     borderRadius: SIZES.base,
     backgroundColor: "transparent",
   },
+  dateCellInner: {
+    width: "100%",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  dateCellInnerWithBadge: {
+    paddingTop: 14,
+  },
 
   dayName: {
-    ...typography.bodyMedium,
-    marginBottom: 12,
+    ...typography.bodySmallSemiBold,
+    marginBottom: 4,
+    width: "100%",
+    textAlign: "center",
+    ...(Platform.OS === "android" ? { includeFontPadding: false } : {}),
   },
   dateNumber: {
     ...typography.headline,
+    width: "100%",
+    textAlign: "center",
+    ...(Platform.OS === "android" ? { includeFontPadding: false } : {}),
   },
   todayText: {
     ...typography.headlineBold,
   },
 
-  monthBadge: {
+  monthBadgeRow: {
     position: "absolute",
     top: 0,
+    left: 0,
     right: 0,
-    paddingHorizontal: 4,
-    paddingVertical: 1,
+    alignItems: "center",
+    zIndex: 1,
+  },
+  monthBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
     borderRadius: 4,
-    borderTopRightRadius: SIZES.base,
   },
   monthBadgeText: {
-    ...typography.overline,
+    ...typography.captionSemiBold,
   },
 });
 

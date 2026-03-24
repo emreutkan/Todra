@@ -27,7 +27,7 @@ import {
   getArchivedTasks,
   updateTask as updateTaskService,
 } from "../services/taskStorageService";
-import { SIZES } from "../theme";
+import { RADII, SIZES } from "../theme";
 import { typography } from "../typography";
 import { RootStackParamList, Task } from "../types";
 
@@ -1172,7 +1172,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: SIZES.small,
     paddingVertical: 4,
-    borderRadius: 12,
+    borderRadius: RADII.md,
     marginLeft: SIZES.small,
   },
   archivedText: {
@@ -1242,7 +1242,7 @@ const styles = StyleSheet.create({
   fab: {
     width: 56,
     height: 56,
-    borderRadius: 28,
+    borderRadius: RADII.fab,
     justifyContent: "center",
     alignItems: "center",
     zIndex: 1000,
@@ -1250,7 +1250,7 @@ const styles = StyleSheet.create({
   addStyleFab: {
     width: 70,
     height: 56,
-    borderRadius: 28,
+    borderRadius: RADII.fab,
     justifyContent: "center",
     alignItems: "center",
     zIndex: 1000,
@@ -1260,7 +1260,7 @@ const styles = StyleSheet.create({
     height: "100%",
     justifyContent: "center",
     alignItems: "center",
-    borderRadius: 28,
+    borderRadius: RADII.fab,
   },
   shadow: {
     ...Platform.select({

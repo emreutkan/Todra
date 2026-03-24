@@ -11,7 +11,7 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import SettingsButton from "../components/SettingsComponents/SettingsButton";
+import SettingsListRow from "../components/SettingsComponents/SettingsListRow";
 import SettingsSection from "../components/SettingsComponents/SettingsSection";
 import SettingsToggle from "../components/SettingsComponents/SettingsToggle";
 import { useSettings } from "../context/SettingsContext";
@@ -43,20 +43,17 @@ const SettingsScreen: React.FC = () => {
   };
 
   return (
-    <View
-      style={[
-        styles.container,
-        {
-          backgroundColor: colors.background,
-          paddingTop: insets.top,
-        },
-      ]}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <StatusBar style={isDark ? "light" : "dark"} />
 
       <View
         style={[
           styles.header,
-          { backgroundColor: colors.card, borderColor: colors.border },
+          {
+            backgroundColor: colors.card,
+            borderColor: colors.border,
+            paddingTop: Math.max(insets.top, 12),
+          },
         ]}>
         <TouchableOpacity
           style={styles.backButton}
@@ -140,7 +137,7 @@ const SettingsScreen: React.FC = () => {
 
         {/* AI */}
         <SettingsSection title="AI assistant">
-          <SettingsButton
+          <SettingsListRow
             icon="chatbubble-ellipses-outline"
             label="AI assistant"
             onPress={() => navigation.navigate("AiAssistant")}
@@ -149,30 +146,30 @@ const SettingsScreen: React.FC = () => {
 
         {/* Data Management Section */}
         <SettingsSection title="Data Management">
-          <SettingsButton
+          <SettingsListRow
             icon="list-outline"
             label="View All Tasks"
             onPress={handleViewAllTasks}
           />
-          <SettingsButton
+          <SettingsListRow
             icon="archive-outline"
             label="View Archived Tasks"
             onPress={handleViewArchivedTasks}
             marginTop={8}
           />
-          <SettingsButton
+          <SettingsListRow
             icon="download-outline"
             label="Export Data"
             onPress={handleExportData}
             marginTop={8}
           />
-          <SettingsButton
+          <SettingsListRow
             icon="cloud-upload-outline"
             label="Import Data"
             onPress={handleImportData}
             marginTop={8}
           />
-          <SettingsButton
+          <SettingsListRow
             icon="trash-bin-outline"
             label="Clear All Tasks"
             onPress={handleClearAllTasks}

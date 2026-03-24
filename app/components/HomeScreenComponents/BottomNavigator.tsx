@@ -1,27 +1,62 @@
 import React from "react";
+import { View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useTheme } from "../../context/ThemeContext";
 import GlassBar from "../common/GlassBar";
 import AddButton from "./AddButton";
+import AssistantNavFab from "./AssistantNavFab";
 import FilterButton from "./FilterButton";
-import SettingsButton from "./SettingsButton";
+import SettingsFab from "./SettingsFab";
 
 const BottomNavigator = ({
   onFilterPress,
   onAddTaskPress,
   onSettingsPress,
+  onAssistantPress,
+  activeFilterCount = 0,
 }: {
   onFilterPress: () => void;
   onAddTaskPress: () => void;
   onSettingsPress: () => void;
+  onAssistantPress: () => void;
+  activeFilterCount?: number;
 }) => {
   const bottomInsets = useSafeAreaInsets();
+  const { colors } = useTheme();
 
   return (
     <GlassBar
-      wrapperStyle={{ marginBottom: Math.max(bottomInsets.bottom, 8) }}>
-      <SettingsButton onPress={onSettingsPress} showShadow={false} />
-      <AddButton onPress={onAddTaskPress} showShadow={false} />
-      <FilterButton onPress={onFilterPress} showShadow={false} />
+      wrapperStyle={{ marginBottom: Math.max(bottomInsets.bottom, 10) }}>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+        <SettingsFab onPress={onSettingsPress} showShadow={false} />
+        <FilterButton
+          onPress={onFilterPress}
+          showShadow={false}
+          activeFilterCount={activeFilterCount}
+        />
+        <View
+          style={{
+            width: 1,
+            height: 36,
+            backgroundColor: colors.hairline,
+            marginHorizontal: 2,
+            opacity: 0.9,
+          }}
+          accessibilityElementsHidden
+        />
+        <AddButton onPress={onAddTaskPress} showShadow={false} />
+        <View
+          style={{
+            width: 1,
+            height: 36,
+            backgroundColor: colors.hairline,
+            marginHorizontal: 2,
+            opacity: 0.9,
+          }}
+          accessibilityElementsHidden
+        />
+        <AssistantNavFab onPress={onAssistantPress} showShadow={false} />
+      </View>
     </GlassBar>
   );
 };

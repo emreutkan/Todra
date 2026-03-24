@@ -38,9 +38,11 @@ import AiAssistantScreen from "./app/screens/AiAssistantScreen";
 import AiSettingsScreen from "./app/screens/AiSettingsScreen";
 import { notificationService } from "./app/services/notificationService";
 import { RootStackParamList } from "./app/types";
+import { lightWarmTheme } from "./app/theme";
 
-const FONT_LOADING_BACKGROUND = "#F7F3EE";
-const FONT_LOADING_SPINNER = "#8B7355";
+/** Matches default light theme; used before ThemeProvider mounts (font bootstrap). */
+const FONT_LOADING_BACKGROUND = lightWarmTheme.background;
+const FONT_LOADING_SPINNER = lightWarmTheme.primary;
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 

@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import { Category } from "../../constants/CategoryConstants";
 import { useTheme } from "../../context/ThemeContext";
+import { RADII } from "../../theme";
 import { useCategories } from "../../hooks/useCategories";
 import { useCategoryModal } from "../../hooks/useCategoryModal";
 import { typography } from "../../typography";
@@ -476,7 +477,7 @@ const styles = StyleSheet.create({
   categoryItem: {
     width: 100,
     padding: 12,
-    borderRadius: 12,
+    borderRadius: RADII.md,
     marginRight: 12,
     alignItems: "center",
     justifyContent: "center",
@@ -498,7 +499,7 @@ const styles = StyleSheet.create({
   addCategoryButton: {
     width: 100,
     padding: 12,
-    borderRadius: 12,
+    borderRadius: RADII.md,
     alignItems: "center",
     borderWidth: 1.5,
     borderStyle: "dashed",
@@ -551,7 +552,7 @@ const styles = StyleSheet.create({
   input: {
     ...typography.body,
     borderWidth: 1,
-    borderRadius: 12,
+    borderRadius: RADII.md,
     paddingHorizontal: 16,
     paddingVertical: 12,
     marginBottom: 20,
@@ -595,12 +596,12 @@ const styles = StyleSheet.create({
     marginBottom: 24,
     paddingVertical: 20,
     borderWidth: 1,
-    borderRadius: 12,
+    borderRadius: RADII.md,
   },
   previewCategory: {
     width: 110,
     padding: 12,
-    borderRadius: 12,
+    borderRadius: RADII.md,
     alignItems: "center",
     borderWidth: 1.5,
   },
@@ -618,7 +619,7 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     paddingVertical: 16,
-    borderRadius: 12,
+    borderRadius: RADII.md,
     alignItems: "center",
     justifyContent: "center",
     shadowOffset: { width: 0, height: 2 },
@@ -662,7 +663,7 @@ const styles = StyleSheet.create({
   },
   confirmButton: {
     paddingVertical: 14,
-    borderRadius: 12,
+    borderRadius: RADII.md,
     width: "48%",
     alignItems: "center",
   },

@@ -18,6 +18,7 @@ import {
 } from "react-native";
 import { useReducedMotion } from "../../hooks/useReducedMotion";
 import { useTheme } from "../../context/ThemeContext";
+import { RADII } from "../../theme";
 import { Task, TaskPriority } from "../../types";
 import { typography } from "../../typography";
 import { formatDate } from "../../utils/taskUtils";
@@ -455,7 +456,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   taskItem: {
-    borderRadius: 12,
+    borderRadius: RADII.md,
     borderWidth: 1,
     overflow: "hidden",
   },

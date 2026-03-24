@@ -15,7 +15,7 @@ import { useSettings } from "../../context/SettingsContext";
 import { useTheme } from "../../context/ThemeContext";
 import { useReducedMotion } from "../../hooks/useReducedMotion";
 import { typography } from "../../typography";
-import { SIZES } from "../../theme";
+import { RADII, SIZES } from "../../theme";
 import { Task, TaskPriority } from "../../types";
 import EmptyTasksState from "../common/EmptyTasksState";
 import TaskItem from "../common/TaskItem";
@@ -258,7 +258,7 @@ const TaskList: React.FC<TaskListProps> = ({
               Completed
             </Text>
             <Text
-              style={[typography.title, { color: colors.success }]}
+              style={[typography.titleMedium, { color: colors.success }]}
               maxFontSizeMultiplier={1.4}>
               {completed}
             </Text>
@@ -279,7 +279,7 @@ const TaskList: React.FC<TaskListProps> = ({
               Remaining
             </Text>
             <Text
-              style={[typography.title, { color: colors.primary }]}
+              style={[typography.titleMedium, { color: colors.primary }]}
               maxFontSizeMultiplier={1.4}>
               {remaining}
             </Text>
@@ -300,7 +300,7 @@ const TaskList: React.FC<TaskListProps> = ({
               Total
             </Text>
             <Text
-              style={[typography.title, { color: colors.text }]}
+              style={[typography.titleMedium, { color: colors.text }]}
               maxFontSizeMultiplier={1.4}>
               {total}
             </Text>
@@ -318,7 +318,7 @@ const TaskList: React.FC<TaskListProps> = ({
 
   if (tasks.length === 0) {
     return (
-      <Animated.View style={listEntranceStyle}>
+      <Animated.View style={[listEntranceStyle, styles.emptyWrap]}>
         <EmptyTasksState
           title="No tasks"
           subtitle="Tap + below to add your first task for this day."
@@ -379,19 +379,21 @@ const TaskList: React.FC<TaskListProps> = ({
 };
 
 const styles = StyleSheet.create({
+  emptyWrap: {
+    flex: 1,
+    paddingBottom: 108,
+  },
   taskList: {
-    marginHorizontal: SIZES.medium,
-    paddingBottom: SIZES.small,
+    paddingBottom: 108,
   },
   progressSection: {
-    paddingVertical: SIZES.medium,
-    borderWidth: 1,
-    borderRadius: SIZES.base + 4,
+    paddingVertical: 14,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: RADII.md,
     flexDirection: "row",
     alignItems: "center",
-    marginHorizontal: -SIZES.medium,
-    marginBottom: SIZES.medium,
-    paddingHorizontal: SIZES.small,
+    marginBottom: SIZES.small,
+    paddingHorizontal: SIZES.medium,
   },
   statsContainer: {
     flexDirection: "row",
@@ -406,9 +408,9 @@ const styles = StyleSheet.create({
   },
   statAccent: {
     width: 4,
-    height: 14,
+    height: 12,
     borderRadius: 2,
-    marginBottom: SIZES.small,
+    marginBottom: 6,
   },
   statLabel: {
     marginBottom: 4,
@@ -424,7 +426,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     paddingVertical: SIZES.medium,
-    paddingHorizontal: 2,
+    paddingHorizontal: SIZES.medium,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   sectionHeaderLeft: {

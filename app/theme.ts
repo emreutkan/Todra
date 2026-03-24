@@ -134,6 +134,17 @@ export const SIZES = {
   extraLarge: 24,
 };
 
+/** Standard corner radii — prefer over raw numbers for cards, chips, FABs */
+export const RADII = {
+  sm: 8,
+  md: 12,
+  /** Half of 56×56 circular FABs */
+  fab: 28,
+} as const;
+
+/** Shared horizontal inset for Home date strip + task stack (one rhythm). */
+export const HOME_GUTTER = SIZES.medium;
+
 /** @deprecated use lightWarmTheme */
 export const COLORS = lightWarmTheme;
 

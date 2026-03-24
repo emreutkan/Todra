@@ -11,9 +11,9 @@
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/icon.png",
+      "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#383838"
+      "backgroundColor": "#F7F3EE"
     },
     "ios": {
       "supportsTablet": true,
@@ -25,12 +25,12 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#383838"
+        "backgroundColor": "#F7F3EE"
       },
       "package": "irfanemreutkan.app.todra"
     },
     "web": {
-      "favicon": "./assets/icon.png"
+      "favicon": "./assets/favicon.png"
     },
     "scheme": "todra",
     "assetBundlePatterns": [

@@ -23,6 +23,7 @@ import { useHomeFilters } from "../hooks/useHomeFilters";
 import { useHomeStats } from "../hooks/useHomeStats";
 import { useHomeTasks } from "../hooks/useHomeTasks";
 import { useReducedMotion } from "../hooks/useReducedMotion";
+import { HOME_GUTTER } from "../theme";
 import { RootStackParamList } from "../types";
 
 type HomeScreenNavigationProp = NativeStackNavigationProp<
@@ -61,6 +62,7 @@ const HomeScreen: React.FC = () => {
     selectedFilterType,
     activeCategory,
     selectedPriority,
+    activeFilterCount,
     clearFilters,
     setCategoryFilter,
     setPriorityFilter,
@@ -182,6 +184,10 @@ const HomeScreen: React.FC = () => {
     navigation.navigate("Settings");
   }, [navigation]);
 
+  const handleAssistantPress = useCallback(() => {
+    navigation.navigate("AiAssistant");
+  }, [navigation]);
+
   // Wrapper for loadTasks to match TaskList's expected signature
   const handleRefresh = useCallback(async () => {
     await loadTasks();
@@ -218,7 +224,11 @@ const HomeScreen: React.FC = () => {
           />
         </Animated.View>
 
-        <View style={styles.contentContainer}>
+        <View
+          style={[
+            styles.contentContainer,
+            { paddingHorizontal: HOME_GUTTER },
+          ]}>
           <TaskList
             tasks={filteredTasks}
             listEntranceOpacity={listOpacity}
@@ -246,6 +256,8 @@ const HomeScreen: React.FC = () => {
           onFilterPress={() => setIsFilterVisible(true)}
           onAddTaskPress={() => handleAddTask()}
           onSettingsPress={handleSettingsPress}
+          onAssistantPress={handleAssistantPress}
+          activeFilterCount={activeFilterCount}
         />
       </Animated.View>
 

@@ -12,11 +12,33 @@ If a task id is unknown, use list_tasks first.`;
 
 const MAX_TOOL_ROUNDS = 10;
 
-export type UiChatMessage = {
+export type ToolTraceStep = {
   id: string;
-  role: "user" | "assistant";
-  content: string;
+  name: string;
+  argumentsPretty: string;
+  resultPretty: string;
 };
+
+export type UiChatMessage =
+  | { id: string; role: "user"; content: string }
+  | {
+      id: string;
+      role: "assistant";
+      content: string;
+      toolSteps?: ToolTraceStep[];
+      isError?: boolean;
+    };
+
+function prettyFormat(raw: string): string {
+  const t = raw.trim();
+  try {
+    return JSON.stringify(JSON.parse(t), null, 2);
+  } catch {
+    return t || "—";
+  }
+}
+
+type LlmReply = { text: string; error?: string; toolTrace: ToolTraceStep[] };
 
 const ANTHROPIC_VERSION = "2023-06-01";
 
@@ -132,8 +154,10 @@ function uiToOpenAiMessages(
     { role: "system", content: SYSTEM_PROMPT },
   ];
   for (const m of history) {
-    if (m.role === "user" || m.role === "assistant") {
-      out.push({ role: m.role, content: m.content });
+    if (m.role === "user") {
+      out.push({ role: "user", content: m.content });
+    } else {
+      out.push({ role: "assistant", content: m.content });
     }
   }
   out.push({ role: "user", content: latestUser });
@@ -147,7 +171,19 @@ async function runOpenAiStyleLoop(
   userText: string,
   azure: boolean,
   onToolRound?: () => void
-): Promise<{ text: string; error?: string }> {
+): Promise<LlmReply> {
+  const toolTrace: ToolTraceStep[] = [];
+  let traceSeq = 0;
+  const recordTool = (name: string, argsRaw: string, resultRaw: string) => {
+    toolTrace.push({
+      id: `tc_${traceSeq++}_${Date.now()}`,
+      name,
+      argumentsPretty: prettyFormat(argsRaw),
+      resultPretty: prettyFormat(resultRaw),
+    });
+    onToolRound?.();
+  };
+
   let url: string;
   let model = (config.model || "").trim();
   if (azure) {
@@ -156,6 +192,7 @@ async function runOpenAiStyleLoop(
       return {
         text: "",
         error: "Azure: set resource endpoint and deployment name.",
+        toolTrace: [],
       };
     }
     url = u;
@@ -175,7 +212,7 @@ async function runOpenAiStyleLoop(
       messages,
       azure
     );
-    if (rawError) return { text: "", error: rawError };
+    if (rawError) return { text: "", error: rawError, toolTrace };
 
     const toolCalls = message.tool_calls;
     if (toolCalls?.length) {
@@ -189,7 +226,7 @@ async function runOpenAiStyleLoop(
         const argStr = tc.function?.arguments ?? "{}";
         if (!name) continue;
         const result = await executeTodoTool(name, argStr);
-        onToolRound?.();
+        recordTool(name, argStr, result);
         messages.push({
           role: "tool",
           tool_call_id: tc.id,
@@ -200,10 +237,13 @@ async function runOpenAiStyleLoop(
     }
 
     const text = (message.content || "").trim();
-    return { text: text || "(No response text)" };
+    return {
+      text: text || "(No response text)",
+      toolTrace,
+    };
   }
 
-  return { text: "", error: "Too many tool rounds." };
+  return { text: "", error: "Too many tool rounds.", toolTrace };
 }
 
 const ANTHROPIC_TOOLS = TODO_TOOLS_OPENAI.map((t) => ({
@@ -280,7 +320,19 @@ async function runAnthropicLoop(
   history: UiChatMessage[],
   userText: string,
   onToolRound?: () => void
-): Promise<{ text: string; error?: string }> {
+): Promise<LlmReply> {
+  const toolTrace: ToolTraceStep[] = [];
+  let traceSeq = 0;
+  const recordTool = (name: string, argsRaw: string, resultRaw: string) => {
+    toolTrace.push({
+      id: `tc_${traceSeq++}_${Date.now()}`,
+      name,
+      argumentsPretty: prettyFormat(argsRaw),
+      resultPretty: prettyFormat(resultRaw),
+    });
+    onToolRound?.();
+  };
+
   const model = (config.model || "claude-sonnet-4-20250514").trim();
   let messages = uiToAnthropicSeed(history, userText);
 
@@ -290,8 +342,10 @@ async function runAnthropicLoop(
       model,
       messages
     );
-    if (rawError) return { text: "", error: rawError };
-    if (!content?.length) return { text: "", error: "Empty Anthropic response" };
+    if (rawError) return { text: "", error: rawError, toolTrace };
+    if (!content?.length) {
+      return { text: "", error: "Empty Anthropic response", toolTrace };
+    }
 
     const toolUses = content.filter(
       (b) => (b as { type?: string }).type === "tool_use"
@@ -303,7 +357,7 @@ async function runAnthropicLoop(
       for (const tu of toolUses) {
         const argsJson = JSON.stringify(tu.input ?? {});
         const result = await executeTodoTool(tu.name, argsJson);
-        onToolRound?.();
+        recordTool(tu.name, argsJson, result);
         toolResults.push({
           type: "tool_result",
           tool_use_id: tu.id,
@@ -319,10 +373,10 @@ async function runAnthropicLoop(
       .map((b) => (b as { text?: string }).text || "")
       .join("")
       .trim();
-    return { text: textParts || "(No response text)" };
+    return { text: textParts || "(No response text)", toolTrace };
   }
 
-  return { text: "", error: "Too many tool rounds." };
+  return { text: "", error: "Too many tool rounds.", toolTrace };
 }
 
 // --- Gemini ---
@@ -444,7 +498,19 @@ async function runGeminiLoop(
   history: UiChatMessage[],
   userText: string,
   onToolRound?: () => void
-): Promise<{ text: string; error?: string }> {
+): Promise<LlmReply> {
+  const toolTrace: ToolTraceStep[] = [];
+  let traceSeq = 0;
+  const recordTool = (name: string, argsRaw: string, resultRaw: string) => {
+    toolTrace.push({
+      id: `tc_${traceSeq++}_${Date.now()}`,
+      name,
+      argumentsPretty: prettyFormat(argsRaw),
+      resultPretty: prettyFormat(resultRaw),
+    });
+    onToolRound?.();
+  };
+
   const model = (config.model || "gemini-2.0-flash").replace(
     /^models\//,
     ""
@@ -460,12 +526,12 @@ async function runGeminiLoop(
       tools,
       toolConfig: { functionCallingConfig: { mode: "AUTO" } },
     });
-    if (error) return { text: "", error: error };
+    if (error) return { text: "", error: error, toolTrace };
 
     const candidates = data.candidates as Record<string, unknown>[] | undefined;
     const candidate = candidates?.[0] as Record<string, unknown> | undefined;
     if (!candidate) {
-      return { text: "", error: "No candidates from Gemini" };
+      return { text: "", error: "No candidates from Gemini", toolTrace };
     }
 
     const calls = extractGeminiFunctionCalls(candidate);
@@ -480,8 +546,9 @@ async function runGeminiLoop(
       });
       const responseParts = [];
       for (const c of calls) {
-        const result = await executeTodoTool(c.name, JSON.stringify(c.args));
-        onToolRound?.();
+        const argsJson = JSON.stringify(c.args);
+        const result = await executeTodoTool(c.name, argsJson);
+        recordTool(c.name, argsJson, result);
         let responseObj: Record<string, unknown>;
         try {
           responseObj = JSON.parse(result) as Record<string, unknown>;
@@ -499,10 +566,10 @@ async function runGeminiLoop(
       continue;
     }
 
-    return { text: textOut || "(No response text)" };
+    return { text: textOut || "(No response text)", toolTrace };
   }
 
-  return { text: "", error: "Too many tool rounds." };
+  return { text: "", error: "Too many tool rounds.", toolTrace };
 }
 
 export async function runAssistantReply(
@@ -511,10 +578,14 @@ export async function runAssistantReply(
   history: UiChatMessage[],
   userText: string,
   onToolRound?: () => void
-): Promise<{ text: string; error?: string }> {
+): Promise<LlmReply> {
   const key = apiKey.trim();
   if (!key) {
-    return { text: "", error: "Add an API key in AI assistant settings." };
+    return {
+      text: "",
+      error: "Add an API key in AI assistant settings.",
+      toolTrace: [],
+    };
   }
 
   const id = config.providerId as AiProviderId;
@@ -546,6 +617,6 @@ export async function runAssistantReply(
     );
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Request failed";
-    return { text: "", error: msg };
+    return { text: "", error: msg, toolTrace: [] };
   }
 }
