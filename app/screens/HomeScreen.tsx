@@ -6,9 +6,8 @@ import {
 } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import * as Haptics from "expo-haptics";
-import { LinearGradient } from "expo-linear-gradient";
 import { StatusBar } from "expo-status-bar";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Animated, Easing, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import BottomNavigator from "../components/HomeScreenComponents/BottomNavigator";
@@ -20,7 +19,6 @@ import { useToast } from "../context/ToastContext";
 import { useHomeCategories } from "../hooks/useHomeCategories";
 import { useHomeDateRange } from "../hooks/useHomeDateRange";
 import { useHomeFilters } from "../hooks/useHomeFilters";
-import { useHomeStats } from "../hooks/useHomeStats";
 import { useHomeTasks } from "../hooks/useHomeTasks";
 import { useReducedMotion } from "../hooks/useReducedMotion";
 import { HOME_GUTTER } from "../theme";
@@ -59,7 +57,6 @@ const HomeScreen: React.FC = () => {
 
   const {
     filteredTasks,
-    selectedFilterType,
     activeCategory,
     selectedPriority,
     activeFilterCount,
@@ -67,8 +64,6 @@ const HomeScreen: React.FC = () => {
     setCategoryFilter,
     setPriorityFilter,
   } = useHomeFilters(tasks);
-
-  const { calculateTaskStats } = useHomeStats();
 
   const { categories, loadCategories } = useHomeCategories();
   const [isFilterVisible, setIsFilterVisible] = useState(false);
@@ -129,24 +124,25 @@ const HomeScreen: React.FC = () => {
     footerTranslateY,
   ]);
 
-  // Load categories when component mounts and when screen is focused
-  useEffect(() => {
-    loadCategories();
-  }, [loadCategories]);
+  const filterCategories = useMemo(() => {
+    const defaults = [
+      "Personal",
+      "Work",
+      "Shopping",
+      "Health",
+      "Education",
+    ];
+    const named = categories.map((c) => c.name).filter(Boolean) as string[];
+    return [...defaults, ...named].filter(
+      (v, i, arr) => arr.indexOf(v) === i
+    );
+  }, [categories]);
 
   useFocusEffect(
     useCallback(() => {
       loadCategories();
-      return () => {};
-    }, [loadCategories])
-  );
+      void loadTasks();
 
-  // Reload tasks when the screen comes into focus
-  useFocusEffect(
-    useCallback(() => {
-      loadTasks();
-
-      // Check for success message from AddTaskScreen
       if (route.params?.showSuccessMessage) {
         runHaptic(() =>
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
@@ -161,23 +157,16 @@ const HomeScreen: React.FC = () => {
           timestamp: undefined,
         });
       }
-
-      return () => {
-        // Clean up any subscriptions if needed
-      };
     }, [
       route.params?.timestamp,
       route.params?.showSuccessMessage,
+      route.params?.message,
+      loadCategories,
       loadTasks,
       showToast,
       navigation,
     ])
   );
-
-  // Calculate stats when filtered tasks change
-  useEffect(() => {
-    calculateTaskStats(filteredTasks);
-  }, [filteredTasks, calculateTaskStats]);
 
   // Handle navigation to Settings screen
   const handleSettingsPress = useCallback(() => {
@@ -199,13 +188,6 @@ const HomeScreen: React.FC = () => {
         styles.container,
         { backgroundColor: colors.background, paddingTop: insets.top },
       ]}>
-      <LinearGradient
-        colors={[colors.background, colors.surface]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 0, y: 1 }}
-        style={StyleSheet.absoluteFill}
-        pointerEvents="none"
-      />
       <StatusBar style={isDark ? "light" : "dark"} />
 
       <View style={styles.mainContentContainer}>
@@ -220,7 +202,6 @@ const HomeScreen: React.FC = () => {
             today={today}
             selectedMonth={selectedMonth}
             onDateChange={handleDateChange}
-            filterType={selectedFilterType}
           />
         </Animated.View>
 
@@ -263,14 +244,7 @@ const HomeScreen: React.FC = () => {
 
       <FilterPopup
         visible={isFilterVisible}
-        categories={[
-          "Personal",
-          "Work",
-          "Shopping",
-          "Health",
-          "Education",
-          ...categories.map((c) => c.name).filter(Boolean),
-        ].filter((v, i, arr) => arr.indexOf(v) === i)}
+        categories={filterCategories}
         activeCategory={activeCategory}
         selectedPriority={selectedPriority}
         onClose={() => setIsFilterVisible(false)}

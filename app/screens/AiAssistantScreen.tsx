@@ -204,7 +204,7 @@ const AiAssistantScreen: React.FC = () => {
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
-        keyboardVerticalOffset={insets.top + 72}>
+        keyboardVerticalOffset={0}>
         <ScrollView
           ref={scrollRef}
           style={styles.scroll}

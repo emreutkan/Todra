@@ -23,7 +23,12 @@ export const AI_PROVIDER_LABELS: Record<AiProviderId, string> = {
 /** Non-secret AI preferences (AsyncStorage). API key lives in SecureStore. */
 export type AiUserConfig = {
   providerId: AiProviderId;
-  /** Custom base for openai_compatible, e.g. https://api.openai.com/v1 */
+  /**
+   * Custom base for openai_compatible (no trailing slash; app appends /chat/completions).
+   * Examples: https://api.openai.com/v1, https://openrouter.ai/api/v1,
+   * https://api.together.xyz/v1, http://localhost:1234/v1 (LM Studio),
+   * http://localhost:11434/v1 (Ollama)
+   */
   baseUrl: string;
   /** Model id (OpenAI / compatible / Groq / Mistral) or Anthropic model or Gemini model */
   model: string;
@@ -58,3 +63,34 @@ export const FIXED_BASE_URLS: Partial<Record<AiProviderId, string>> = {
   groq: "https://api.groq.com/openai/v1",
   mistral: "https://api.mistral.ai/v1",
 };
+
+/** OpenRouter OpenAI-compatible API base (no trailing slash). */
+export const OPENROUTER_COMPATIBLE_BASE_URL = "https://openrouter.ai/api/v1";
+
+/** Default model when using OpenRouter (free tier friendly). */
+export const OPENROUTER_DEFAULT_MODEL = "stepfun/step-3.5-flash:free";
+
+export type OpenAiCompatibleEndpointPreset = {
+  id: string;
+  label: string;
+  url: string;
+  /** Applied when user picks this preset from the endpoint menu */
+  suggestedModel?: string;
+};
+
+export const OPENAI_COMPATIBLE_ENDPOINT_PRESETS: OpenAiCompatibleEndpointPreset[] = [
+  { id: "openai", label: "OpenAI", url: "https://api.openai.com/v1" },
+  {
+    id: "openrouter",
+    label: "OpenRouter",
+    url: OPENROUTER_COMPATIBLE_BASE_URL,
+    suggestedModel: OPENROUTER_DEFAULT_MODEL,
+  },
+  { id: "together", label: "Together", url: "https://api.together.xyz/v1" },
+  { id: "lm_studio", label: "LM Studio", url: "http://localhost:1234/v1" },
+  { id: "ollama", label: "Ollama", url: "http://localhost:11434/v1" },
+];
+
+export function normalizeOpenAiCompatibleBaseUrl(u: string): string {
+  return u.trim().replace(/\/+$/, "");
+}

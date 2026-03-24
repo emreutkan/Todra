@@ -18,7 +18,7 @@ import {
 } from "react-native";
 import { useReducedMotion } from "../../hooks/useReducedMotion";
 import { useTheme } from "../../context/ThemeContext";
-import { RADII } from "../../theme";
+import { HOME_LIST } from "../../theme";
 import { Task, TaskPriority } from "../../types";
 import { typography } from "../../typography";
 import { formatDate } from "../../utils/taskUtils";
@@ -453,15 +453,15 @@ const TaskItem: React.FC<TaskItemProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 12,
+    marginBottom: HOME_LIST.itemMarginBottom,
   },
   taskItem: {
-    borderRadius: RADII.md,
+    borderRadius: HOME_LIST.cardRadius,
     borderWidth: 1,
     overflow: "hidden",
   },
   taskContent: {
-    padding: 16,
+    padding: HOME_LIST.sectionPaddingH,
   },
   mainRow: {
     flexDirection: "row",

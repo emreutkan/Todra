@@ -1,8 +1,12 @@
 import { MaterialIcons } from "@expo/vector-icons";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Animated,
+  Easing,
   LayoutAnimation,
+  LayoutChangeEvent,
+  NativeSyntheticEvent,
+  NativeScrollEvent,
   Platform,
   SectionList,
   StyleSheet,
@@ -15,7 +19,7 @@ import { useSettings } from "../../context/SettingsContext";
 import { useTheme } from "../../context/ThemeContext";
 import { useReducedMotion } from "../../hooks/useReducedMotion";
 import { typography } from "../../typography";
-import { RADII, SIZES } from "../../theme";
+import { HOME_LIST, SIZES } from "../../theme";
 import { Task, TaskPriority } from "../../types";
 import EmptyTasksState from "../common/EmptyTasksState";
 import TaskItem from "../common/TaskItem";
@@ -63,6 +67,69 @@ const TaskList: React.FC<TaskListProps> = ({
   const [expandedSections, setExpandedSections] = useState<{
     [key: string]: boolean;
   }>({});
+  /**
+   * Done / To do strip: row height + `stackGap` (measured).
+   * Default avoids height-0 first pass so `onLayout` can run.
+   */
+  const [statsBlockHeight, setStatsBlockHeight] = useState(56);
+  const statsProgress = useRef(new Animated.Value(0)).current;
+  const statsShownRef = useRef(false);
+  const lastScrollY = useRef(0);
+
+  const setStatsVisible = useCallback(
+    (visible: boolean) => {
+      if (statsShownRef.current === visible) return;
+      statsShownRef.current = visible;
+      if (reducedMotion) {
+        statsProgress.setValue(visible ? 1 : 0);
+        return;
+      }
+      Animated.timing(statsProgress, {
+        toValue: visible ? 1 : 0,
+        duration: visible ? 300 : 220,
+        easing: visible
+          ? Easing.out(Easing.cubic)
+          : Easing.in(Easing.cubic),
+        useNativeDriver: false,
+      }).start();
+    },
+    [reducedMotion, statsProgress]
+  );
+
+  const handleStatsLayout = useCallback((e: LayoutChangeEvent) => {
+    const h = e.nativeEvent.layout.height;
+    if (h <= 0) return;
+    const total = h + HOME_LIST.stackGap;
+    setStatsBlockHeight((prev) =>
+      Math.abs(prev - total) < 1 ? prev : total
+    );
+  }, []);
+
+  const handleScroll = useMemo(() => {
+    const scrollHandler = scrollY
+      ? Animated.event(
+          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+          { useNativeDriver: false }
+        )
+      : undefined;
+
+    return (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+      scrollHandler?.(e);
+      const y = Math.max(0, e.nativeEvent.contentOffset.y);
+      const dy = y - lastScrollY.current;
+      lastScrollY.current = y;
+      const threshold = 10;
+      if (y < threshold) {
+        setStatsVisible(false);
+        return;
+      }
+      if (dy > threshold) {
+        setStatsVisible(true);
+      } else if (dy < -threshold) {
+        setStatsVisible(false);
+      }
+    };
+  }, [scrollY, setStatsVisible]);
 
   // Group filtered tasks into sections for the SectionList
   const sections = useMemo(() => {
@@ -136,6 +203,17 @@ const TaskList: React.FC<TaskListProps> = ({
     }
   }, [sections]);
 
+  const dayKey = useMemo(
+    () =>
+      `${currentDate.getFullYear()}-${currentDate.getMonth()}-${currentDate.getDate()}`,
+    [currentDate]
+  );
+  useEffect(() => {
+    lastScrollY.current = 0;
+    statsShownRef.current = false;
+    statsProgress.setValue(0);
+  }, [dayKey, statsProgress]);
+
   // Helper: Return a color based on task priority
   const getPrioritySectionColor = (priority: TaskPriority) => {
     switch (priority) {
@@ -161,8 +239,8 @@ const TaskList: React.FC<TaskListProps> = ({
           style={[
             styles.sectionHeader,
             {
-              backgroundColor: colors.surface,
-              borderBottomColor: colors.hairline,
+              backgroundColor: colors.card,
+              borderColor: colors.border,
             },
           ]}
           accessibilityRole="button"
@@ -193,13 +271,13 @@ const TaskList: React.FC<TaskListProps> = ({
                 styles.priorityIndicator,
                 {
                   backgroundColor: priorityColor,
-                  borderColor: colors.card,
+                  borderColor: colors.background,
                 },
               ]}
             />
             <Text
               style={[
-                typography.headline,
+                typography.bodySemiBold,
                 styles.sectionTitle,
                 { color: colors.text },
               ]}>
@@ -230,83 +308,96 @@ const TaskList: React.FC<TaskListProps> = ({
     [expandedSections, colors, reducedMotion]
   );
 
-  // Render a simple progress header
   const renderTasksHeader = () => {
-    const total = tasks.length;
     const completed = tasks.filter((t) => t.completed).length;
-    const remaining = total - completed;
+    const remaining = tasks.length - completed;
+    const h = statsBlockHeight;
+    const animatedShell = {
+      height: statsProgress.interpolate({
+        inputRange: [0, 1],
+        outputRange: [0, h],
+      }),
+      overflow: "hidden" as const,
+    };
+    const animatedInner = {
+      transform: [
+        {
+          translateY: statsProgress.interpolate({
+            inputRange: [0, 1],
+            outputRange: reducedMotion ? [0, 0] : [-14, 0],
+          }),
+        },
+      ],
+      opacity: statsProgress.interpolate({
+        inputRange: [0, 0.35, 1],
+        outputRange: [0, 0.85, 1],
+      }),
+    };
+
     return (
-      <View
-        style={[
-          styles.progressSection,
-          {
-            backgroundColor: colors.surface,
-            borderColor: colors.border,
-          },
-        ]}>
-        <View style={styles.statsContainer}>
-          <View style={styles.statItem}>
+      <Animated.View style={animatedShell}>
+        <Animated.View style={animatedInner}>
+          <View onLayout={handleStatsLayout}>
             <View
-              style={[styles.statAccent, { backgroundColor: colors.success }]}
-            />
-            <Text
               style={[
-                typography.captionMedium,
-                styles.statLabel,
-                { color: colors.textSecondary },
+                styles.progressSection,
+                {
+                  backgroundColor: colors.card,
+                  borderColor: colors.border,
+                },
               ]}>
-              Completed
-            </Text>
-            <Text
-              style={[typography.titleMedium, { color: colors.success }]}
-              maxFontSizeMultiplier={1.4}>
-              {completed}
-            </Text>
+              <View style={styles.progressInline}>
+                <View
+                  style={[
+                    styles.progressDot,
+                    { backgroundColor: colors.success },
+                  ]}
+                />
+                <Text
+                  style={[
+                    typography.captionMedium,
+                    styles.progressCaption,
+                    { color: colors.textSecondary },
+                  ]}>
+                  Done
+                </Text>
+                <Text
+                  style={[typography.headline, { color: colors.success }]}
+                  maxFontSizeMultiplier={1.4}>
+                  {completed}
+                </Text>
+              </View>
+              <View
+                style={[
+                  styles.progressDivider,
+                  { backgroundColor: colors.hairline },
+                ]}
+              />
+              <View style={styles.progressInline}>
+                <View
+                  style={[
+                    styles.progressDot,
+                    { backgroundColor: colors.primary },
+                  ]}
+                />
+                <Text
+                  style={[
+                    typography.captionMedium,
+                    styles.progressCaption,
+                    { color: colors.textSecondary },
+                  ]}>
+                  To do
+                </Text>
+                <Text
+                  style={[typography.headline, { color: colors.primary }]}
+                  maxFontSizeMultiplier={1.4}>
+                  {remaining}
+                </Text>
+              </View>
+            </View>
           </View>
-          <View
-            style={[styles.statDivider, { backgroundColor: colors.hairline }]}
-          />
-          <View style={styles.statItem}>
-            <View
-              style={[styles.statAccent, { backgroundColor: colors.primary }]}
-            />
-            <Text
-              style={[
-                typography.captionMedium,
-                styles.statLabel,
-                { color: colors.textSecondary },
-              ]}>
-              Remaining
-            </Text>
-            <Text
-              style={[typography.titleMedium, { color: colors.primary }]}
-              maxFontSizeMultiplier={1.4}>
-              {remaining}
-            </Text>
-          </View>
-          <View
-            style={[styles.statDivider, { backgroundColor: colors.hairline }]}
-          />
-          <View style={styles.statItem}>
-            <View
-              style={[styles.statAccent, { backgroundColor: colors.accent }]}
-            />
-            <Text
-              style={[
-                typography.captionMedium,
-                styles.statLabel,
-                { color: colors.textSecondary },
-              ]}>
-              Total
-            </Text>
-            <Text
-              style={[typography.titleMedium, { color: colors.text }]}
-              maxFontSizeMultiplier={1.4}>
-              {total}
-            </Text>
-          </View>
-        </View>
-      </View>
+        </Animated.View>
+      </Animated.View>
     );
   };
 
@@ -321,7 +412,7 @@ const TaskList: React.FC<TaskListProps> = ({
       <Animated.View style={[listEntranceStyle, styles.emptyWrap]}>
         <EmptyTasksState
           title="No tasks"
-          subtitle="Tap + below to add your first task for this day."
+          subtitle="Tap + to add one for this day."
           icon="calendar-outline"
         />
       </Animated.View>
@@ -339,14 +430,7 @@ const TaskList: React.FC<TaskListProps> = ({
         stickySectionHeadersEnabled
         ListHeaderComponent={renderTasksHeader}
         scrollEventThrottle={16}
-        onScroll={
-          scrollY
-            ? Animated.event(
-                [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-                { useNativeDriver: false }
-              )
-            : undefined
-        }
+        onScroll={handleScroll}
         renderItem={({ item, index, section }) => {
           if (!expandedSections[section.title]) return null;
           const isOverdue = Boolean(
@@ -387,47 +471,45 @@ const styles = StyleSheet.create({
     paddingBottom: 108,
   },
   progressSection: {
-    paddingVertical: 14,
+    flexDirection: "row",
+    alignItems: "center",
     borderWidth: StyleSheet.hairlineWidth,
-    borderRadius: RADII.md,
+    borderRadius: HOME_LIST.cardRadius,
+    paddingVertical: HOME_LIST.sectionPaddingV,
+    paddingHorizontal: HOME_LIST.sectionPaddingH,
+  },
+  progressInline: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: SIZES.small,
-    paddingHorizontal: SIZES.medium,
-  },
-  statsContainer: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    flex: 1,
-  },
-
-  statItem: {
-    alignItems: "center",
-    flex: 1,
+    justifyContent: "center",
     minWidth: 0,
   },
-  statAccent: {
-    width: 4,
-    height: 12,
-    borderRadius: 2,
-    marginBottom: 6,
+  progressCaption: {
+    marginRight: SIZES.base,
   },
-  statLabel: {
-    marginBottom: 4,
+  progressDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    marginRight: SIZES.base,
   },
-  statDivider: {
+  progressDivider: {
     width: StyleSheet.hairlineWidth,
     alignSelf: "stretch",
-    marginVertical: SIZES.small,
+    marginVertical: 2,
+    marginHorizontal: SIZES.base,
   },
 
   sectionHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: SIZES.medium,
-    paddingHorizontal: SIZES.medium,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    paddingVertical: HOME_LIST.sectionPaddingV,
+    paddingHorizontal: HOME_LIST.sectionPaddingH,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: HOME_LIST.cardRadius,
+    marginBottom: HOME_LIST.stackGap,
   },
   sectionHeaderLeft: {
     flexDirection: "row",
@@ -436,9 +518,9 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   priorityIndicator: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
     marginRight: SIZES.medium,
     borderWidth: 2,
   },
@@ -446,10 +528,10 @@ const styles = StyleSheet.create({
     flexShrink: 1,
   },
   countPill: {
-    paddingHorizontal: SIZES.medium,
-    paddingVertical: 6,
-    borderRadius: 14,
-    minWidth: 36,
+    paddingHorizontal: SIZES.small,
+    paddingVertical: 4,
+    borderRadius: HOME_LIST.cardRadius,
+    minWidth: 32,
     alignItems: "center",
   },
 });

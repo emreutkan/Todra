@@ -24,7 +24,8 @@ export const TODO_TOOLS_OPENAI = [
     type: "function" as const,
     function: {
       name: "create_task",
-      description: "Create a new active task.",
+      description:
+        "Create a new active task. If the user did not say when it is due and you cannot infer a reasonable deadline, ask them first instead of calling this tool.",
       parameters: {
         type: "object",
         properties: {
@@ -42,7 +43,8 @@ export const TODO_TOOLS_OPENAI = [
           },
           due_date_iso: {
             type: "string",
-            description: "Due date as ISO 8601 datetime in local intent.",
+            description:
+              "Due datetime as ISO 8601. Do not use the current clock instant unless the user asked for that moment. For same-day due dates use end-of-workday (e.g. 17:00–18:00) or end of day, not 'now'. Infer from task size when the user gave a rough timeframe. Omit only if the user clearly wants no deadline (then the app applies a generic default).",
           },
         },
         required: ["title"],
@@ -64,7 +66,11 @@ export const TODO_TOOLS_OPENAI = [
           completed: { type: "boolean" },
           priority: { type: "string", enum: ["low", "normal", "high"] },
           category: { type: "string" },
-          due_date_iso: { type: "string" },
+          due_date_iso: {
+            type: "string",
+            description:
+              "New due datetime as ISO 8601; same rules as create_task (no arbitrary 'now' unless user asked).",
+          },
         },
         required: ["task_id"],
       },

@@ -480,7 +480,8 @@ const AddTaskScreen: React.FC = () => {
         pointerEvents="none"
       />
       <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        keyboardVerticalOffset={0}
         style={{ flex: 1 }}>
         <StatusBar style={isDark ? "light" : "dark"} />
 

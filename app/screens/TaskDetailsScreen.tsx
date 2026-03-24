@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   Alert,
   Animated,
+  KeyboardAvoidingView,
   Platform,
   ScrollView,
   StyleSheet,
@@ -878,6 +879,7 @@ const TaskDetailsScreen = () => {
         style={styles.content}
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
+        keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
         showsVerticalScrollIndicator={false}>
         <TaskTitleInput value={title} onChangeText={setTitle} />
 
@@ -986,8 +988,19 @@ const TaskDetailsScreen = () => {
       />
 
       {isEditMode ? (
-        renderEditMode()
+        <KeyboardAvoidingView
+          style={styles.mainContainer}
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          keyboardVerticalOffset={0}>
+          {renderEditMode()}
+          <ActionFooter
+            onCancel={handleCancelEdit}
+            onSave={handleSaveEdit}
+            saveEnabled={isFormValid}
+          />
+        </KeyboardAvoidingView>
       ) : (
+        <>
         <ScrollView
           style={styles.scrollView}
           showsVerticalScrollIndicator={false}
@@ -1002,16 +1015,6 @@ const TaskDetailsScreen = () => {
 
           {renderStaticTaskDetails()}
         </ScrollView>
-      )}
-
-      {/* Action Footer */}
-      {isEditMode ? (
-        <ActionFooter
-          onCancel={handleCancelEdit}
-          onSave={handleSaveEdit}
-          saveEnabled={isFormValid}
-        />
-      ) : (
         <View style={{ position: "absolute", bottom: 0, left: 0, right: 0 }}>
           <View style={[styles.wrapper, { marginBottom: bottomInsets.bottom }]}>
             <BlurView
@@ -1047,6 +1050,7 @@ const TaskDetailsScreen = () => {
             </BlurView>
           </View>
         </View>
+        </>
       )}
     </View>
   );

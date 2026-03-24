@@ -13,7 +13,7 @@
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#F7F3EE"
+      "backgroundColor": "#F9FAFB"
     },
     "ios": {
       "supportsTablet": true,
@@ -23,9 +23,10 @@
       }
     },
     "android": {
+      "softwareKeyboardLayoutMode": "resize",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#F7F3EE"
+        "backgroundColor": "#F9FAFB"
       },
       "package": "irfanemreutkan.app.todra"
     },

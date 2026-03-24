@@ -2,10 +2,12 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { StatusBar } from "expo-status-bar";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -28,7 +30,9 @@ import {
   AiProviderId,
   AiUserConfig,
   DEFAULT_AI_CONFIG,
+  OPENAI_COMPATIBLE_ENDPOINT_PRESETS,
   PRESET_DEFAULT_MODEL,
+  normalizeOpenAiCompatibleBaseUrl,
 } from "../types/ai";
 import { RADII } from "../theme";
 import { RootStackParamList } from "../types";
@@ -55,6 +59,7 @@ const AiSettingsScreen: React.FC = () => {
   const [config, setConfig] = useState<AiUserConfig>(DEFAULT_AI_CONFIG);
   const [apiKeyInput, setApiKeyInput] = useState("");
   const [providerMenuOpen, setProviderMenuOpen] = useState(false);
+  const [endpointPresetMenuOpen, setEndpointPresetMenuOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -79,7 +84,36 @@ const AiSettingsScreen: React.FC = () => {
       model: PRESET_DEFAULT_MODEL[pid] ?? prev.model,
     }));
     setProviderMenuOpen(false);
+    setEndpointPresetMenuOpen(false);
   }, []);
+
+  const endpointPresetSummary = useMemo(() => {
+    if (config.providerId !== "openai_compatible") return { label: "", subtitle: "" };
+    const match = OPENAI_COMPATIBLE_ENDPOINT_PRESETS.find(
+      (p) =>
+        normalizeOpenAiCompatibleBaseUrl(config.baseUrl) ===
+        normalizeOpenAiCompatibleBaseUrl(p.url)
+    );
+    if (match) {
+      return { label: match.label, subtitle: match.url };
+    }
+    return {
+      label: "Custom URL",
+      subtitle: (config.baseUrl || "").trim() || "Enter a base URL below",
+    };
+  }, [config.baseUrl, config.providerId]);
+
+  const applyEndpointPreset = useCallback(
+    (preset: (typeof OPENAI_COMPATIBLE_ENDPOINT_PRESETS)[number]) => {
+      setConfig((prev) => ({
+        ...prev,
+        baseUrl: preset.url,
+        model: preset.suggestedModel ?? prev.model,
+      }));
+      setEndpointPresetMenuOpen(false);
+    },
+    []
+  );
 
   const handleSave = useCallback(async () => {
     if (config.providerId === "openai_compatible") {
@@ -170,11 +204,19 @@ const AiSettingsScreen: React.FC = () => {
           <ActivityIndicator color={colors.primary} />
         </View>
       ) : (
-        <ScrollView
-          style={styles.scroll}
-          contentContainerStyle={styles.scrollContent}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}>
+        <KeyboardAvoidingView
+          style={styles.keyboardAvoid}
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          keyboardVerticalOffset={0}>
+          <ScrollView
+            style={styles.scroll}
+            contentContainerStyle={[
+              styles.scrollContent,
+              { paddingBottom: Math.max(insets.bottom, 20) + 32 },
+            ]}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
+            showsVerticalScrollIndicator={false}>
           <View
             style={[
               styles.privacyCard,
@@ -198,7 +240,10 @@ const AiSettingsScreen: React.FC = () => {
                 styles.selectRow,
                 { backgroundColor: colors.surface, borderColor: colors.border },
               ]}
-              onPress={() => setProviderMenuOpen((o) => !o)}>
+              onPress={() => {
+                setProviderMenuOpen((o) => !o);
+                setEndpointPresetMenuOpen(false);
+              }}>
               <Text style={[typography.body, { color: colors.text, flex: 1 }]}>
                 {AI_PROVIDER_LABELS[config.providerId]}
               </Text>
@@ -253,15 +298,96 @@ const AiSettingsScreen: React.FC = () => {
 
           {config.providerId === "openai_compatible" && (
             <SettingsSection title="OpenAI-compatible endpoint">
-              <Text style={[typography.caption, { color: colors.textSecondary, marginBottom: 8 }]}>
-                Base URL only, e.g. https://api.openai.com/v1 or your proxy. No trailing slash
-                required.
+              <Text style={[typography.caption, { color: colors.textSecondary, marginBottom: 10 }]}>
+                Base URL only — no trailing slash. Requests go to your base plus /chat/completions.
+              </Text>
+              <Text
+                style={[
+                  typography.caption,
+                  { color: colors.textSecondary, marginBottom: 6 },
+                ]}>
+                Endpoint preset
+              </Text>
+              <TouchableOpacity
+                style={[
+                  styles.selectRow,
+                  { backgroundColor: colors.surface, borderColor: colors.border },
+                ]}
+                onPress={() => {
+                  setEndpointPresetMenuOpen((o) => !o);
+                  setProviderMenuOpen(false);
+                }}
+                accessibilityRole="button"
+                accessibilityLabel="Choose OpenAI-compatible endpoint preset"
+                accessibilityState={{ expanded: endpointPresetMenuOpen }}>
+                <View style={styles.endpointSelectText}>
+                  <Text style={[typography.bodySemiBold, { color: colors.text }]}>
+                    {endpointPresetSummary.label}
+                  </Text>
+                  <Text
+                    style={[typography.caption, { color: colors.textSecondary, marginTop: 2 }]}
+                    numberOfLines={2}
+                    selectable>
+                    {endpointPresetSummary.subtitle}
+                  </Text>
+                </View>
+                <Ionicons
+                  name={endpointPresetMenuOpen ? "chevron-up" : "chevron-down"}
+                  size={20}
+                  color={colors.textSecondary}
+                />
+              </TouchableOpacity>
+              {endpointPresetMenuOpen && (
+                <View style={[styles.menu, { borderColor: colors.border, marginTop: 8 }]}>
+                  {OPENAI_COMPATIBLE_ENDPOINT_PRESETS.map((preset) => {
+                    const selected =
+                      normalizeOpenAiCompatibleBaseUrl(config.baseUrl) ===
+                      normalizeOpenAiCompatibleBaseUrl(preset.url);
+                    return (
+                      <TouchableOpacity
+                        key={preset.id}
+                        style={[
+                          styles.menuRow,
+                          styles.endpointMenuRow,
+                          {
+                            backgroundColor: selected ? colors.card : colors.surface,
+                          },
+                        ]}
+                        onPress={() => applyEndpointPreset(preset)}
+                        accessibilityRole="button"
+                        accessibilityLabel={`${preset.label}, ${preset.url}`}
+                        accessibilityState={{ selected }}>
+                        <View style={styles.endpointMenuRowText}>
+                          <Text style={[typography.body, { color: colors.text }]}>
+                            {preset.label}
+                          </Text>
+                          <Text
+                            style={[typography.caption, { color: colors.textSecondary, marginTop: 2 }]}
+                            numberOfLines={2}
+                            selectable>
+                            {preset.url}
+                          </Text>
+                        </View>
+                        {selected ? (
+                          <Ionicons name="checkmark" size={20} color={colors.primary} />
+                        ) : null}
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              )}
+              <Text
+                style={[
+                  typography.caption,
+                  { color: colors.textSecondary, marginTop: 12, marginBottom: 6 },
+                ]}>
+                Base URL (editable)
               </Text>
               <TextInput
                 style={inputStyle}
                 value={config.baseUrl}
                 onChangeText={(baseUrl) => setConfig((c) => ({ ...c, baseUrl }))}
-                placeholder="https://..."
+                placeholder="https://openrouter.ai/api/v1"
                 placeholderTextColor={colors.textSecondary}
                 autoCapitalize="none"
                 autoCorrect={false}
@@ -356,6 +482,7 @@ const AiSettingsScreen: React.FC = () => {
             )}
           </TouchableOpacity>
         </ScrollView>
+        </KeyboardAvoidingView>
       )}
     </View>
   );
@@ -363,6 +490,7 @@ const AiSettingsScreen: React.FC = () => {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  keyboardAvoid: { flex: 1 },
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -375,7 +503,7 @@ const styles = StyleSheet.create({
   headerTitle: { flex: 1, textAlign: "center" },
   placeholder: { width: 40 },
   scroll: { flex: 1 },
-  scrollContent: { padding: 16, paddingBottom: 40 },
+  scrollContent: { padding: 16 },
   centered: { flex: 1, justifyContent: "center", alignItems: "center" },
   privacyCard: {
     padding: 16,
@@ -412,6 +540,9 @@ const styles = StyleSheet.create({
     ...typography.body,
   },
   clearKey: { marginTop: 10, alignSelf: "flex-start" },
+  endpointSelectText: { flex: 1, minWidth: 0, paddingRight: 8 },
+  endpointMenuRow: { alignItems: "flex-start" },
+  endpointMenuRowText: { flex: 1, minWidth: 0, paddingRight: 8 },
   saveBtn: {
     marginTop: 24,
     paddingVertical: 14,

@@ -6,9 +6,23 @@ import {
 import { TODO_TOOLS_OPENAI } from "../todoToolDefinitions";
 import { executeTodoTool } from "../todoToolExecutor";
 
-const SYSTEM_PROMPT = `You are Todra's task assistant. You help users manage their todo list using the provided tools.
+const SYSTEM_PROMPT_STATIC = `You are Todra's task assistant. You help users manage their todo list using the provided tools.
 Be concise and confirm what you changed. Dates in tools use ISO 8601 when supplied.
-If a task id is unknown, use list_tasks first.`;
+If a task id is unknown, use list_tasks first.
+
+Due dates (due_date_iso on create_task / update_task):
+- Never set the due time to "right now" or the current clock minute unless the user explicitly asked for that exact moment (e.g. "in 20 minutes", "at 3pm today" with 3pm being now).
+- For work due "today" or same-day, use a sensible end-of-day or end-of-workday time on that calendar date (e.g. 17:00 or 18:00 local intent), not the present hour.
+- Infer a reasonable horizon from the task: quick errands → later today or tomorrow; bigger projects → several days out or next week; vague scope → prefer asking instead of guessing.
+- If the user gave no timeframe and you cannot infer one without a wild guess, do not create or reschedule the task yet—reply with one short clarifying question (e.g. when they need it done).
+- When you do set a deadline, pass a full ISO 8601 datetime that matches your reasoning.`;
+
+function buildSystemPrompt(): string {
+  const iso = new Date().toISOString();
+  return `${SYSTEM_PROMPT_STATIC}
+
+Time anchor (UTC ISO, for interpreting "today" / relative dates): ${iso}`;
+}
 
 const MAX_TOOL_ROUNDS = 10;
 
@@ -151,7 +165,7 @@ function uiToOpenAiMessages(
   latestUser: string
 ): { role: string; content: string }[] {
   const out: { role: string; content: string }[] = [
-    { role: "system", content: SYSTEM_PROMPT },
+    { role: "system", content: buildSystemPrompt() },
   ];
   for (const m of history) {
     if (m.role === "user") {
@@ -276,7 +290,7 @@ async function anthropicOnce(
     body: JSON.stringify({
       model,
       max_tokens: 4096,
-      system: SYSTEM_PROMPT,
+      system: buildSystemPrompt(),
       tools: ANTHROPIC_TOOLS,
       messages,
     }),
@@ -521,7 +535,7 @@ async function runGeminiLoop(
 
   for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
     const { data, error } = await geminiGenerate(apiKey, model, {
-      systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
+      systemInstruction: { parts: [{ text: buildSystemPrompt() }] },
       contents,
       tools,
       toolConfig: { functionCallingConfig: { mode: "AUTO" } },

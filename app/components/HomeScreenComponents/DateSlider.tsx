@@ -26,7 +26,6 @@ interface DateSliderProps {
   today: Date;
   selectedMonth: string;
   onDateChange: (date: Date) => void;
-  filterType?: "createdAt" | "dueDate";
 }
 
 const DateSlider: React.FC<DateSliderProps> = ({
@@ -35,7 +34,6 @@ const DateSlider: React.FC<DateSliderProps> = ({
   today,
   selectedMonth,
   onDateChange,
-  filterType: _filterType = "dueDate",
 }) => {
   const { colors } = useTheme();
   const flatListRef = useRef<FlatList>(null);

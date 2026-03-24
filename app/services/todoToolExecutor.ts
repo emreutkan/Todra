@@ -23,6 +23,19 @@ function parsePriority(v: unknown): TaskPriority {
   return "normal";
 }
 
+/** When the model omits a due date, avoid using "now" (reads as wrong hour). */
+function defaultDueMsWhenUnspecified(nowMs: number): number {
+  const endToday = new Date(nowMs);
+  endToday.setHours(23, 59, 59, 999);
+  if (endToday.getTime() > nowMs + 5 * 60 * 1000) {
+    return endToday.getTime();
+  }
+  const next = new Date(nowMs);
+  next.setDate(next.getDate() + 1);
+  next.setHours(18, 0, 0, 0);
+  return next.getTime();
+}
+
 function summarizeTask(t: Task) {
   return {
     id: t.id,
@@ -66,10 +79,13 @@ export async function executeTodoTool(
           return JSON.stringify({ error: "title is required" });
         }
         const now = Date.now();
-        const dueMs =
-          typeof args.due_date_iso === "string" && args.due_date_iso
-            ? new Date(args.due_date_iso).getTime()
-            : now;
+        const parsedDue =
+          typeof args.due_date_iso === "string" && args.due_date_iso.trim()
+            ? new Date(args.due_date_iso.trim()).getTime()
+            : NaN;
+        const dueMs = Number.isNaN(parsedDue)
+          ? defaultDueMsWhenUnspecified(now)
+          : parsedDue;
         const task: Task = {
           id: genTaskId(),
           title,
@@ -78,7 +94,7 @@ export async function executeTodoTool(
           priority: parsePriority(args.priority),
           completed: false,
           createdAt: now,
-          dueDate: Number.isNaN(dueMs) ? now : dueMs,
+          dueDate: dueMs,
           category: normalizeCategory(
             typeof args.category === "string" ? args.category : undefined
           ),
