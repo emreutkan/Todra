@@ -3,6 +3,7 @@ import * as Haptics from "expo-haptics";
 import React, { useRef } from "react";
 import { Animated, Platform, StyleSheet, TouchableOpacity } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
+import { RADII } from "../../theme";
 
 interface AddButtonProps {
   onPress: () => void;
@@ -20,8 +21,8 @@ const AddButton: React.FC<AddButtonProps> = ({
 
   const handlePressIn = () => {
     Animated.timing(scaleAnim, {
-      toValue: 1.2,
-      duration: 200,
+      toValue: 1.08,
+      duration: 140,
       useNativeDriver: true,
     }).start();
   };
@@ -29,7 +30,7 @@ const AddButton: React.FC<AddButtonProps> = ({
   const handlePressOut = () => {
     Animated.timing(scaleAnim, {
       toValue: 1,
-      duration: 200,
+      duration: 180,
       useNativeDriver: true,
     }).start();
   };
@@ -67,7 +68,7 @@ const styles = StyleSheet.create({
   fab: {
     width: 70,
     height: 56,
-    borderRadius: 28,
+    borderRadius: RADII.fab,
     justifyContent: "center",
     alignItems: "center",
     zIndex: 1000,
@@ -77,7 +78,7 @@ const styles = StyleSheet.create({
     height: "100%",
     justifyContent: "center",
     alignItems: "center",
-    borderRadius: 28,
+    borderRadius: RADII.fab,
   },
   shadow: {
     ...Platform.select({

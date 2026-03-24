@@ -45,4 +45,6 @@ export type RootStackParamList = {
   Settings: undefined;
   AllTasks: undefined;
   ArchivedTasks: undefined; // New screen for viewing archived tasks
+  AiAssistant: undefined;
+  AiSettings: undefined;
 };

@@ -15,7 +15,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useToast } from "../context/ToastContext";
 import { useTheme } from "../context/ThemeContext";
-import { PRIORITY_COLORS } from "../theme";
+import { PRIORITY_COLORS, RADII } from "../theme";
 import { typography } from "../typography";
 import {
   getArchivedTasks,
@@ -248,20 +248,17 @@ const ArchivedTasksScreen: React.FC = () => {
   };
 
   return (
-    <View
-      style={[
-        styles.container,
-        {
-          backgroundColor: colors.background,
-          paddingTop: insets.top,
-        },
-      ]}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <StatusBar style={isDark ? "light" : "dark"} />
 
       <View
         style={[
           styles.header,
-          { backgroundColor: colors.card, borderColor: colors.border },
+          {
+            backgroundColor: colors.card,
+            borderColor: colors.border,
+            paddingTop: Math.max(insets.top, 12),
+          },
         ]}>
         <TouchableOpacity style={styles.backButton} onPress={handleBackPress}>
           <Ionicons name="arrow-back" size={24} color={colors.text} />
@@ -341,7 +338,7 @@ const styles = StyleSheet.create({
     paddingBottom: 80,
   },
   taskItem: {
-    borderRadius: 12,
+    borderRadius: RADII.md,
     padding: 16,
     marginBottom: 16,
     borderWidth: 1,

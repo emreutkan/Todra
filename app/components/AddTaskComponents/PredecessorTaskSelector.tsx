@@ -9,7 +9,7 @@ import {
   View,
 } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
-import { SIZES } from "../../theme";
+import { RADII, SIZES } from "../../theme";
 import { Task } from "../../types";
 import { typography } from "../../typography";
 import FormSection from "./FormSection";
@@ -63,7 +63,7 @@ const PredecessorTaskSelector: React.FC<PredecessorTaskSelectorProps> = ({
     button: {
       borderWidth: 1,
       borderColor: colors.border,
-      borderRadius: SIZES.base,
+      borderRadius: RADII.sm,
       paddingVertical: SIZES.medium,
       paddingHorizontal: SIZES.medium,
       minHeight: 48,
@@ -141,7 +141,7 @@ const PredecessorTaskSelector: React.FC<PredecessorTaskSelectorProps> = ({
       paddingVertical: 14,
       paddingHorizontal: 12,
       minHeight: 52,
-      borderRadius: 8,
+      borderRadius: RADII.sm,
       backgroundColor: colors.card,
       marginBottom: 8,
       justifyContent: "space-between",
@@ -176,7 +176,7 @@ const PredecessorTaskSelector: React.FC<PredecessorTaskSelectorProps> = ({
     checkbox: {
       width: 24,
       height: 24,
-      borderRadius: 12,
+      borderRadius: RADII.md,
       borderWidth: 2,
       borderColor: colors.primary,
       alignItems: "center",

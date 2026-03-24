@@ -1,34 +1,23 @@
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import React, { useRef } from "react";
-import {
-  Animated,
-  Platform,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { Animated, Platform, StyleSheet, TouchableOpacity } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
 import { RADII } from "../../theme";
 
-interface FilterButtonProps {
+interface SettingsFabProps {
   onPress: () => void;
   label?: string;
   showShadow?: boolean;
-  /** Number of active category + priority filters (excludes date). */
-  activeFilterCount?: number;
 }
 
-const FilterButton: React.FC<FilterButtonProps> = ({
+const SettingsFab: React.FC<SettingsFabProps> = ({
   onPress,
-  label = "Filter tasks",
+  label = "Settings",
   showShadow = true,
-  activeFilterCount = 0,
 }) => {
   const { colors } = useTheme();
   const scaleAnim = useRef(new Animated.Value(1)).current;
-  const hasFilters = activeFilterCount > 0;
 
   const handlePressIn = () => {
     Animated.timing(scaleAnim, {
@@ -52,8 +41,8 @@ const FilterButton: React.FC<FilterButtonProps> = ({
         styles.fab,
         {
           backgroundColor: colors.card,
-          borderColor: hasFilters ? colors.primary : colors.border,
-          borderWidth: hasFilters ? 1.5 : 1,
+          borderColor: colors.border,
+          borderWidth: 1,
         },
         showShadow && [styles.shadow, { shadowColor: colors.shadowColor }],
         { transform: [{ scale: scaleAnim }] },
@@ -66,30 +55,11 @@ const FilterButton: React.FC<FilterButtonProps> = ({
         }}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
-        accessibilityLabel={
-          hasFilters
-            ? `${label}, ${activeFilterCount} active`
-            : label
-        }
+        accessibilityLabel={label}
         accessibilityRole="button"
-        accessibilityState={{ expanded: false }}
         style={styles.touchable}>
-        <Ionicons
-          name="funnel-outline"
-          size={22}
-          color={hasFilters ? colors.primary : colors.text}
-        />
+        <Ionicons name="settings-outline" size={24} color={colors.text} />
       </TouchableOpacity>
-      {hasFilters ? (
-        <View
-          style={[styles.badge, { backgroundColor: colors.primary }]}
-          accessibilityElementsHidden
-          importantForAccessibility="no">
-          <Text style={[styles.badgeText, { color: colors.onPrimary }]}>
-            {activeFilterCount > 9 ? "9+" : String(activeFilterCount)}
-          </Text>
-        </View>
-      ) : null}
     </Animated.View>
   );
 };
@@ -110,34 +80,18 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderRadius: RADII.fab,
   },
-  badge: {
-    position: "absolute",
-    top: 4,
-    right: 4,
-    minWidth: 18,
-    height: 18,
-    paddingHorizontal: 4,
-    borderRadius: 9,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  badgeText: {
-    fontSize: 11,
-    fontWeight: "700",
-    fontVariant: ["tabular-nums"],
-  },
   shadow: {
     ...Platform.select({
       ios: {
         shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.1,
-        shadowRadius: 6,
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
       },
       android: {
-        elevation: 6,
+        elevation: 8,
       },
     }),
   },
 });
 
-export default FilterButton;
+export default SettingsFab;

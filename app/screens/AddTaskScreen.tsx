@@ -30,7 +30,7 @@ import ScreenHeader from "../components/common/ScreenHeader";
 import { useTheme } from "../context/ThemeContext";
 import { useAddTask } from "../hooks/useAddTask";
 import { useReducedMotion } from "../hooks/useReducedMotion";
-import { SIZES } from "../theme";
+import { RADII, SIZES } from "../theme";
 import { typography } from "../typography";
 
 const PRESS_SCALE = 1.04;
@@ -58,7 +58,7 @@ const createButtonStyles = (shadowColor: string) =>
     fab: {
       width: 56,
       height: 56,
-      borderRadius: 28,
+      borderRadius: RADII.fab,
       justifyContent: "center",
       alignItems: "center",
       zIndex: 1000,
@@ -66,7 +66,7 @@ const createButtonStyles = (shadowColor: string) =>
     largeFab: {
       minWidth: 152,
       height: 56,
-      borderRadius: 28,
+      borderRadius: RADII.fab,
       paddingHorizontal: 18,
       justifyContent: "center",
       alignItems: "center",
@@ -77,7 +77,7 @@ const createButtonStyles = (shadowColor: string) =>
       height: "100%",
       justifyContent: "center",
       alignItems: "center",
-      borderRadius: 28,
+      borderRadius: RADII.fab,
     },
     largeTouchable: {
       width: "100%",
@@ -86,7 +86,7 @@ const createButtonStyles = (shadowColor: string) =>
       alignItems: "center",
       justifyContent: "center",
       gap: 8,
-      borderRadius: 28,
+      borderRadius: RADII.fab,
       paddingHorizontal: 4,
     },
     shadow: {
@@ -480,7 +480,8 @@ const AddTaskScreen: React.FC = () => {
         pointerEvents="none"
       />
       <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        keyboardVerticalOffset={0}
         style={{ flex: 1 }}>
         <StatusBar style={isDark ? "light" : "dark"} />
 

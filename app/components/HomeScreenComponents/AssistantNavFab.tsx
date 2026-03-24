@@ -3,16 +3,18 @@ import * as Haptics from "expo-haptics";
 import React, { useRef } from "react";
 import { Animated, Platform, StyleSheet, TouchableOpacity } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
+import { RADII } from "../../theme";
 
-interface SettingsButtonProps {
+type Props = {
   onPress: () => void;
-  label?: string;
   showShadow?: boolean;
-}
+};
 
-const SettingsButton: React.FC<SettingsButtonProps> = ({
+/**
+ * Opens the BYOK AI assistant from the home floating dock.
+ */
+const AssistantNavFab: React.FC<Props> = ({
   onPress,
-  label = "Settings",
   showShadow = true,
 }) => {
   const { colors } = useTheme();
@@ -20,8 +22,8 @@ const SettingsButton: React.FC<SettingsButtonProps> = ({
 
   const handlePressIn = () => {
     Animated.timing(scaleAnim, {
-      toValue: 1.2,
-      duration: 200,
+      toValue: 1.06,
+      duration: 140,
       useNativeDriver: true,
     }).start();
   };
@@ -29,7 +31,7 @@ const SettingsButton: React.FC<SettingsButtonProps> = ({
   const handlePressOut = () => {
     Animated.timing(scaleAnim, {
       toValue: 1,
-      duration: 200,
+      duration: 180,
       useNativeDriver: true,
     }).start();
   };
@@ -39,9 +41,10 @@ const SettingsButton: React.FC<SettingsButtonProps> = ({
       style={[
         styles.fab,
         {
-          backgroundColor: colors.surface,
+          backgroundColor: colors.primaryMuted,
+          borderColor: colors.accent,
         },
-        showShadow && [styles.shadow, { shadowColor: colors.primary }],
+        showShadow && [styles.shadow, { shadowColor: colors.shadowColor }],
         { transform: [{ scale: scaleAnim }] },
       ]}>
       <TouchableOpacity
@@ -52,10 +55,15 @@ const SettingsButton: React.FC<SettingsButtonProps> = ({
         }}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
-        accessibilityLabel={label}
+        accessibilityLabel="Open AI assistant"
+        accessibilityHint="Chat with your task assistant using your own API key"
         accessibilityRole="button"
         style={styles.touchable}>
-        <Ionicons name="settings-outline" size={24} color={colors.text} />
+        <Ionicons
+          name="chatbubbles-outline"
+          size={22}
+          color={colors.primary}
+        />
       </TouchableOpacity>
     </Animated.View>
   );
@@ -65,7 +73,8 @@ const styles = StyleSheet.create({
   fab: {
     width: 56,
     height: 56,
-    borderRadius: 28,
+    borderRadius: RADII.fab,
+    borderWidth: 1.5,
     justifyContent: "center",
     alignItems: "center",
     zIndex: 1000,
@@ -75,20 +84,20 @@ const styles = StyleSheet.create({
     height: "100%",
     justifyContent: "center",
     alignItems: "center",
-    borderRadius: 28,
+    borderRadius: RADII.fab,
   },
   shadow: {
     ...Platform.select({
       ios: {
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.12,
         shadowRadius: 8,
       },
       android: {
-        elevation: 8,
+        elevation: 5,
       },
     }),
   },
 });
 
-export default SettingsButton;
+export default AssistantNavFab;

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSettings } from "../context/SettingsContext";
 import { Task, TaskPriority } from "../types";
 
@@ -77,11 +77,18 @@ export const useHomeFilters = (tasks: Task[]) => {
     setSelectedFilterType(type);
   }, []);
 
+  const activeFilterCount = useMemo(
+    () =>
+      (activeCategory ? 1 : 0) + (selectedPriority !== "all" ? 1 : 0),
+    [activeCategory, selectedPriority]
+  );
+
   return {
     filteredTasks,
     selectedFilterType,
     activeCategory,
     selectedPriority,
+    activeFilterCount,
     clearFilters,
     setCategoryFilter,
     setPriorityFilter,

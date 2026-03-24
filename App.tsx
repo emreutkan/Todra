@@ -18,7 +18,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { useFonts } from "expo-font";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect } from "react";
-import { ActivityIndicator, View } from "react-native";
+import { ActivityIndicator, Platform, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { applyGlobalTypography } from "./app/bootstrapTypography";
 import { SettingsProvider } from "./app/context/SettingsContext";
@@ -34,11 +34,15 @@ import TaskDetailsScreen from "./app/screens/TaskDetailsScreen";
 
 import * as Notifications from "expo-notifications";
 import ArchivedTasksScreen from "./app/screens/ArchivedTasksScreen";
+import AiAssistantScreen from "./app/screens/AiAssistantScreen";
+import AiSettingsScreen from "./app/screens/AiSettingsScreen";
 import { notificationService } from "./app/services/notificationService";
 import { RootStackParamList } from "./app/types";
+import { lightWarmTheme } from "./app/theme";
 
-const FONT_LOADING_BACKGROUND = "#F7F3EE";
-const FONT_LOADING_SPINNER = "#8B7355";
+/** Matches default light theme; used before ThemeProvider mounts (font bootstrap). */
+const FONT_LOADING_BACKGROUND = lightWarmTheme.background;
+const FONT_LOADING_SPINNER = lightWarmTheme.primary;
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -90,9 +94,18 @@ function AppContent() {
           contentStyle: {
             backgroundColor: colors.background,
           },
-          animation: "fade",
+          // Avoid global crossfade — it reads as “phasing” between screens.
+          animation: Platform.select({
+            ios: "default",
+            android: "slide_from_right",
+          }),
+          animationDuration: 280,
         }}>
-        <Stack.Screen name="Splash" component={SplashScreen} />
+        <Stack.Screen
+          name="Splash"
+          component={SplashScreen}
+          options={{ animation: "none" }}
+        />
         <Stack.Screen name="Home" component={HomeScreen} />
         <Stack.Screen name="AddTask" component={AddTaskScreen} />
         <Stack.Screen
@@ -108,6 +121,8 @@ function AppContent() {
         <Stack.Screen name="Settings" component={SettingsScreen} />
         <Stack.Screen name="AllTasks" component={AllTasksScreen} />
         <Stack.Screen name="ArchivedTasks" component={ArchivedTasksScreen} />
+        <Stack.Screen name="AiAssistant" component={AiAssistantScreen} />
+        <Stack.Screen name="AiSettings" component={AiSettingsScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

@@ -8,7 +8,7 @@ import {
   View,
 } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
-import { PRIORITY_COLORS, SIZES } from "../../theme";
+import { PRIORITY_COLORS, RADII, SIZES } from "../../theme";
 import { FONT, typography } from "../../typography";
 import { TaskPriority } from "../../types";
 
@@ -134,7 +134,7 @@ const PrioritySelector: React.FC<PrioritySelectorProps> = ({
       alignItems: "center",
       justifyContent: "space-between",
       backgroundColor: colors.card,
-      borderRadius: 12,
+      borderRadius: RADII.md,
       padding: SIZES.medium,
       borderWidth: 1,
       borderColor: colors.border,

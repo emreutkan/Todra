@@ -9,6 +9,7 @@ import {
   View,
 } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
+import { RADII } from "../../theme";
 import { typography } from "../../typography";
 import CustomDatePicker from "./CustomDatePicker";
 
@@ -172,7 +173,7 @@ const styles = StyleSheet.create({
   footerButton: {
     flex: 1,
     height: 48,
-    borderRadius: 12,
+    borderRadius: RADII.md,
     justifyContent: "center",
     alignItems: "center",
   },

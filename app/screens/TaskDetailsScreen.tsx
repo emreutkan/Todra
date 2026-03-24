@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   Alert,
   Animated,
+  KeyboardAvoidingView,
   Platform,
   ScrollView,
   StyleSheet,
@@ -27,7 +28,7 @@ import {
   getArchivedTasks,
   updateTask as updateTaskService,
 } from "../services/taskStorageService";
-import { SIZES } from "../theme";
+import { RADII, SIZES } from "../theme";
 import { typography } from "../typography";
 import { RootStackParamList, Task } from "../types";
 
@@ -878,6 +879,7 @@ const TaskDetailsScreen = () => {
         style={styles.content}
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
+        keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
         showsVerticalScrollIndicator={false}>
         <TaskTitleInput value={title} onChangeText={setTitle} />
 
@@ -986,8 +988,19 @@ const TaskDetailsScreen = () => {
       />
 
       {isEditMode ? (
-        renderEditMode()
+        <KeyboardAvoidingView
+          style={styles.mainContainer}
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          keyboardVerticalOffset={0}>
+          {renderEditMode()}
+          <ActionFooter
+            onCancel={handleCancelEdit}
+            onSave={handleSaveEdit}
+            saveEnabled={isFormValid}
+          />
+        </KeyboardAvoidingView>
       ) : (
+        <>
         <ScrollView
           style={styles.scrollView}
           showsVerticalScrollIndicator={false}
@@ -1002,16 +1015,6 @@ const TaskDetailsScreen = () => {
 
           {renderStaticTaskDetails()}
         </ScrollView>
-      )}
-
-      {/* Action Footer */}
-      {isEditMode ? (
-        <ActionFooter
-          onCancel={handleCancelEdit}
-          onSave={handleSaveEdit}
-          saveEnabled={isFormValid}
-        />
-      ) : (
         <View style={{ position: "absolute", bottom: 0, left: 0, right: 0 }}>
           <View style={[styles.wrapper, { marginBottom: bottomInsets.bottom }]}>
             <BlurView
@@ -1047,6 +1050,7 @@ const TaskDetailsScreen = () => {
             </BlurView>
           </View>
         </View>
+        </>
       )}
     </View>
   );
@@ -1172,7 +1176,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: SIZES.small,
     paddingVertical: 4,
-    borderRadius: 12,
+    borderRadius: RADII.md,
     marginLeft: SIZES.small,
   },
   archivedText: {
@@ -1242,7 +1246,7 @@ const styles = StyleSheet.create({
   fab: {
     width: 56,
     height: 56,
-    borderRadius: 28,
+    borderRadius: RADII.fab,
     justifyContent: "center",
     alignItems: "center",
     zIndex: 1000,
@@ -1250,7 +1254,7 @@ const styles = StyleSheet.create({
   addStyleFab: {
     width: 70,
     height: 56,
-    borderRadius: 28,
+    borderRadius: RADII.fab,
     justifyContent: "center",
     alignItems: "center",
     zIndex: 1000,
@@ -1260,7 +1264,7 @@ const styles = StyleSheet.create({
     height: "100%",
     justifyContent: "center",
     alignItems: "center",
-    borderRadius: 28,
+    borderRadius: RADII.fab,
   },
   shadow: {
     ...Platform.select({

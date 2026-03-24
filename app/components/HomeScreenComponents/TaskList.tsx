@@ -15,7 +15,7 @@ import { useSettings } from "../../context/SettingsContext";
 import { useTheme } from "../../context/ThemeContext";
 import { useReducedMotion } from "../../hooks/useReducedMotion";
 import { typography } from "../../typography";
-import { SIZES } from "../../theme";
+import { HOME_LIST, SIZES } from "../../theme";
 import { Task, TaskPriority } from "../../types";
 import EmptyTasksState from "../common/EmptyTasksState";
 import TaskItem from "../common/TaskItem";
@@ -40,7 +40,6 @@ interface TaskListProps {
   onDeleteTask: (id: string) => void;
   onToggleTaskCompletion: (id: string) => void;
   onTaskPress: (id: string) => void;
-  scrollY?: Animated.Value;
   listEntranceOpacity: Animated.Value;
   listEntranceTranslateY: Animated.Value;
   loading?: boolean;
@@ -53,7 +52,6 @@ const TaskList: React.FC<TaskListProps> = ({
   onDeleteTask,
   onToggleTaskCompletion,
   onTaskPress,
-  scrollY,
   listEntranceOpacity,
   listEntranceTranslateY,
 }) => {
@@ -161,8 +159,8 @@ const TaskList: React.FC<TaskListProps> = ({
           style={[
             styles.sectionHeader,
             {
-              backgroundColor: colors.surface,
-              borderBottomColor: colors.hairline,
+              backgroundColor: colors.card,
+              borderColor: colors.border,
             },
           ]}
           accessibilityRole="button"
@@ -193,13 +191,13 @@ const TaskList: React.FC<TaskListProps> = ({
                 styles.priorityIndicator,
                 {
                   backgroundColor: priorityColor,
-                  borderColor: colors.card,
+                  borderColor: colors.background,
                 },
               ]}
             />
             <Text
               style={[
-                typography.headline,
+                typography.bodySemiBold,
                 styles.sectionTitle,
                 { color: colors.text },
               ]}>
@@ -230,79 +228,66 @@ const TaskList: React.FC<TaskListProps> = ({
     [expandedSections, colors, reducedMotion]
   );
 
-  // Render a simple progress header
   const renderTasksHeader = () => {
-    const total = tasks.length;
     const completed = tasks.filter((t) => t.completed).length;
-    const remaining = total - completed;
+    const remaining = tasks.length - completed;
+
     return (
-      <View
-        style={[
-          styles.progressSection,
-          {
-            backgroundColor: colors.surface,
-            borderColor: colors.border,
-          },
-        ]}>
-        <View style={styles.statsContainer}>
-          <View style={styles.statItem}>
+      <View style={styles.statsHeaderWrap}>
+        <View
+          style={[
+            styles.progressSection,
+            {
+              backgroundColor: colors.card,
+              borderColor: colors.border,
+            },
+          ]}>
+          <View style={styles.progressInline}>
             <View
-              style={[styles.statAccent, { backgroundColor: colors.success }]}
+              style={[
+                styles.progressDot,
+                { backgroundColor: colors.primary },
+              ]}
             />
             <Text
               style={[
                 typography.captionMedium,
-                styles.statLabel,
+                styles.progressCaption,
                 { color: colors.textSecondary },
               ]}>
-              Completed
+              To do
             </Text>
             <Text
-              style={[typography.title, { color: colors.success }]}
-              maxFontSizeMultiplier={1.4}>
-              {completed}
-            </Text>
-          </View>
-          <View
-            style={[styles.statDivider, { backgroundColor: colors.hairline }]}
-          />
-          <View style={styles.statItem}>
-            <View
-              style={[styles.statAccent, { backgroundColor: colors.primary }]}
-            />
-            <Text
-              style={[
-                typography.captionMedium,
-                styles.statLabel,
-                { color: colors.textSecondary },
-              ]}>
-              Remaining
-            </Text>
-            <Text
-              style={[typography.title, { color: colors.primary }]}
+              style={[typography.headline, { color: colors.primary }]}
               maxFontSizeMultiplier={1.4}>
               {remaining}
             </Text>
           </View>
           <View
-            style={[styles.statDivider, { backgroundColor: colors.hairline }]}
+            style={[
+              styles.progressDivider,
+              { backgroundColor: colors.hairline },
+            ]}
           />
-          <View style={styles.statItem}>
+          <View style={styles.progressInline}>
             <View
-              style={[styles.statAccent, { backgroundColor: colors.accent }]}
+              style={[
+                styles.progressDot,
+                { backgroundColor: colors.success },
+              ]}
             />
             <Text
               style={[
                 typography.captionMedium,
-                styles.statLabel,
+                styles.progressCaption,
                 { color: colors.textSecondary },
               ]}>
-              Total
+              Done
             </Text>
             <Text
-              style={[typography.title, { color: colors.text }]}
+              style={[typography.headline, { color: colors.success }]}
               maxFontSizeMultiplier={1.4}>
-              {total}
+              {completed}
             </Text>
           </View>
         </View>
@@ -318,10 +303,10 @@ const TaskList: React.FC<TaskListProps> = ({
 
   if (tasks.length === 0) {
     return (
-      <Animated.View style={listEntranceStyle}>
+      <Animated.View style={[listEntranceStyle, styles.emptyWrap]}>
         <EmptyTasksState
           title="No tasks"
-          subtitle="Tap + below to add your first task for this day."
+          subtitle="Tap + to add one for this day."
           icon="calendar-outline"
         />
       </Animated.View>
@@ -338,15 +323,6 @@ const TaskList: React.FC<TaskListProps> = ({
         renderSectionHeader={renderSectionHeader}
         stickySectionHeadersEnabled
         ListHeaderComponent={renderTasksHeader}
-        scrollEventThrottle={16}
-        onScroll={
-          scrollY
-            ? Animated.event(
-                [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-                { useNativeDriver: false }
-              )
-            : undefined
-        }
         renderItem={({ item, index, section }) => {
           if (!expandedSections[section.title]) return null;
           const isOverdue = Boolean(
@@ -379,53 +355,56 @@ const TaskList: React.FC<TaskListProps> = ({
 };
 
 const styles = StyleSheet.create({
+  emptyWrap: {
+    flex: 1,
+    paddingBottom: 108,
+  },
   taskList: {
-    marginHorizontal: SIZES.medium,
-    paddingBottom: SIZES.small,
+    paddingBottom: 108,
+  },
+  statsHeaderWrap: {
+    marginBottom: HOME_LIST.stackGap,
   },
   progressSection: {
-    paddingVertical: SIZES.medium,
-    borderWidth: 1,
-    borderRadius: SIZES.base + 4,
     flexDirection: "row",
     alignItems: "center",
-    marginHorizontal: -SIZES.medium,
-    marginBottom: SIZES.medium,
-    paddingHorizontal: SIZES.small,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: HOME_LIST.cardRadius,
+    paddingVertical: HOME_LIST.sectionPaddingV,
+    paddingHorizontal: HOME_LIST.sectionPaddingH,
   },
-  statsContainer: {
+  progressInline: {
+    flex: 1,
     flexDirection: "row",
-    justifyContent: "space-around",
-    flex: 1,
-  },
-
-  statItem: {
     alignItems: "center",
-    flex: 1,
+    justifyContent: "center",
     minWidth: 0,
   },
-  statAccent: {
-    width: 4,
-    height: 14,
-    borderRadius: 2,
-    marginBottom: SIZES.small,
+  progressCaption: {
+    marginRight: SIZES.base,
   },
-  statLabel: {
-    marginBottom: 4,
+  progressDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    marginRight: SIZES.base,
   },
-  statDivider: {
+  progressDivider: {
     width: StyleSheet.hairlineWidth,
     alignSelf: "stretch",
-    marginVertical: SIZES.small,
+    marginVertical: 2,
+    marginHorizontal: SIZES.base,
   },
 
   sectionHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: SIZES.medium,
-    paddingHorizontal: 2,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    paddingVertical: HOME_LIST.sectionPaddingV,
+    paddingHorizontal: HOME_LIST.sectionPaddingH,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: HOME_LIST.cardRadius,
+    marginBottom: HOME_LIST.stackGap,
   },
   sectionHeaderLeft: {
     flexDirection: "row",
@@ -434,9 +413,9 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   priorityIndicator: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
     marginRight: SIZES.medium,
     borderWidth: 2,
   },
@@ -444,10 +423,10 @@ const styles = StyleSheet.create({
     flexShrink: 1,
   },
   countPill: {
-    paddingHorizontal: SIZES.medium,
-    paddingVertical: 6,
-    borderRadius: 14,
-    minWidth: 36,
+    paddingHorizontal: SIZES.small,
+    paddingVertical: 4,
+    borderRadius: HOME_LIST.cardRadius,
+    minWidth: 32,
     alignItems: "center",
   },
 });

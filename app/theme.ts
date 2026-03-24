@@ -1,4 +1,4 @@
-// Warm minimal light, premium warm dark, optional true-black dark
+// Restrained editorial: ink neutrals, no washed pastels — dark fills on light, light fills on dark
 
 export type ThemeColors = {
   primary: string;
@@ -36,93 +36,93 @@ export type ThemeColors = {
 };
 
 export const lightWarmTheme: ThemeColors = {
-  primary: "#8B7355",
-  secondary: "#6B5D4F",
-  accent: "#C4A57B",
-  background: "#F7F3EE",
-  card: "#FFFCF9",
-  surface: "#F0EBE3",
-  text: "#3D3835",
-  textSecondary: "#7A726B",
-  border: "#E8E0D5",
-  notification: "#7A726B",
-  success: "#7D9F7B",
-  error: "#C17C74",
-  warning: "#D4A574",
-  info: "#8B9EB7",
-  inputBackground: "#F3EEE8",
-  divider: "#E5DDD4",
-  disabled: "#B5ADA3",
-  onPrimary: "#FFFCF9",
-  glassOverlay: "rgba(255, 252, 249, 0.82)",
-  primaryMuted: "rgba(139, 115, 85, 0.14)",
-  overlayScrim: "rgba(0, 0, 0, 0.5)",
-  shadowColor: "rgba(61, 56, 53, 0.22)",
-  hairline: "rgba(0, 0, 0, 0.12)",
-  destructiveSurface: "#ffebeb",
-  destructiveText: "#d63031",
+  primary: "#111827",
+  secondary: "#4B5563",
+  accent: "#B45309",
+  background: "#F9FAFB",
+  card: "#FFFFFF",
+  surface: "#F3F4F6",
+  text: "#111827",
+  textSecondary: "#6B7280",
+  border: "#E5E7EB",
+  notification: "#6B7280",
+  success: "#166534",
+  error: "#991B1B",
+  warning: "#A16207",
+  info: "#1E40AF",
+  inputBackground: "#F3F4F6",
+  divider: "#E5E7EB",
+  disabled: "#9CA3AF",
+  onPrimary: "#FFFFFF",
+  glassOverlay: "rgba(255, 255, 255, 0.92)",
+  primaryMuted: "rgba(17, 24, 39, 0.08)",
+  overlayScrim: "rgba(0, 0, 0, 0.52)",
+  shadowColor: "rgba(0, 0, 0, 0.14)",
+  hairline: "rgba(0, 0, 0, 0.09)",
+  destructiveSurface: "#fef2f2",
+  destructiveText: "#b91c1c",
 };
 
 export const darkPremiumTheme: ThemeColors = {
-  primary: "#D4C4B0",
-  secondary: "#B8A896",
-  accent: "#C9B896",
-  background: "#1A1816",
-  card: "#242120",
-  surface: "#2C2928",
-  text: "#F2EDE8",
-  textSecondary: "#A39E98",
-  border: "#3A3634",
-  notification: "#A39E98",
-  success: "#9BB89E",
-  error: "#D4A09A",
-  warning: "#D4B896",
-  info: "#A3B4C9",
-  inputBackground: "#2A2726",
-  divider: "#343130",
-  disabled: "#6B6662",
-  onPrimary: "#1A1816",
-  glassOverlay: "rgba(26, 24, 22, 0.78)",
-  primaryMuted: "rgba(212, 196, 176, 0.12)",
-  overlayScrim: "rgba(0, 0, 0, 0.42)",
-  shadowColor: "rgba(0, 0, 0, 0.35)",
-  hairline: "rgba(242, 237, 232, 0.12)",
-  destructiveSurface: "#421b1b",
-  destructiveText: "#ff6b6b",
+  primary: "#E5E7EB",
+  secondary: "#A1A1AA",
+  accent: "#D97706",
+  background: "#09090B",
+  card: "#18181B",
+  surface: "#27272A",
+  text: "#FAFAFA",
+  textSecondary: "#A1A1AA",
+  border: "#3F3F46",
+  notification: "#A1A1AA",
+  success: "#22C55E",
+  error: "#EF4444",
+  warning: "#F59E0B",
+  info: "#3B82F6",
+  inputBackground: "#27272A",
+  divider: "#3F3F46",
+  disabled: "#71717A",
+  onPrimary: "#09090B",
+  glassOverlay: "rgba(9, 9, 11, 0.88)",
+  primaryMuted: "rgba(229, 231, 235, 0.12)",
+  overlayScrim: "rgba(0, 0, 0, 0.55)",
+  shadowColor: "rgba(0, 0, 0, 0.5)",
+  hairline: "rgba(250, 250, 250, 0.1)",
+  destructiveSurface: "#450a0a",
+  destructiveText: "#fca5a5",
 };
 
 export const darkOledTheme: ThemeColors = {
-  primary: "#D4C4B0",
-  secondary: "#B8A896",
-  accent: "#C9B896",
+  primary: "#E5E7EB",
+  secondary: "#A1A1AA",
+  accent: "#D97706",
   background: "#000000",
-  card: "#0C0C0C",
+  card: "#0A0A0A",
   surface: "#141414",
-  text: "#ECEAE8",
-  textSecondary: "#9A9693",
-  border: "#252525",
-  notification: "#9A9693",
-  success: "#8FAF92",
-  error: "#C9948E",
-  warning: "#C9A882",
-  info: "#98A8BC",
-  inputBackground: "#101010",
-  divider: "#1C1C1C",
-  disabled: "#5C5956",
+  text: "#FAFAFA",
+  textSecondary: "#A1A1AA",
+  border: "#27272A",
+  notification: "#A1A1AA",
+  success: "#22C55E",
+  error: "#EF4444",
+  warning: "#F59E0B",
+  info: "#3B82F6",
+  inputBackground: "#141414",
+  divider: "#1F1F1F",
+  disabled: "#71717A",
   onPrimary: "#000000",
-  glassOverlay: "rgba(0, 0, 0, 0.76)",
-  primaryMuted: "rgba(212, 196, 176, 0.1)",
-  overlayScrim: "rgba(0, 0, 0, 0.58)",
-  shadowColor: "rgba(0, 0, 0, 0.5)",
-  hairline: "rgba(236, 234, 232, 0.14)",
-  destructiveSurface: "#421b1b",
-  destructiveText: "#ff6b6b",
+  glassOverlay: "rgba(0, 0, 0, 0.82)",
+  primaryMuted: "rgba(229, 231, 235, 0.1)",
+  overlayScrim: "rgba(0, 0, 0, 0.62)",
+  shadowColor: "rgba(0, 0, 0, 0.6)",
+  hairline: "rgba(250, 250, 250, 0.1)",
+  destructiveSurface: "#450a0a",
+  destructiveText: "#fca5a5",
 };
 
 export const PRIORITY_COLORS = {
-  low: "#8FA8B8",
-  normal: "#D4B896",
-  high: "#C9948E",
+  low: "#71717A",
+  normal: "#52525B",
+  high: "#B91C1C",
 };
 
 export const SIZES = {
@@ -133,6 +133,31 @@ export const SIZES = {
   large: 18,
   extraLarge: 24,
 };
+
+/** Standard corner radii — prefer over raw numbers for cards, chips, FABs */
+export const RADII = {
+  sm: 8,
+  md: 12,
+  /** Half of 56×56 circular FABs */
+  fab: 28,
+} as const;
+
+/** Shared horizontal inset for Home date strip + task stack (one rhythm). */
+export const HOME_GUTTER = SIZES.medium;
+
+/**
+ * Home `TaskList`: stats strip, priority section headers, and `TaskItem` rows share
+ * the same corner radius, insets, and vertical rhythm (see TaskList + TaskItem).
+ */
+export const HOME_LIST = {
+  cardRadius: RADII.md,
+  sectionPaddingV: SIZES.small,
+  sectionPaddingH: SIZES.medium,
+  /** Space below each task card */
+  itemMarginBottom: SIZES.small,
+  /** Space below stats strip / each section header */
+  stackGap: SIZES.base,
+} as const;
 
 /** @deprecated use lightWarmTheme */
 export const COLORS = lightWarmTheme;
