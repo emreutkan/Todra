@@ -36,7 +36,7 @@ const WELCOME: UiChatMessage = {
   id: "welcome",
   role: "assistant",
   content:
-    "Hi — I can **list**, **create**, **update**, **delete**, and **archive** your tasks.\n\n" +
+    "Hi — I can manage both **tasks** and **habits** with tools: **list**, **create**, **update**, **delete**, **archive**, and habit completion toggles.\n\n" +
     "Your setup is **BYOK** (bring your own key): open the gear, pick a provider, and save your API key. " +
     "It stays in **SecureStore** on this device only.\n\n" +
     "When I use a tool, tap the row to see the **request** and **result**.",
@@ -276,7 +276,7 @@ const AiAssistantScreen: React.FC = () => {
               <View style={[styles.typingDots, { backgroundColor: colors.surface }]}>
                 <ActivityIndicator size="small" color={colors.primary} />
                 <Text style={[typography.captionMedium, { color: colors.textSecondary }]}>
-                  Working on your tasks…
+                  Working on your tasks and habits...
                 </Text>
               </View>
             </View>
@@ -304,7 +304,7 @@ const AiAssistantScreen: React.FC = () => {
               style={[styles.input, { color: colors.text }]}
               value={input}
               onChangeText={setInput}
-              placeholder="Ask about your tasks…"
+              placeholder="Ask about your tasks or habits..."
               placeholderTextColor={colors.textSecondary}
               multiline
               maxLength={4000}
