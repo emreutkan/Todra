@@ -18,7 +18,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { useFonts } from "expo-font";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect } from "react";
-import { ActivityIndicator, View } from "react-native";
+import { ActivityIndicator, Platform, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { applyGlobalTypography } from "./app/bootstrapTypography";
 import { SettingsProvider } from "./app/context/SettingsContext";
@@ -94,9 +94,18 @@ function AppContent() {
           contentStyle: {
             backgroundColor: colors.background,
           },
-          animation: "fade",
+          // Avoid global crossfade — it reads as “phasing” between screens.
+          animation: Platform.select({
+            ios: "default",
+            android: "slide_from_right",
+          }),
+          animationDuration: 280,
         }}>
-        <Stack.Screen name="Splash" component={SplashScreen} />
+        <Stack.Screen
+          name="Splash"
+          component={SplashScreen}
+          options={{ animation: "none" }}
+        />
         <Stack.Screen name="Home" component={HomeScreen} />
         <Stack.Screen name="AddTask" component={AddTaskScreen} />
         <Stack.Screen

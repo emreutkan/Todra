@@ -69,8 +69,6 @@ const HomeScreen: React.FC = () => {
   const [isFilterVisible, setIsFilterVisible] = useState(false);
   const reducedMotion = useReducedMotion();
 
-  const scrollY = useRef(new Animated.Value(0)).current;
-
   const headerOpacity = useRef(new Animated.Value(0)).current;
   const headerTranslateY = useRef(new Animated.Value(12)).current;
   const listOpacity = useRef(new Animated.Value(0)).current;
@@ -107,7 +105,7 @@ const HomeScreen: React.FC = () => {
         }),
       ]);
 
-    const sequence = Animated.stagger(72, [
+    const sequence = Animated.stagger(88, [
       slideIn(headerOpacity, headerTranslateY),
       slideIn(listOpacity, listTranslateY),
       slideIn(footerOpacity, footerTranslateY),
@@ -184,10 +182,7 @@ const HomeScreen: React.FC = () => {
 
   return (
     <View
-      style={[
-        styles.container,
-        { backgroundColor: colors.background, paddingTop: insets.top },
-      ]}>
+      style={[styles.container, { backgroundColor: colors.background }]}>
       <StatusBar style={isDark ? "light" : "dark"} />
 
       <View style={styles.mainContentContainer}>
@@ -202,6 +197,7 @@ const HomeScreen: React.FC = () => {
             today={today}
             selectedMonth={selectedMonth}
             onDateChange={handleDateChange}
+            safeAreaTopInset={insets.top}
           />
         </Animated.View>
 
@@ -220,7 +216,6 @@ const HomeScreen: React.FC = () => {
             onToggleTaskCompletion={handleToggleTaskCompletion}
             onTaskPress={handleTaskPress}
             onRefresh={handleRefresh}
-            scrollY={scrollY}
           />
         </View>
       </View>

@@ -1,12 +1,8 @@
 import { MaterialIcons } from "@expo/vector-icons";
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Animated,
-  Easing,
   LayoutAnimation,
-  LayoutChangeEvent,
-  NativeSyntheticEvent,
-  NativeScrollEvent,
   Platform,
   SectionList,
   StyleSheet,
@@ -44,7 +40,6 @@ interface TaskListProps {
   onDeleteTask: (id: string) => void;
   onToggleTaskCompletion: (id: string) => void;
   onTaskPress: (id: string) => void;
-  scrollY?: Animated.Value;
   listEntranceOpacity: Animated.Value;
   listEntranceTranslateY: Animated.Value;
   loading?: boolean;
@@ -57,7 +52,6 @@ const TaskList: React.FC<TaskListProps> = ({
   onDeleteTask,
   onToggleTaskCompletion,
   onTaskPress,
-  scrollY,
   listEntranceOpacity,
   listEntranceTranslateY,
 }) => {
@@ -67,69 +61,6 @@ const TaskList: React.FC<TaskListProps> = ({
   const [expandedSections, setExpandedSections] = useState<{
     [key: string]: boolean;
   }>({});
-  /**
-   * Done / To do strip: row height + `stackGap` (measured).
-   * Default avoids height-0 first pass so `onLayout` can run.
-   */
-  const [statsBlockHeight, setStatsBlockHeight] = useState(56);
-  const statsProgress = useRef(new Animated.Value(0)).current;
-  const statsShownRef = useRef(false);
-  const lastScrollY = useRef(0);
-
-  const setStatsVisible = useCallback(
-    (visible: boolean) => {
-      if (statsShownRef.current === visible) return;
-      statsShownRef.current = visible;
-      if (reducedMotion) {
-        statsProgress.setValue(visible ? 1 : 0);
-        return;
-      }
-      Animated.timing(statsProgress, {
-        toValue: visible ? 1 : 0,
-        duration: visible ? 300 : 220,
-        easing: visible
-          ? Easing.out(Easing.cubic)
-          : Easing.in(Easing.cubic),
-        useNativeDriver: false,
-      }).start();
-    },
-    [reducedMotion, statsProgress]
-  );
-
-  const handleStatsLayout = useCallback((e: LayoutChangeEvent) => {
-    const h = e.nativeEvent.layout.height;
-    if (h <= 0) return;
-    const total = h + HOME_LIST.stackGap;
-    setStatsBlockHeight((prev) =>
-      Math.abs(prev - total) < 1 ? prev : total
-    );
-  }, []);
-
-  const handleScroll = useMemo(() => {
-    const scrollHandler = scrollY
-      ? Animated.event(
-          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-          { useNativeDriver: false }
-        )
-      : undefined;
-
-    return (e: NativeSyntheticEvent<NativeScrollEvent>) => {
-      scrollHandler?.(e);
-      const y = Math.max(0, e.nativeEvent.contentOffset.y);
-      const dy = y - lastScrollY.current;
-      lastScrollY.current = y;
-      const threshold = 10;
-      if (y < threshold) {
-        setStatsVisible(false);
-        return;
-      }
-      if (dy > threshold) {
-        setStatsVisible(true);
-      } else if (dy < -threshold) {
-        setStatsVisible(false);
-      }
-    };
-  }, [scrollY, setStatsVisible]);
 
   // Group filtered tasks into sections for the SectionList
   const sections = useMemo(() => {
@@ -202,17 +133,6 @@ const TaskList: React.FC<TaskListProps> = ({
       setExpandedSections(newExpandedSections);
     }
   }, [sections]);
-
-  const dayKey = useMemo(
-    () =>
-      `${currentDate.getFullYear()}-${currentDate.getMonth()}-${currentDate.getDate()}`,
-    [currentDate]
-  );
-  useEffect(() => {
-    lastScrollY.current = 0;
-    statsShownRef.current = false;
-    statsProgress.setValue(0);
-  }, [dayKey, statsProgress]);
 
   // Helper: Return a color based on task priority
   const getPrioritySectionColor = (priority: TaskPriority) => {
@@ -311,93 +231,67 @@ const TaskList: React.FC<TaskListProps> = ({
   const renderTasksHeader = () => {
     const completed = tasks.filter((t) => t.completed).length;
     const remaining = tasks.length - completed;
-    const h = statsBlockHeight;
-    const animatedShell = {
-      height: statsProgress.interpolate({
-        inputRange: [0, 1],
-        outputRange: [0, h],
-      }),
-      overflow: "hidden" as const,
-    };
-    const animatedInner = {
-      transform: [
-        {
-          translateY: statsProgress.interpolate({
-            inputRange: [0, 1],
-            outputRange: reducedMotion ? [0, 0] : [-14, 0],
-          }),
-        },
-      ],
-      opacity: statsProgress.interpolate({
-        inputRange: [0, 0.35, 1],
-        outputRange: [0, 0.85, 1],
-      }),
-    };
 
     return (
-      <Animated.View style={animatedShell}>
-        <Animated.View style={animatedInner}>
-          <View onLayout={handleStatsLayout}>
+      <View style={styles.statsHeaderWrap}>
+        <View
+          style={[
+            styles.progressSection,
+            {
+              backgroundColor: colors.card,
+              borderColor: colors.border,
+            },
+          ]}>
+          <View style={styles.progressInline}>
             <View
               style={[
-                styles.progressSection,
-                {
-                  backgroundColor: colors.card,
-                  borderColor: colors.border,
-                },
+                styles.progressDot,
+                { backgroundColor: colors.primary },
+              ]}
+            />
+            <Text
+              style={[
+                typography.captionMedium,
+                styles.progressCaption,
+                { color: colors.textSecondary },
               ]}>
-              <View style={styles.progressInline}>
-                <View
-                  style={[
-                    styles.progressDot,
-                    { backgroundColor: colors.success },
-                  ]}
-                />
-                <Text
-                  style={[
-                    typography.captionMedium,
-                    styles.progressCaption,
-                    { color: colors.textSecondary },
-                  ]}>
-                  Done
-                </Text>
-                <Text
-                  style={[typography.headline, { color: colors.success }]}
-                  maxFontSizeMultiplier={1.4}>
-                  {completed}
-                </Text>
-              </View>
-              <View
-                style={[
-                  styles.progressDivider,
-                  { backgroundColor: colors.hairline },
-                ]}
-              />
-              <View style={styles.progressInline}>
-                <View
-                  style={[
-                    styles.progressDot,
-                    { backgroundColor: colors.primary },
-                  ]}
-                />
-                <Text
-                  style={[
-                    typography.captionMedium,
-                    styles.progressCaption,
-                    { color: colors.textSecondary },
-                  ]}>
-                  To do
-                </Text>
-                <Text
-                  style={[typography.headline, { color: colors.primary }]}
-                  maxFontSizeMultiplier={1.4}>
-                  {remaining}
-                </Text>
-              </View>
-            </View>
+              To do
+            </Text>
+            <Text
+              style={[typography.headline, { color: colors.primary }]}
+              maxFontSizeMultiplier={1.4}>
+              {remaining}
+            </Text>
           </View>
-        </Animated.View>
-      </Animated.View>
+          <View
+            style={[
+              styles.progressDivider,
+              { backgroundColor: colors.hairline },
+            ]}
+          />
+          <View style={styles.progressInline}>
+            <View
+              style={[
+                styles.progressDot,
+                { backgroundColor: colors.success },
+              ]}
+            />
+            <Text
+              style={[
+                typography.captionMedium,
+                styles.progressCaption,
+                { color: colors.textSecondary },
+              ]}>
+              Done
+            </Text>
+            <Text
+              style={[typography.headline, { color: colors.success }]}
+              maxFontSizeMultiplier={1.4}>
+              {completed}
+            </Text>
+          </View>
+        </View>
+      </View>
     );
   };
 
@@ -429,8 +323,6 @@ const TaskList: React.FC<TaskListProps> = ({
         renderSectionHeader={renderSectionHeader}
         stickySectionHeadersEnabled
         ListHeaderComponent={renderTasksHeader}
-        scrollEventThrottle={16}
-        onScroll={handleScroll}
         renderItem={({ item, index, section }) => {
           if (!expandedSections[section.title]) return null;
           const isOverdue = Boolean(
@@ -469,6 +361,9 @@ const styles = StyleSheet.create({
   },
   taskList: {
     paddingBottom: 108,
+  },
+  statsHeaderWrap: {
+    marginBottom: HOME_LIST.stackGap,
   },
   progressSection: {
     flexDirection: "row",
