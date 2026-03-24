@@ -104,4 +104,166 @@ export const TODO_TOOLS_OPENAI = [
       },
     },
   },
+  {
+    type: "function" as const,
+    function: {
+      name: "list_habits",
+      description:
+        "List habits. By default returns active (non-archived) habits. Set include_archived to true to include archived habits.",
+      parameters: {
+        type: "object",
+        properties: {
+          include_archived: {
+            type: "boolean",
+            description: "If true, include archived habits in the result.",
+          },
+        },
+        required: [] as string[],
+      },
+    },
+  },
+  {
+    type: "function" as const,
+    function: {
+      name: "create_habit",
+      description:
+        "Create a new active habit. title and schedule_type are required. schedule_type is one of daily, interval, weekly.",
+      parameters: {
+        type: "object",
+        properties: {
+          title: { type: "string", description: "Habit title (required)." },
+          description: { type: "string", description: "Optional details." },
+          category: {
+            type: "string",
+            description:
+              "Category id or name, e.g. personal, work, shopping, health, education.",
+          },
+          color: {
+            type: "string",
+            description: "Hex accent color, e.g. #D97706.",
+          },
+          icon: {
+            type: "string",
+            description: "Ionicons icon name, e.g. fitness-outline.",
+          },
+          schedule_type: {
+            type: "string",
+            enum: ["daily", "interval", "weekly"],
+          },
+          interval_days: {
+            type: "number",
+            description: "For interval schedule, every N days (1-90).",
+          },
+          interval_phases: {
+            type: "string",
+            description:
+              "JSON stringified array of phase names for interval schedule, e.g. [\"Push\",\"Pull\",\"Legs\"].",
+          },
+          day_phases: {
+            type: "string",
+            description:
+              "JSON stringified array for weekly schedule, e.g. [{\"dayOfWeek\":1,\"name\":\"Push Day\"}]. dayOfWeek is 0-6.",
+          },
+          start_date: {
+            type: "string",
+            description: "Start date in YYYY-MM-DD.",
+          },
+          end_date: {
+            type: "string",
+            description: "Optional end date in YYYY-MM-DD.",
+          },
+        },
+        required: ["title", "schedule_type"],
+      },
+    },
+  },
+  {
+    type: "function" as const,
+    function: {
+      name: "update_habit",
+      description:
+        "Update an existing habit by id. Only include fields to change.",
+      parameters: {
+        type: "object",
+        properties: {
+          habit_id: { type: "string", description: "Habit id." },
+          title: { type: "string" },
+          description: { type: "string" },
+          category: { type: "string" },
+          color: { type: "string" },
+          icon: { type: "string" },
+          schedule_type: {
+            type: "string",
+            enum: ["daily", "interval", "weekly"],
+          },
+          interval_days: { type: "number" },
+          interval_phases: {
+            type: "string",
+            description: "JSON stringified array of phase names.",
+          },
+          day_phases: {
+            type: "string",
+            description:
+              "JSON stringified array of {dayOfWeek, name, description?}.",
+          },
+          start_date: { type: "string", description: "YYYY-MM-DD" },
+          end_date: {
+            type: "string",
+            description:
+              "YYYY-MM-DD. Use empty string to clear end date if needed.",
+          },
+        },
+        required: ["habit_id"],
+      },
+    },
+  },
+  {
+    type: "function" as const,
+    function: {
+      name: "toggle_habit_completion",
+      description:
+        "Toggle habit completion for a specific date (YYYY-MM-DD). Adds completion if missing, removes if exists.",
+      parameters: {
+        type: "object",
+        properties: {
+          habit_id: { type: "string" },
+          date: { type: "string", description: "YYYY-MM-DD" },
+          phase_name: {
+            type: "string",
+            description:
+              "Optional phase snapshot name to save when marking complete.",
+          },
+        },
+        required: ["habit_id", "date"],
+      },
+    },
+  },
+  {
+    type: "function" as const,
+    function: {
+      name: "delete_habit",
+      description: "Permanently delete a habit by id.",
+      parameters: {
+        type: "object",
+        properties: {
+          habit_id: { type: "string" },
+        },
+        required: ["habit_id"],
+      },
+    },
+  },
+  {
+    type: "function" as const,
+    function: {
+      name: "archive_habit",
+      description: "Move an active habit to archived.",
+      parameters: {
+        type: "object",
+        properties: {
+          habit_id: { type: "string" },
+        },
+        required: ["habit_id"],
+      },
+    },
+  },
 ];

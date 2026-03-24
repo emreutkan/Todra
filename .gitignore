@@ -41,3 +41,4 @@ eas.json
 android/
 ios/
 .vscode/
+.claude/settings.local.json

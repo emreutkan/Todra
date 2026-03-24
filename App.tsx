@@ -36,6 +36,9 @@ import * as Notifications from "expo-notifications";
 import ArchivedTasksScreen from "./app/screens/ArchivedTasksScreen";
 import AiAssistantScreen from "./app/screens/AiAssistantScreen";
 import AiSettingsScreen from "./app/screens/AiSettingsScreen";
+import AddHabitScreen from "./app/screens/AddHabitScreen";
+import HabitDetailScreen from "./app/screens/HabitDetailScreen";
+import HabitsScreen from "./app/screens/HabitsScreen";
 import { notificationService } from "./app/services/notificationService";
 import { RootStackParamList } from "./app/types";
 import { lightWarmTheme } from "./app/theme";
@@ -123,6 +126,9 @@ function AppContent() {
         <Stack.Screen name="ArchivedTasks" component={ArchivedTasksScreen} />
         <Stack.Screen name="AiAssistant" component={AiAssistantScreen} />
         <Stack.Screen name="AiSettings" component={AiSettingsScreen} />
+        <Stack.Screen name="Habits" component={HabitsScreen} />
+        <Stack.Screen name="AddHabit" component={AddHabitScreen} />
+        <Stack.Screen name="HabitDetail" component={HabitDetailScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

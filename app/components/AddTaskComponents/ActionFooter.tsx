@@ -14,12 +14,17 @@ interface ActionFooterProps {
   onCancel: () => void;
   onSave: () => void;
   saveEnabled: boolean;
+  /** Defaults to "Save Task" for task flows; use e.g. "Save habit" for habits. */
+  saveButtonText?: string;
+  saveAccessibilityLabel?: string;
 }
 
 const ActionFooter: React.FC<ActionFooterProps> = ({
   onCancel,
   onSave,
   saveEnabled,
+  saveButtonText = "Save Task",
+  saveAccessibilityLabel,
 }) => {
   const { colors, isDark } = useTheme();
 
@@ -62,11 +67,11 @@ const ActionFooter: React.FC<ActionFooterProps> = ({
         onPress={onSave}
         disabled={!saveEnabled}
         activeOpacity={0.7}
-        accessibilityLabel="Save task"
+        accessibilityLabel={saveAccessibilityLabel ?? saveButtonText}
         accessibilityRole="button"
         accessibilityState={{ disabled: !saveEnabled }}>
         <Text style={[styles.saveButtonText, { color: colors.onPrimary }]}>
-          Save Task
+          {saveButtonText}
         </Text>
         <Ionicons name="checkmark-outline" size={22} color={colors.onPrimary} />
       </TouchableOpacity>
